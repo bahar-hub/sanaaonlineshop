@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -25,8 +27,7 @@
     <!-- Main Stylesheet -->
     <link
         rel="stylesheet"
-        href="../statics/css/main.css"
-    >
+        href="{% static 'css/main.css' %}">    >
 </head>
 
 <body>
@@ -561,11 +562,11 @@
 
 
     <!-- JavaScript -->
-    <script src="../statics/js/modules/storage.js" defer></script>
-    <script src="../statics/js/modules/auth.js" defer></script>
-    <script src="../statics/js/modules/page-guard.js" defer></script>
-    <script src="../statics/js/modules/forgot-password.js" defer></script>
-    <script src="../statics/js/main.js" defer></script>
+    <script src="{% static 'js/modules/storage.js' %}" defer></script>
+    <script src="{% static 'js/modules/auth.js' %}" defer></script>
+    <script src="{% static 'js/modules/page-guard.js' %}" defer></script>
+    <script src="{% static 'js/modules/forgot-password.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
 
     <!-- If already logged in, skip straight to the right panel -->
     <script>
