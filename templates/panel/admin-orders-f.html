@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -18,7 +20,7 @@
 
     <link
         rel="stylesheet"
-        href="../statics/css/main.css"
+        href="{% static 'css/main.css' %}"
     >
 </head>
 
@@ -59,7 +61,7 @@
         >
 
             <a
-                href="admin-orders-f.html"
+                href="{% url 'panel:orders' %}"
                 class="admin-navigation-f__item admin-navigation-f__item--active"
                 aria-current="page"
             >
@@ -92,7 +94,7 @@
 
 
             <a
-                href="admin-customers-f.html"
+                href="{% url 'panel:customers' %}"
                 class="admin-navigation-f__item"
             >
                 <svg
@@ -123,7 +125,7 @@
 
 
             <a
-                href="admin-reports-f.html"
+                href="{% url 'panel:report' %}"
                 class="admin-navigation-f__item"
             >
                 <svg
@@ -1073,7 +1075,7 @@
     ========================================================== -->
 
     <script
-        src="../statics/js/modules/admin-orders-f.js"
+        src="{% static 'js/modules/admin-orders-f.js' %}"
         defer
     ></script>
 

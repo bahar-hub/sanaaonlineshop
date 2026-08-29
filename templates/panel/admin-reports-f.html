@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -19,7 +20,7 @@
     <!-- Main Stylesheet (unchanged — shared with the rest of the site) -->
     <link
         rel="stylesheet"
-        href="../statics/css/main.css"
+        href="{% static 'css/main.css' %}"
     >
 </head>
 
@@ -36,7 +37,7 @@
         <!-- Horizontal navigation tabs -->
         <nav class="admin-navigation-f" aria-label="بخش‌های پنل ادمین">
 
-            <a href="admin-orders-f.html" class="admin-navigation-f__item">
+            <a href="{% url 'panel:orders' %}" class="admin-navigation-f__item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                     <rect x="4" y="7" width="16" height="13" rx="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7" stroke-linecap="round" stroke-linejoin="round"/>
@@ -44,7 +45,7 @@
                 سفارش‌ها
             </a>
 
-            <a href="admin-customers-f.html" class="admin-navigation-f__item">
+            <a href="{% url 'panel:customers' %}" class="admin-navigation-f__item">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                     <circle cx="12" cy="8" r="3.5" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M4.5 20c1.2-3.6 4.2-5.5 7.5-5.5s6.3 1.9 7.5 5.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -53,7 +54,7 @@
             </a>
 
 
-            <a href="admin-reports-f.html" class="admin-navigation-f__item admin-navigation-f__item--active" aria-current="page">
+            <a href="{% url 'panel:report' %}" class="admin-navigation-f__item admin-navigation-f__item--active" aria-current="page">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                     <path d="M4 20V10M11 20V4M18 20v-7" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -279,7 +280,7 @@
 
     </div>
 
-    <script src="../statics/js/modules/admin-reports-f.js" defer></script>
+    <script src="{% static 'js/modules/admin-reports-f.js' %}" defer></script>
 
 </body>
 

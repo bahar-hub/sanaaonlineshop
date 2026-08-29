@@ -15,9 +15,9 @@
      */
 
     const ADMIN_ROUTES = {
-        orders: "admin-orders-f.html",
-        customers: "/customers/",
-        reports: "admin-reports-f.html"
+        orders: "orders/",
+        customers: "customers/",
+        reports: "report/"
     };
 
 
