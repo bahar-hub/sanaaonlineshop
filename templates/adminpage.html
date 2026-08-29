@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -26,7 +28,7 @@
     <!-- Main Stylesheet -->
     <link
         rel="stylesheet"
-        href="../statics/css/main.css"
+        href="{% static 'css/main.css' %}"
     >
 
 </head>
@@ -278,19 +280,19 @@
 
 
     <script
-        src="../statics/js/modules/storage.js"
+        src="{% static 'js/modules/storage.js' %}"
         defer
     ></script>
 
 
     <script
-        src="../statics/js/modules/auth.js"
+        src="{% static 'js/modules/auth.js' %}"
         defer
     ></script>
 
 
     <script
-        src="../statics/js/modules/admin-panel-f.js"
+        src="{% static 'js/modules/admin-panel-f.js' %}"
         defer
     ></script>
 

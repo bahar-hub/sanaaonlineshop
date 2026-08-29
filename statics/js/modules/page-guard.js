@@ -16,7 +16,7 @@ function redirectToRoleHome(user) {
 
     if (user.role === "admin") {
 
-        window.location.href = "admin-orders-f.html";
+        window.location.href = "{% url 'base:admin_orders' %}";
 
         return;
     }
@@ -24,7 +24,7 @@ function redirectToRoleHome(user) {
 
     if (user.role === "customer") {
 
-        window.location.href = "customer.html";
+        window.location.href = "{% url 'base:customer' %}";
 
         return;
     }

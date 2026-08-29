@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 
@@ -19,7 +21,7 @@
     <!-- Main Stylesheet (unchanged — shared with the rest of the site) -->
     <link
         rel="stylesheet"
-        href="../statics/css/main.css"
+        href="{% static 'css/main.css' %}"
     >
 </head>
 
@@ -193,7 +195,7 @@
     </div>
 
 
-    <script src="../statics/js/modules/admin-customers-f.js" defer></script>
+    <script src="{% static 'js/modules/admin-customers-f.js' %}" defer></script>
 
 </body>
 
