@@ -1,0 +1,17 @@
+body {
+    direction: rtl;
+
+    font-family: $font-family-persian;
+}
+
+.ltr {
+    direction: ltr;
+}
+
+.brand-font {
+    font-family: $font-family-primary;
+}
+
+.persian-font {
+    font-family: $font-family-persian;
+}

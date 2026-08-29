@@ -1,0 +1,892 @@
+// ============================================================
+// Admin Panel — Layout Shell
+// MODIFIED (refactored): the previous version had a desktop
+// sidebar + mobile hamburger/drawer. The client removed that
+// requirement — navigation is now a single horizontal tab bar
+// that works the same way on every screen size (like Zara's
+// mobile category tabs). Sidebar/drawer/hamburger code below
+// has been deleted, not just hidden.
+// ============================================================
+
+.admin-layout-f {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background-color: $color-background;
+
+    // CRITICAL: a class-based `display` declaration otherwise
+    // overrides the browser's default [hidden] behavior (equal
+    // specificity, and author CSS always wins over the UA
+    // stylesheet) — without this, the admin panel would stay
+    // visible even while router.js sets `hidden` on it for the
+    // login/customer routes, corrupting the layout of whichever
+    // page is actually supposed to be showing.
+    &[hidden] {
+        display: none;
+    }
+}
+
+
+// ----------------------------------------
+// Topbar
+// ----------------------------------------
+
+.admin-topbar-f {
+    @include flex-between;
+
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    height: 56px;
+    padding: 0 $spacing-md;
+
+    background-color: $color-surface;
+    border-bottom: 1px solid $color-hairline;
+}
+
+.admin-topbar-f__brand {
+    color: $color-primary;
+
+    font-family: $font-family-primary;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+}
+
+.admin-topbar-f__brand span {
+    margin-right: 4px;
+
+    color: $color-text-muted;
+
+    font-family: $font-family-primary;
+    font-size: 0.55rem;
+    letter-spacing: 0.24em;
+}
+
+.admin-topbar-f__profile {
+    @include button-reset;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    width: 32px;
+    height: 32px;
+
+    border-radius: 999px;
+
+    background-color: $color-primary;
+    color: $color-surface;
+
+    font-family: $font-family-persian;
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+
+
+// ----------------------------------------
+// Horizontal navigation tabs
+// (replaces the old sidebar + drawer)
+// ----------------------------------------
+
+.admin-navigation-f {
+    display: flex;
+    align-items: center;
+    gap: $spacing-lg;
+
+    padding: 0 $spacing-md;
+
+    background-color: $color-surface;
+    border-bottom: 1px solid $color-hairline;
+
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    // hide the scrollbar visually, keep it functional
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.admin-navigation-f::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-navigation-f__item {
+    @include button-reset;
+
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 6px;
+
+    padding: $spacing-sm 2px;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+
+    color: $color-text-muted;
+
+    font-family: $font-family-persian;
+    font-size: 0.82rem;
+    font-weight: 500;
+
+    white-space: nowrap;
+
+    transition: color $transition-fast, border-color $transition-fast;
+}
+
+.admin-navigation-f__item svg {
+    flex-shrink: 0;
+
+    width: 17px;
+    height: 17px;
+}
+
+.admin-navigation-f__item:hover {
+    color: $color-text;
+    border-bottom-color: $color-hairline;
+}
+
+.admin-navigation-f__item--active {
+    color: $color-primary;
+    border-bottom-color: $color-primary;
+
+    font-weight: 600;
+}
+
+
+// ----------------------------------------
+// Content area
+// ----------------------------------------
+
+.admin-content-f {
+    flex: 1;
+    min-width: 0;
+}
+
+
+// ----------------------------------------
+// Placeholder pages
+// (Orders / Customers / Invoices are not
+// designed yet in this iteration — only
+// the navigation entry + an empty state)
+// ----------------------------------------
+
+.admin-placeholder-f {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-sm;
+
+    min-height: 50vh;
+    padding: $spacing-xl;
+
+    text-align: center;
+}
+
+.admin-placeholder-f__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: 999px;
+
+    background-color: rgba(166, 21, 121, 0.08);
+    color: $color-primary;
+}
+
+.admin-placeholder-f__icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.admin-placeholder-f__title {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.admin-placeholder-f__text {
+    max-width: 280px;
+
+    color: $color-text-muted;
+
+    font-size: 0.78rem;
+}
+
+
+// ----------------------------------------
+// Desktop: a bit more breathing room —
+// the tab bar itself stays horizontal at
+// every breakpoint (per the client's
+// request), only spacing/padding grows.
+// ----------------------------------------
+
+@include respond-to(lg) {
+    .admin-topbar-f,
+    .admin-navigation-f {
+        padding-left: $spacing-lg;
+        padding-right: $spacing-lg;
+    }
+
+    .admin-navigation-f {
+        gap: $spacing-xl;
+    }
+}
+
+
+.admin-welcome-f {
+    position: relative;
+
+    width: min(680px, 100%);
+
+    padding: 64px 48px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    background: rgba(255, 255, 255, 0.72);
+
+    border: 1px solid $color-border;
+
+    border-radius: $radius-xl;
+
+    box-shadow:
+        0 20px 60px rgba(30, 27, 25, 0.06);
+
+    overflow: hidden;
+
+    animation: adminWelcomeAppear 700ms ease-out both;
+}
+
+
+// ----------------------------------------
+// Icon
+// ----------------------------------------
+
+.admin-welcome-f__icon {
+    width: 76px;
+    height: 76px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 28px;
+
+    color: $color-primary;
+
+    border: 1px solid rgba(166, 21, 121, 0.18);
+
+    border-radius: 50%;
+
+    background:
+        rgba(166, 21, 121, 0.055);
+
+    animation:
+        adminWelcomeIconAppear 800ms ease-out 150ms both,
+        adminWelcomeIconFloat 4s ease-in-out 1.1s infinite;
+}
+
+
+.admin-welcome-f__icon svg {
+    width: 42px;
+    height: 42px;
+}
+
+
+// ----------------------------------------
+// Text
+// ----------------------------------------
+
+.admin-welcome-f__text {
+    position: relative;
+    z-index: 2;
+}
+
+
+.admin-welcome-f__eyebrow {
+    display: block;
+
+    margin-bottom: 12px;
+
+    font-family: "Belleza", sans-serif;
+
+    font-size: 13px;
+
+    letter-spacing: 3px;
+
+    color: $color-text-muted;
+
+    direction: ltr;
+
+    animation: adminWelcomeTextAppear 600ms ease-out 250ms both;
+}
+
+
+.admin-welcome-f__title {
+    margin: 0;
+
+    font-family: "Vazirmatn", sans-serif;
+
+    font-size: clamp(32px, 5vw, 48px);
+
+    font-weight: 500;
+
+    line-height: 1.5;
+
+    color: $color-text;
+
+    animation: adminWelcomeTextAppear 600ms ease-out 350ms both;
+}
+
+
+.admin-welcome-f__description {
+    margin: 16px 0 0;
+
+    font-family: "Vazirmatn", sans-serif;
+
+    font-size: 14px;
+
+    font-weight: 400;
+
+    line-height: 2;
+
+    color: $color-text-muted;
+
+    animation: adminWelcomeTextAppear 600ms ease-out 450ms both;
+}
+
+
+// ----------------------------------------
+// Decorative elements
+// ----------------------------------------
+
+.admin-welcome-f__decor {
+    position: absolute;
+
+    border-radius: 50%;
+
+    pointer-events: none;
+
+    opacity: 0.45;
+}
+
+
+.admin-welcome-f__decor--one {
+    width: 180px;
+    height: 180px;
+
+    top: -100px;
+    right: -70px;
+
+    border: 1px solid rgba(166, 21, 121, 0.12);
+
+    animation: adminWelcomeDecorOne 8s ease-in-out infinite;
+}
+
+
+.admin-welcome-f__decor--two {
+    width: 130px;
+    height: 130px;
+
+    bottom: -75px;
+    left: -50px;
+
+    border: 1px solid rgba(185, 195, 185, 0.55);
+
+    animation: adminWelcomeDecorTwo 7s ease-in-out infinite;
+}
+
+
+// ========================================
+// Animations
+// ========================================
+
+@keyframes adminWelcomeAppear {
+
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+@keyframes adminWelcomeIconAppear {
+
+    from {
+        opacity: 0;
+        transform: scale(0.65) rotate(-12deg);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0);
+    }
+}
+
+
+@keyframes adminWelcomeIconFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+
+@keyframes adminWelcomeTextAppear {
+
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+@keyframes adminWelcomeDecorOne {
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(-12px, 10px) rotate(8deg);
+    }
+}
+
+
+@keyframes adminWelcomeDecorTwo {
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    50% {
+        transform: translate(10px, -8px);
+    }
+}
+
+
+// ========================================
+// Responsive
+// ========================================
+
+@media (max-width: 768px) {
+
+    .admin-content-f {
+        min-height: calc(100vh - 120px);
+
+        padding: 32px 16px;
+    }
+
+
+    .admin-welcome-f {
+        padding: 48px 24px;
+
+        border-radius: $radius-lg;
+    }
+
+
+    .admin-welcome-f__icon {
+        width: 66px;
+        height: 66px;
+
+        margin-bottom: 22px;
+    }
+
+
+    .admin-welcome-f__icon svg {
+        width: 36px;
+        height: 36px;
+    }
+
+
+    .admin-welcome-f__eyebrow {
+        font-size: 11px;
+        letter-spacing: 2.5px;
+    }
+
+
+    .admin-welcome-f__description {
+        font-size: 13px;
+    }
+
+}
+
+
+@media (max-width: 480px) {
+
+    .admin-content-f {
+        padding: 24px 12px;
+    }
+
+
+    .admin-welcome-f {
+        padding: 40px 20px;
+    }
+
+
+    .admin-welcome-f__title {
+        font-size: 30px;
+    }
+
+
+    .admin-welcome-f__description {
+        font-size: 12px;
+        line-height: 2.1;
+    }
+
+}
+
+
+
+.admin-welcome-f {
+    width: 100%;
+    max-width: 920px;
+    min-height: 420px;
+    margin: 0 auto;
+
+    box-sizing: border-box;
+
+    background: $color-surface;
+    border: 1px solid $color-border;
+    border-radius: $radius-xl;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    position: relative;
+    overflow: hidden;
+
+    box-shadow: 0 18px 45px rgba(30, 27, 25, 0.06);
+}
+
+
+/* Decorative circle */
+
+.admin-welcome-f::before,
+.admin-welcome-f::after {
+    content: "";
+    position: absolute;
+
+    width: 230px;
+    height: 230px;
+
+    border: 1px solid rgba(166, 21, 121, 0.08);
+    border-radius: 50%;
+
+    pointer-events: none;
+}
+
+.admin-welcome-f::before {
+    top: -145px;
+    right: -70px;
+}
+
+.admin-welcome-f::after {
+    bottom: -160px;
+    left: -80px;
+
+    border-color: rgba(185, 195, 185, 0.22);
+}
+
+
+/* Icon */
+
+.admin-welcome-f__icon {
+    width: 92px;
+    height: 92px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: $color-primary;
+
+    background: rgba(166, 21, 121, 0.05);
+    border: 2px solid rgba(166, 21, 121, 0.18);
+
+    margin-bottom: 28px;
+
+    position: relative;
+    z-index: 1;
+
+    animation: adminWelcomeFloatF 3.5s ease-in-out infinite;
+}
+
+.admin-welcome-f__icon svg {
+    width: 52px;
+    height: 52px;
+
+    animation: adminWelcomeSparkleF 2.8s ease-in-out infinite;
+}
+
+
+/* Small English label */
+
+.admin-welcome-f__eyebrow {
+    position: relative;
+    z-index: 1;
+
+    font-family: Belleza, sans-serif;
+
+    font-size: 16px;
+    letter-spacing: 5px;
+
+    color: $color-text-muted;
+
+    margin-bottom: 14px;
+}
+
+
+/* Main title */
+
+.admin-welcome-f__title {
+    position: relative;
+    z-index: 1;
+
+    margin: 0;
+
+    color: $color-primary;
+
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1.3;
+
+    animation: adminWelcomeTitleF 700ms ease both;
+}
+
+
+/* Description */
+
+.admin-welcome-f__description {
+    position: relative;
+    z-index: 1;
+
+    margin: 22px 0 0;
+
+    color: $color-text-muted;
+
+    font-size: 18px;
+    line-height: 2;
+
+    animation: adminWelcomeDescriptionF 900ms ease both;
+}
+
+
+/* ========================================
+   Animations
+   ======================================== */
+
+@keyframes adminWelcomeFloatF {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+
+@keyframes adminWelcomeSparkleF {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+
+    50% {
+        transform: scale(1.08) rotate(5deg);
+    }
+}
+
+
+@keyframes adminWelcomeTitleF {
+
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+@keyframes adminWelcomeDescriptionF {
+
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* ========================================
+   Mobile
+   ======================================== */
+
+@media (max-width: 768px) {
+
+    .admin-content-f {
+        padding: 24px 16px 32px;
+    }
+
+    .admin-welcome-f {
+        min-height: 360px;
+
+        padding: 40px 20px;
+
+        border-radius: $radius-lg;
+    }
+
+    .admin-welcome-f__icon {
+        width: 76px;
+        height: 76px;
+
+        margin-bottom: 22px;
+    }
+
+    .admin-welcome-f__icon svg {
+        width: 43px;
+        height: 43px;
+    }
+
+    .admin-welcome-f__eyebrow {
+        font-size: 13px;
+        letter-spacing: 4px;
+    }
+
+    .admin-welcome-f__title {
+        font-size: 40px;
+    }
+
+    .admin-welcome-f__description {
+        margin-top: 16px;
+
+        font-size: 15px;
+        line-height: 1.9;
+    }
+}
+
+
+@media (max-width: 480px) {
+
+    .admin-content-f {
+        padding: 18px 12px 24px;
+    }
+
+    .admin-welcome-f {
+        min-height: 330px;
+        padding: 32px 16px;
+    }
+
+    .admin-welcome-f__icon {
+        width: 68px;
+        height: 68px;
+
+        margin-bottom: 18px;
+    }
+
+    .admin-welcome-f__icon svg {
+        width: 38px;
+        height: 38px;
+    }
+
+    .admin-welcome-f__eyebrow {
+        font-size: 11px;
+        letter-spacing: 3px;
+    }
+
+    .admin-welcome-f__title {
+        font-size: 34px;
+    }
+
+    .admin-welcome-f__description {
+        font-size: 14px;
+    }
+}
+// ========================================
+// Admin Welcome
+// ========================================
+
+.admin-welcome-f {
+    position: relative;
+
+    width: calc(100% - 48px);
+    max-width: 920px;
+
+    min-height: 420px;
+
+    margin: 36px auto;
+
+    box-sizing: border-box;
+
+    background: $color-surface;
+
+    border: 1px solid $color-border;
+    border-radius: $radius-xl;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 56px 40px;
+
+    text-align: center;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 18px 45px rgba(30, 27, 25, 0.06);
+
+    animation:
+        adminWelcomeAppear 700ms ease-out both;
+}

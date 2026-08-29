@@ -1,0 +1,284 @@
+// ============================================================
+// Admin Panel — Customers page
+// NEW FILE. Uses .modal / .order-list / .order-card / the real
+// .order-status modifiers from components/orders (NOT the
+// admin-only -f status variants) so the "customer's orders"
+// view matches the teammate's storefront order-history UI
+// pixel-for-pixel, per the current request.
+// ============================================================
+
+.admin-customers-f {
+    padding: $spacing-md $spacing-md $spacing-2xl;
+}
+
+.admin-customers-f__header {
+    @include flex-between;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-md;
+}
+
+.admin-customers-f__title {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+
+// ----------------------------------------
+// Toolbar: search + sort
+// ----------------------------------------
+
+.admin-customers-f__toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-lg;
+}
+
+.admin-customers-f__toolbar .admin-select-f {
+    width: 100%;
+}
+
+
+// ----------------------------------------
+// Customer list + card
+// ----------------------------------------
+
+.admin-customers-f__list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+
+    list-style: none;
+}
+
+.admin-customers-f__card {
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    padding: $spacing-md;
+
+    background-color: $color-surface;
+
+    transition: border-color $transition-fast, box-shadow $transition-fast;
+}
+
+.admin-customers-f__card:hover {
+    border-color: $color-primary;
+    box-shadow: 0 8px 20px -14px rgba(30, 20, 15, 0.35);
+}
+
+.admin-customers-f__card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-sm;
+}
+
+.admin-customers-f__card-name {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.admin-customers-f__card-id {
+    margin-top: 1px;
+
+    color: $color-text-muted;
+
+    font-size: 0.7rem;
+}
+
+.admin-customers-f__card-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+.admin-customers-f__card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-md;
+
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid $color-hairline;
+
+    color: $color-text-muted;
+
+    font-size: 0.74rem;
+}
+
+.admin-customers-f__card-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-customers-f__card-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-customers-f__card-stat span {
+    color: $color-text-muted;
+
+    font-size: 0.68rem;
+}
+
+.admin-customers-f__card-stat strong {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.admin-customers-f__card-stat--amount strong {
+    color: $color-primary;
+}
+
+
+// ----------------------------------------
+// Empty state (no results)
+// ----------------------------------------
+
+.admin-customers-f__empty {
+    padding: $spacing-2xl $spacing-md;
+
+    color: $color-text-muted;
+
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+
+// ----------------------------------------
+// Add-customer form (inside .modal__panel)
+// ----------------------------------------
+
+.admin-customers-f__form-group {
+    margin-bottom: $spacing-md;
+}
+
+.admin-customers-f__form-label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.admin-customers-f__form-input {
+    width: 100%;
+
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    background-color: $color-input-bg;
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.85rem;
+
+    transition: border-color $transition-fast, background-color $transition-fast;
+}
+
+.admin-customers-f__form-input:focus {
+    outline: none;
+    border-color: $color-primary;
+    background-color: $color-input-bg-focus;
+}
+
+.admin-customers-f__form-error {
+    display: none;
+
+    margin-top: 4px;
+
+    color: $color-error;
+
+    font-size: 0.7rem;
+}
+
+.admin-customers-f__form-group.has-error .admin-customers-f__form-input {
+    border-color: $color-error;
+}
+
+.admin-customers-f__form-group.has-error .admin-customers-f__form-error {
+    display: block;
+}
+
+.admin-customers-f__form-submit {
+    width: 100%;
+    justify-content: center;
+
+    margin-top: $spacing-sm;
+}
+
+
+// ----------------------------------------
+// "Customer orders" modal
+// ----------------------------------------
+
+.admin-customers-f__orders-summary {
+    margin-bottom: $spacing-md;
+    padding-bottom: $spacing-md;
+    border-bottom: 1px solid $color-hairline;
+
+    color: $color-text-muted;
+
+    font-size: 0.78rem;
+}
+
+.admin-customers-f__orders-summary strong {
+    color: $color-text;
+}
+
+
+// ----------------------------------------
+// Responsive
+// ----------------------------------------
+
+@include respond-to(sm) {
+    .admin-customers-f__toolbar {
+        flex-direction: row;
+    }
+
+    .admin-customers-f__toolbar .admin-select-f {
+        width: auto;
+        flex-shrink: 0;
+    }
+}
+
+@include respond-to(md) {
+    .admin-customers-f {
+        padding: $spacing-lg $spacing-lg $spacing-3xl;
+    }
+
+    .admin-customers-f__list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: $spacing-md;
+    }
+}
+
+@include respond-to(lg) {
+    .admin-customers-f__list {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

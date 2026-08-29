@@ -1,0 +1,62 @@
+// ========================================
+// Belleza
+// ========================================
+
+@font-face {
+    font-family: "Belleza";
+
+    src:
+        url("../../fonts/Belleza-Regular.woff2")
+        format("woff2");
+
+    font-style: normal;
+    font-weight: 400;
+
+    font-display: swap;
+}
+
+
+// ========================================
+// Persian Font
+// ========================================
+
+@font-face {
+    font-family: "Sanaa Persian";
+
+    src:
+        url("../../fonts/PersianFont-Regular.woff2")
+        format("woff2");
+
+    font-style: normal;
+    font-weight: 400;
+
+    font-display: swap;
+}
+
+
+@font-face {
+    font-family: "Sanaa Persian";
+
+    src:
+        url("../../fonts/PersianFont-Medium.woff2")
+        format("woff2");
+
+    font-style: normal;
+    font-weight: 500;
+
+    font-display: swap;
+}
+
+
+@font-face {
+    font-family: "Sanaa Persian";
+
+    src:
+        url("../../fonts/PersianFont-Bold.woff2")
+        format("woff2");
+
+    font-style: normal;
+    font-weight: 700;
+
+    font-display: swap;
+}

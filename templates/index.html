@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Sanaa Online Shop"
+    >
+
+    <title>Sanaa Online Shop</title>
+
+    <!-- Persian Typeface: Vazirmatn -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/vazirmatn@33.003/Vazirmatn-font-face.css"
+    >
+
+    <!-- Main Stylesheet -->
+    <link
+        rel="stylesheet"
+        href="../statics/css/main.css"
+    >
+</head>
+
+<body>
+
+
+    <!-- ========================================
+         Splash Screen
+    ========================================= -->
+
+    <section
+        class="splash"
+        id="splash"
+        aria-label="Sanaa introduction"
+    >
+
+        <div class="splash__texture"></div>
+
+        <div class="splash__content">
+
+            <h1 class="splash__brand">
+                SANAA
+            </h1>
+
+            <p class="splash__tagline" dir="ltr">
+                CREATE YOUR OWN STYLE
+            </p>
+
+            <span class="splash__line" aria-hidden="true"></span>
+
+        </div>
+
+    </section>
+
+
+    <!-- ========================================
+         Authentication
+    ========================================= -->
+
+    <main
+        class="auth-page"
+        id="authPage"
+    >
+
+        <div class="auth-page__container">
+
+            <!-- Brand -->
+
+            <header class="auth-page__brand">
+
+                <h1 class="auth-page__brand-name" dir="ltr">
+                    SANAA
+                </h1>
+
+                <p
+                    class="auth-page__brand-subtitle"
+                    dir="ltr"
+                >
+                    ONLINE SHOP
+                </p>
+
+            </header>
+
+
+            <!-- Auth Card -->
+
+            <section class="auth-card">
+
+                <!-- Tabs -->
+
+                <div
+                    class="auth-tabs"
+                    role="tablist"
+                >
+
+                    <button
+                        type="button"
+                        class="auth-tab is-active"
+                        data-auth-tab="login"
+                        role="tab"
+                        aria-selected="true"
+                    >
+                        ورود
+                    </button>
+
+                    <button
+                        type="button"
+                        class="auth-tab"
+                        data-auth-tab="signup"
+                        role="tab"
+                        aria-selected="false"
+                    >
+                        ثبت نام
+                    </button>
+
+                </div>
+
+
+                <div class="auth-content">
+
+                    <!-- ==================================
+                         Login
+                    =================================== -->
+
+                    <form
+                        class="auth-form is-active"
+                        id="loginForm"
+                        data-auth-form="login"
+                    >
+
+                        <div class="form-group">
+
+                            <label
+                                class="form-label"
+                                for="loginUsername"
+                            >
+                                نام کاربری
+                            </label>
+
+                            <input
+                                class="form-input"
+                                type="text"
+                                id="loginUsername"
+                                name="username"
+                                placeholder="نام کاربری خود را وارد کنید"
+                                autocomplete="username"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label
+                                class="form-label"
+                                for="loginPassword"
+                            >
+                                رمز عبور
+                            </label>
+
+                            <div class="password-field">
+
+                                <input
+                                    class="form-input"
+                                    type="password"
+                                    id="loginPassword"
+                                    name="password"
+                                    placeholder="رمز عبور خود را وارد کنید"
+                                    autocomplete="current-password"
+                                    required
+                                >
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    data-password-toggle="loginPassword"
+                                    aria-label="نمایش رمز عبور"
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                        <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            class="auth-submit"
+                        >
+                            <span class="auth-submit__label">ورود</span>
+                            <svg class="auth-submit__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="auth-secondary"
+                            data-switch-auth="forgot"
+                        >
+                            فراموشی رمز عبور؟
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="auth-secondary"
+                            data-switch-auth="signup"
+                        >
+                            ایجاد حساب کاربری
+                        </button>
+
+                    </form>
+
+
+                    <!-- ==================================
+                         Signup
+                    =================================== -->
+
+                    <form
+                        class="auth-form"
+                        id="signupForm"
+                        data-auth-form="signup"
+                    >
+
+                        <div class="form-group">
+
+                            <label
+                                class="form-label"
+                                for="signupFirstName"
+                            >
+                                نام
+                            </label>
+
+                            <input
+                                class="form-input"
+                                type="text"
+                                id="signupFirstName"
+                                name="firstName"
+                                placeholder="نام خود را وارد کنید"
+                                autocomplete="given-name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label
+                                class="form-label"
+                                for="signupLastName"
+                            >
+                                نام خانوادگی
+                            </label>
+
+                            <input
+                                class="form-input"
+                                type="text"
+                                id="signupLastName"
+                                name="lastName"
+                                placeholder="نام خانوادگی خود را وارد کنید"
+                                autocomplete="family-name"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label
+                                class="form-label"
+                                for="signupPhone"
+                            >
+                                شماره تلفن
+                            </label>
+
+                            <input
+                                class="form-input"
+                                type="tel"
+                                id="signupPhone"
+                                name="phone"
+                                placeholder="شماره تلفن خود را وارد کنید"
+                                autocomplete="tel"
+                                inputmode="tel"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label
+                                class="form-label"
+                                for="signupAddress"
+                            >
+                                آدرس
+                            </label>
+
+                            <textarea
+                                class="form-textarea"
+                                id="signupAddress"
+                                name="address"
+                                placeholder="آدرس خود را وارد کنید"
+                                autocomplete="street-address"
+                                required
+                            ></textarea>
+
+                        </div>
+                        <div class="form-group">
+
+    <label
+        class="form-label"
+        for="signupUsername"
+    >
+        نام کاربری
+    </label>
+
+    <input
+        class="form-input"
+        type="text"
+        id="signupUsername"
+        name="username"
+        placeholder="نام کاربری خود را وارد کنید"
+        autocomplete="username"
+        minlength="4"
+        required
+    >
+
+</div>
+
+
+<div class="form-group">
+
+    <label
+        class="form-label"
+        for="signupPassword"
+    >
+        رمز عبور
+    </label>
+
+    <div class="password-field">
+
+        <input
+            class="form-input"
+            type="password"
+            id="signupPassword"
+            name="password"
+            placeholder="رمز عبور خود را وارد کنید"
+            autocomplete="new-password"
+            minlength="6"
+            required
+        >
+
+        <button
+            type="button"
+            class="password-toggle"
+            data-password-toggle="signupPassword"
+            aria-label="نمایش رمز عبور"
+        >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+                        <button
+                            type="submit"
+                            class="auth-submit"
+                        >
+                            <span class="auth-submit__label">ثبت نام</span>
+                            <svg class="auth-submit__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="auth-secondary"
+                            data-switch-auth="login"
+                        >
+                            ورود به حساب
+                        </button>
+
+                    </form>
+
+
+                    <!-- ==================================
+                         Forgot Password
+                    =================================== -->
+
+                    <form
+                        class="auth-form"
+                        id="forgotForm"
+                        data-auth-form="forgot"
+                        novalidate
+                    >
+
+                        <!-- Step 1: Phone -->
+
+                        <div
+                            class="forgot-step is-active"
+                            data-forgot-step="phone"
+                        >
+
+                            <div class="form-group">
+
+                                <label
+                                    class="form-label"
+                                    for="forgotPhone"
+                                >
+                                    شماره تلفن
+                                </label>
+
+                                <input
+                                    class="form-input"
+                                    type="tel"
+                                    id="forgotPhone"
+                                    name="phone"
+                                    placeholder="شماره تلفن خود را وارد کنید"
+                                    autocomplete="tel"
+                                    inputmode="tel"
+                                    dir="ltr"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                class="auth-submit"
+                                data-forgot-send
+                            >
+                                <span class="auth-submit__label">ارسال رمز</span>
+                                <svg class="auth-submit__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="auth-secondary"
+                                data-switch-auth="login"
+                            >
+                                بازگشت به ورود
+                            </button>
+
+                        </div>
+
+
+                        <!-- Step 2: Code -->
+
+                        <div
+                            class="forgot-step"
+                            data-forgot-step="code"
+                            hidden
+                        >
+
+                            <p
+                                class="forgot-step__hint"
+                                id="forgotHint"
+                            ></p>
+
+                            <div class="form-group">
+
+                                <label
+                                    class="form-label"
+                                    for="forgotCode"
+                                >
+                                    رمز ارسال شده
+                                </label>
+
+                                <input
+                                    class="form-input otp-input"
+                                    type="text"
+                                    id="forgotCode"
+                                    name="code"
+                                    placeholder="− − − −"
+                                    inputmode="numeric"
+                                    autocomplete="one-time-code"
+                                    dir="ltr"
+                                    maxlength="4"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <button
+                                type="submit"
+                                class="auth-submit"
+                            >
+                                <span class="auth-submit__label">تایید</span>
+                                <svg class="auth-submit__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+
+
+                            <button
+                                type="button"
+                                class="auth-secondary"
+                                data-forgot-resend
+                            >
+                                ارسال مجدد رمز
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+
+            <p class="auth-footer">
+                با ورود یا ثبت نام، شما
+                <a href="#">
+                    شرایط و قوانین
+                </a>
+                و
+                <a href="#">
+                    حریم خصوصی
+                </a>
+                را می‌پذیرید.
+            </p>
+
+        </div>
+
+    </main>
+
+
+    <!-- JavaScript -->
+    <script src="../statics/js/modules/storage.js" defer></script>
+    <script src="../statics/js/modules/auth.js" defer></script>
+    <script src="../statics/js/modules/page-guard.js" defer></script>
+    <script src="../statics/js/modules/forgot-password.js" defer></script>
+    <script src="../statics/js/main.js" defer></script>
+
+    <!-- If already logged in, skip straight to the right panel -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => redirectIfAuthenticated());
+    </script>
+
+</body>
+
+</html>

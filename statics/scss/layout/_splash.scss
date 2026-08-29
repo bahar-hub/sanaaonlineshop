@@ -1,0 +1,169 @@
+.splash {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background-color: $color-secondary;
+
+    opacity: 1;
+    visibility: visible;
+
+    transition:
+        opacity 600ms ease,
+        visibility 600ms ease;
+}
+
+.splash.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+
+// ----------------------------------------
+// Texture
+// ----------------------------------------
+
+.splash__texture {
+    position: absolute;
+    inset: 0;
+
+    background-image: url("../img/sanaa-texture.jpg");
+    background-position: center;
+    background-repeat: repeat;
+    background-size: auto;
+
+    opacity: 0.06;
+    mix-blend-mode: multiply;
+
+    pointer-events: none;
+}
+
+
+// ----------------------------------------
+// Content
+// ----------------------------------------
+
+.splash__content {
+    position: relative;
+    z-index: 2;
+
+    width: 100%;
+    padding: $spacing-lg;
+
+    text-align: center;
+}
+
+
+// ----------------------------------------
+// SANAA 
+// ----------------------------------------
+
+.splash__brand {
+    color: $color-primary;
+
+    font-family: $font-family-primary;
+
+    font-size: clamp(3.2rem, 16vw, 6.5rem);
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    line-height: 0.9;
+
+    opacity: 0;
+    transform: scale(0.96);
+
+    animation: splashBrandEnter 900ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards;
+}
+
+
+// ----------------------------------------
+// Tagline 
+// ----------------------------------------
+
+.splash__tagline {
+    margin-top: $spacing-md;
+
+    color: $color-text-muted;
+
+    font-family: $font-family-primary;
+
+    font-size: clamp(0.62rem, 2.6vw, 0.8rem);
+    letter-spacing: 0.32em;
+    line-height: 1.4;
+
+    opacity: 0;
+
+    animation: splashTaglineEnter 700ms ease 650ms forwards;
+}
+
+.splash__line {
+    display: block;
+
+    width: 32px;
+    height: 1px;
+    margin: $spacing-md auto 0;
+
+    background-color: $color-primary;
+
+    transform: scaleX(0);
+
+    animation: splashLineEnter 600ms cubic-bezier(0.16, 1, 0.3, 1) 950ms forwards;
+}
+
+
+// ----------------------------------------
+// Animations
+// ----------------------------------------
+
+@keyframes splashBrandEnter {
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes splashTaglineEnter {
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes splashLineEnter {
+    to {
+        transform: scaleX(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .splash__brand,
+    .splash__tagline,
+    .splash__line {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+}
+
+
+// ----------------------------------------
+// Desktop
+// ----------------------------------------
+
+@include respond-to(md) {
+    .splash__brand {
+        font-size: clamp(5rem, 10vw, 7.5rem);
+    }
+
+    .splash__tagline {
+        margin-top: $spacing-lg;
+        font-size: 0.85rem;
+        letter-spacing: 0.36em;
+    }
+}

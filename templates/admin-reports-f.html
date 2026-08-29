@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Sanaa Online Shop — Admin Panel"
+    >
+
+    <title>گزارش‌ها | Sanaa Admin</title>
+
+    <!-- Main Stylesheet (unchanged — shared with the rest of the site) -->
+    <link
+        rel="stylesheet"
+        href="../statics/css/main.css"
+    >
+</head>
+
+<body>
+
+    <div class="admin-layout-f">
+
+        <!-- Topbar -->
+        <header class="admin-topbar-f">
+            <div class="admin-topbar-f__brand" dir="ltr">SANAA <span>ADMIN</span></div>
+            <div class="admin-topbar-f__profile" aria-label="مدیر فروشگاه">ع.م</div>
+        </header>
+
+        <!-- Horizontal navigation tabs -->
+        <nav class="admin-navigation-f" aria-label="بخش‌های پنل ادمین">
+
+            <a href="admin-orders-f.html" class="admin-navigation-f__item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <rect x="4" y="7" width="16" height="13" rx="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                سفارش‌ها
+            </a>
+
+            <a href="admin-customers-f.html" class="admin-navigation-f__item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <circle cx="12" cy="8" r="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M4.5 20c1.2-3.6 4.2-5.5 7.5-5.5s6.3 1.9 7.5 5.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                مشتریان
+            </a>
+
+
+            <a href="admin-reports-f.html" class="admin-navigation-f__item admin-navigation-f__item--active" aria-current="page">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path d="M4 20V10M11 20V4M18 20v-7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                گزارش‌ها
+            </a>
+
+        </nav>
+
+
+        <!-- Content -->
+        <div class="admin-content-f">
+
+            <main class="admin-reports-f">
+
+                <div class="admin-reports-f__header">
+                    <h1 class="admin-reports-f__title">گزارش فروش</h1>
+
+                    <div class="admin-reports-f__mode">
+                        <button type="button" class="admin-reports-f__mode-btn is-active" data-report-mode-btn-f="monthly">ماهانه</button>
+                        <button type="button" class="admin-reports-f__mode-btn" data-report-mode-btn-f="yearly">سالانه</button>
+                    </div>
+                </div>
+
+
+                <!-- ============ MONTHLY VIEW ============ -->
+
+                <div id="adminMonthlyViewF">
+
+                    <div class="admin-reports-f__selector">
+                        <select class="admin-select-f" id="adminMonthSelectF" aria-label="انتخاب ماه"></select>
+                    </div>
+
+                    <div class="admin-reports-f__stats">
+
+                        <article class="admin-reports-f__card">
+                            <span class="admin-reports-f__card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M9.5 15c.5 1 1.4 1.5 2.5 1.5 1.5 0 2.5-.8 2.5-2s-1-1.6-2.5-2-2.5-.8-2.5-2 1-2 2.5-2c1.1 0 2 .5 2.5 1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M12 6.5v1M12 16.5v1" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <div class="admin-reports-f__card-body">
+                                <p class="admin-reports-f__card-label">فروش ماه</p>
+                                <p class="admin-reports-f__card-value">
+                                    <span id="monthlySalesValueF">—</span>
+                                    <small>تومان</small>
+                                </p>
+                            </div>
+                            <span class="admin-reports-f__card-change" id="monthlySalesChangeF">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span data-change-text-f>—</span>
+                            </span>
+                        </article>
+
+                        <article class="admin-reports-f__card">
+                            <span class="admin-reports-f__card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <rect x="4" y="7" width="16" height="13" rx="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <div class="admin-reports-f__card-body">
+                                <p class="admin-reports-f__card-label">تعداد سفارش‌ها</p>
+                                <p class="admin-reports-f__card-value">
+                                    <span id="monthlyOrdersValueF">—</span>
+                                </p>
+                            </div>
+                        </article>
+
+                        <article class="admin-reports-f__card">
+                            <span class="admin-reports-f__card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <path d="M7 3h8l4 4v14H5V3Z" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M9 12h6M9 16h6M9 8h3" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <div class="admin-reports-f__card-body">
+                                <p class="admin-reports-f__card-label">تعداد فاکتورها</p>
+                                <p class="admin-reports-f__card-value">
+                                    <span id="monthlyInvoicesValueF">—</span>
+                                </p>
+                            </div>
+                        </article>
+
+                        <article class="admin-reports-f__card">
+                            <span class="admin-reports-f__card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <circle cx="9" cy="8" r="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M2.5 19c1-3 3.4-4.5 6.5-4.5s5.5 1.5 6.5 4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M15.5 5.5c1.4.3 2.5 1.5 2.5 3s-1.1 2.7-2.5 3" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M17 14.6c1.9.5 3.2 1.8 3.9 4.4" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <div class="admin-reports-f__card-body">
+                                <p class="admin-reports-f__card-label">مشتریان جدید</p>
+                                <p class="admin-reports-f__card-value">
+                                    <span id="monthlyNewCustomersValueF">—</span>
+                                </p>
+                            </div>
+                        </article>
+
+                    </div>
+
+                    <section class="admin-reports-f__section" aria-label="نمودار فروش ماه">
+                        <div class="admin-reports-f__section-head">
+                            <h2 class="admin-reports-f__section-title">روند فروش در ماه</h2>
+                        </div>
+
+                        <p class="admin-reports-f__chart-total">
+                            <span id="adminMonthlyChartTotalF">—</span>
+                            <small>تومان</small>
+                        </p>
+
+                        <div class="admin-reports-f__chart-wrap">
+                            <svg class="admin-reports-f__chart-svg" viewBox="0 0 600 200" preserveAspectRatio="none" aria-hidden="true">
+                                <defs>
+                                    <linearGradient id="adminMonthlyChartGradientF" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stop-color="#A61579" stop-opacity="0.22"/>
+                                        <stop offset="100%" stop-color="#A61579" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                                <path id="adminMonthlyChartAreaF" d="" fill="url(#adminMonthlyChartGradientF)"/>
+                                <path id="adminMonthlyChartLineF" d="" fill="none" stroke="#A61579" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+
+                        <div class="admin-reports-f__chart-labels" id="adminMonthlyChartLabelsF"></div>
+                    </section>
+
+                </div>
+
+
+                <!-- ============ YEARLY VIEW ============ -->
+
+                <div id="adminYearlyViewF" hidden>
+
+                    <div class="admin-reports-f__selector">
+                        <select class="admin-select-f" id="adminYearSelectF" aria-label="انتخاب سال"></select>
+                    </div>
+
+                    <div class="admin-reports-f__stats">
+
+                        <article class="admin-reports-f__card">
+                            <span class="admin-reports-f__card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M9.5 15c.5 1 1.4 1.5 2.5 1.5 1.5 0 2.5-.8 2.5-2s-1-1.6-2.5-2-2.5-.8-2.5-2 1-2 2.5-2c1.1 0 2 .5 2.5 1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M12 6.5v1M12 16.5v1" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <div class="admin-reports-f__card-body">
+                                <p class="admin-reports-f__card-label">فروش سال</p>
+                                <p class="admin-reports-f__card-value">
+                                    <span id="yearlySalesValueF">—</span>
+                                    <small>تومان</small>
+                                </p>
+                            </div>
+                            <span class="admin-reports-f__card-change" id="yearlySalesChangeF">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span data-change-text-f>—</span>
+                            </span>
+                        </article>
+
+                        <article class="admin-reports-f__card">
+                            <span class="admin-reports-f__card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <rect x="4" y="7" width="16" height="13" rx="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <div class="admin-reports-f__card-body">
+                                <p class="admin-reports-f__card-label">تعداد سفارش‌ها</p>
+                                <p class="admin-reports-f__card-value">
+                                    <span id="yearlyOrdersValueF">—</span>
+                                </p>
+                            </div>
+                        </article>
+
+                        <article class="admin-reports-f__card">
+                            <span class="admin-reports-f__card-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                                    <path d="M7 3h8l4 4v14H5V3Z" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M9 12h6M9 16h6M9 8h3" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                            <div class="admin-reports-f__card-body">
+                                <p class="admin-reports-f__card-label">تعداد فاکتورها</p>
+                                <p class="admin-reports-f__card-value">
+                                    <span id="yearlyInvoicesValueF">—</span>
+                                </p>
+                            </div>
+                        </article>
+
+                    </div>
+
+                    <section class="admin-reports-f__section" aria-label="نمودار فروش سال">
+                        <div class="admin-reports-f__section-head">
+                            <h2 class="admin-reports-f__section-title">فروش به تفکیک ماه</h2>
+                        </div>
+
+                        <p class="admin-reports-f__chart-total">
+                            <span id="adminYearlyChartTotalF">—</span>
+                            <small>تومان</small>
+                        </p>
+
+                        <div class="admin-reports-f__chart-wrap">
+                            <svg class="admin-reports-f__chart-svg" id="adminYearlyChartSvgF" viewBox="0 0 600 200" preserveAspectRatio="none" aria-hidden="true"></svg>
+                        </div>
+
+                        <div class="admin-reports-f__chart-labels" id="adminYearlyChartLabelsF"></div>
+                    </section>
+
+                </div>
+
+            </main>
+
+        </div>
+
+    </div>
+
+    <script src="../statics/js/modules/admin-reports-f.js" defer></script>
+
+</body>
+
+</html>

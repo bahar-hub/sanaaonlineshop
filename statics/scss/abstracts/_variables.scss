@@ -1,0 +1,81 @@
+// ========================================
+// Brand Colors
+// ========================================
+
+$color-primary: #A61579;
+$color-secondary: #B9C3B9;
+$color-background: #F1ECE4;
+$color-surface: #FFFFFF;
+$color-input-bg: #F6F2EC;
+$color-input-bg-focus: #FBF8F4;
+
+$color-text: #1E1B19;
+$color-text-muted: #96908A;
+$color-border: #E3DCD2;
+
+
+$color-hairline: #DCD4C8;
+
+$color-error: #C62828;
+$color-success: #2E7D32;
+
+$shadow-card: 0 24px 48px -24px rgba(30, 20, 15, 0.22),
+    0 2px 8px rgba(30, 20, 15, 0.05);
+
+
+// ========================================
+// Typography
+// ========================================
+
+$font-family-primary: "Belleza", Arial, sans-serif;
+
+$font-family-persian: "Vazirmatn",
+    "Sanaa Persian",
+    Tahoma,
+    Arial,
+    sans-serif;
+
+
+// ========================================
+// Layout
+// ========================================
+
+$container-max-width: 1200px;
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+$spacing-3xl: 64px;
+
+
+// ========================================
+// Border Radius
+// ========================================
+
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 20px;
+
+
+// ========================================
+// Transitions
+// ========================================
+
+$transition-fast: 180ms ease;
+$transition-normal: 300ms ease;
+$transition-slow: 500ms ease;
+
+
+// ========================================
+// Breakpoints
+// Mobile First
+// ========================================
+
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;

@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Sanaa Online Shop — Admin Orders"
+    >
+
+    <title>سفارش‌ها | Sanaa Admin</title>
+
+    <link
+        rel="stylesheet"
+        href="../statics/css/main.css"
+    >
+</head>
+
+<body>
+
+    <div class="admin-layout-f">
+
+        <!-- =====================================================
+             TOPBAR
+        ====================================================== -->
+
+        <header class="admin-topbar-f">
+
+            <div
+                class="admin-topbar-f__brand"
+                dir="ltr"
+            >
+                SANAA <span>ADMIN</span>
+            </div>
+
+            <div
+                class="admin-topbar-f__profile"
+                aria-label="مدیر فروشگاه"
+            >
+                ع.م
+            </div>
+
+        </header>
+
+
+        <!-- =====================================================
+             NAVIGATION
+        ====================================================== -->
+
+        <nav
+            class="admin-navigation-f"
+            aria-label="بخش‌های پنل ادمین"
+        >
+
+            <a
+                href="admin-orders-f.html"
+                class="admin-navigation-f__item admin-navigation-f__item--active"
+                aria-current="page"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                >
+                    <rect
+                        x="4"
+                        y="7"
+                        width="16"
+                        height="13"
+                        rx="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+
+                    <path
+                        d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+
+                سفارش‌ها
+            </a>
+
+
+            <a
+                href="admin-customers-f.html"
+                class="admin-navigation-f__item"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                >
+                    <circle
+                        cx="12"
+                        cy="8"
+                        r="3.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+
+                    <path
+                        d="M4.5 20c1.2-3.6 4.2-5.5 7.5-5.5s6.3 1.9 7.5 5.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+
+                مشتریان
+            </a>
+
+
+
+            <a
+                href="admin-reports-f.html"
+                class="admin-navigation-f__item"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M4 20V10M11 20V4M18 20v-7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+
+                گزارش‌ها
+            </a>
+
+        </nav>
+
+
+        <!-- =====================================================
+             CONTENT
+        ====================================================== -->
+
+        <div class="admin-content-f">
+
+            <main class="admin-orders-f">
+
+
+                <!-- =================================================
+                     PAGE HEADER
+                ================================================== -->
+
+                <div class="admin-orders-f__header">
+
+                    <h1 class="admin-orders-f__title">
+                        مدیریت سفارش‌ها
+                    </h1>
+
+                    <div class="admin-orders-f__toolbar-actions">
+
+                        <!-- New order -->
+                        <button
+                            type="button"
+                            class="admin-btn-f"
+                            id="adminNewOrderBtnF"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M12 5v14M5 12h14"
+                                    stroke-linecap="round"
+                                />
+                            </svg>
+
+                            سفارش جدید
+                        </button>
+
+
+                        <!-- Clear filters -->
+                        <button
+                            type="button"
+                            class="admin-btn-f admin-btn-f--secondary-f"
+                            id="adminClearFiltersF"
+                        >
+                            پاک‌کردن فیلترها
+                        </button>
+
+
+                        <!-- Export -->
+                        <button
+                            type="button"
+                            class="admin-btn-f admin-btn-f--secondary-f"
+                            id="adminExportOrdersF"
+                        >
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M12 3v12m0 0-4-4m4 4 4-4"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+
+                                <path
+                                    d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+
+                            خروجی سفارش‌ها
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     SEARCH + FILTERS
+                ================================================== -->
+
+                <div class="admin-orders-f__toolbar">
+
+
+                    <div class="admin-orders-f__toolbar-row">
+
+                        <div class="admin-search-f">
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                aria-hidden="true"
+                            >
+                                <circle
+                                    cx="11"
+                                    cy="11"
+                                    r="7"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+
+                                <path
+                                    d="m20 20-3.5-3.5"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+
+                            <input
+                                type="text"
+                                class="admin-search-f__input"
+                                id="adminOrderSearchF"
+                                placeholder="جستجوی شماره سفارش، نام مشتری یا محصول"
+                            >
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="admin-btn-f admin-btn-f--secondary-f admin-orders-f__filters-toggle"
+                            id="adminFiltersToggleF"
+                            aria-expanded="false"
+                            aria-controls="adminFiltersPanelF"
+                        >
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                aria-hidden="true"
+                            >
+                                <path
+                                    d="M4 6h16M7 12h10M10 18h4"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+
+                            فیلترها
+
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        class="admin-orders-f__toolbar-row"
+                        id="adminFiltersPanelF"
+                        hidden
+                    >
+
+                        <!-- Order status -->
+
+                        <select
+                            class="admin-select-f"
+                            id="adminOrderStatusFilterF"
+                            aria-label="فیلتر وضعیت سفارش"
+                        >
+
+                            <option value="all">
+                                همه وضعیت‌های سفارش
+                            </option>
+
+                            <option value="registered">
+                                ثبت‌شده
+                            </option>
+
+                            <option value="confirmed">
+                                تأییدشده
+                            </option>
+
+                            <option value="preparing">
+                                در حال آماده‌سازی
+                            </option>
+
+                            <option value="shipped">
+                                ارسال‌شده
+                            </option>
+
+                            <option value="delivered">
+                                تحویل داده‌شده
+                            </option>
+
+                            <option value="cancelled">
+                                لغوشده
+                            </option>
+
+                            <option value="returned">
+                                مرجوع‌شده
+                            </option>
+
+                        </select>
+
+
+                        <!-- Payment status -->
+
+                        <select
+                            class="admin-select-f"
+                            id="adminPaymentStatusFilterF"
+                            aria-label="فیلتر وضعیت پرداخت"
+                        >
+
+                            <option value="all">
+                                همه وضعیت‌های پرداخت
+                            </option>
+
+                            <option value="paid">
+                                پرداخت‌شده
+                            </option>
+
+                            <option value="pending">
+                                در انتظار پرداخت
+                            </option>
+
+                            <option value="partial">
+                                پرداخت ناقص
+                            </option>
+
+                            <option value="failed">
+                                پرداخت ناموفق
+                            </option>
+
+                            <option value="cancelled">
+                                لغوشده
+                            </option>
+
+                        </select>
+
+
+                        <!-- Invoice status -->
+
+                        <select
+                            class="admin-select-f"
+                            id="adminInvoiceStatusFilterF"
+                            aria-label="فیلتر وضعیت فاکتور"
+                        >
+
+                            <option value="all">
+                                همه وضعیت‌های فاکتور
+                            </option>
+
+                            <option value="issued">
+                                صادرشده
+                            </option>
+
+                            <option value="sent">
+                                ارسال‌شده
+                            </option>
+
+                            <option value="waiting">
+                                در انتظار صدور
+                            </option>
+
+                            <option value="error">
+                                خطا در تولید فاکتور
+                            </option>
+
+                        </select>
+
+
+                        <!-- Sort -->
+
+                        <select
+                            class="admin-select-f"
+                            id="adminOrderSortF"
+                            aria-label="مرتب‌سازی سفارش‌ها"
+                        >
+
+                            <option value="newest">
+                                جدیدترین
+                            </option>
+
+                            <option value="oldest">
+                                قدیمی‌ترین
+                            </option>
+
+                            <option value="amount-desc">
+                                بیشترین مبلغ
+                            </option>
+
+                            <option value="amount-asc">
+                                کمترین مبلغ
+                            </option>
+
+                            <option value="last-changed">
+                                آخرین تغییر
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     LOADING
+                ================================================== -->
+
+                <div
+                    class="admin-orders-f__state"
+                    id="adminOrdersLoadingF"
+                    hidden
+                >
+                    در حال دریافت سفارش‌ها...
+                </div>
+
+
+                <!-- =================================================
+                     EMPTY
+                ================================================== -->
+
+                <div
+                    class="admin-orders-f__state"
+                    id="adminOrdersEmptyF"
+                    hidden
+                >
+                    سفارشی با این مشخصات پیدا نشد.
+                </div>
+
+
+                <!-- =================================================
+                     ERROR
+                ================================================== -->
+
+                <div
+                    class="admin-orders-f__state admin-orders-f__state--error-f"
+                    id="adminOrdersErrorF"
+                    hidden
+                >
+                    دریافت سفارش‌ها با خطا مواجه شد.
+                </div>
+
+
+                <!-- =================================================
+                     DESKTOP TABLE
+                ================================================== -->
+
+                <div
+                    class="admin-orders-f__table-wrap"
+                    id="adminOrdersTableWrapF"
+                >
+
+                    <table class="admin-orders-f__table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    شماره سفارش
+                                </th>
+
+                                <th>
+                                    محصول
+                                </th>
+
+                                <th>
+                                    مشتری
+                                </th>
+
+                                <th>
+                                    تاریخ
+                                </th>
+
+                                <th>
+                                    مبلغ
+                                </th>
+
+                                <th>
+                                    ارز
+                                </th>
+
+                                <th>
+                                    مبلغ نهایی
+                                </th>
+
+                                <th>
+                                    پرداخت
+                                </th>
+
+                                <th>
+                                    وضعیت سفارش
+                                </th>
+
+                                <th>
+                                    فاکتور
+                                </th>
+
+                                <th>
+                                    عملیات
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="adminOrdersTableBodyF">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- =================================================
+                     MOBILE CARDS
+                ================================================== -->
+
+                <ul
+                    class="admin-orders-f__cards"
+                    id="adminOrdersCardsF"
+                >
+                </ul>
+
+
+            </main>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         ORDER DETAILS SHEET
+         این ساختار همان ساختاری است که در index.html استفاده
+         می‌شود؛ بنابراین popup مستقل هم همان معماری را دارد.
+    ========================================================== -->
+
+    <div
+        class="modal"
+        id="adminOrderDetailsModalF"
+        hidden
+    >
+
+        <div class="modal__backdrop"></div>
+
+
+        <div class="modal__panel">
+
+
+            <!-- Sheet header -->
+
+            <div class="admin-orders-f__sheet-header">
+
+                <h2
+                    class="admin-orders-f__sheet-title"
+                    id="adminSheetTitleF"
+                >
+                    جزئیات سفارش
+                </h2>
+
+
+                <button
+                    type="button"
+                    class="modal__close"
+                    id="adminSheetCloseF"
+                    aria-label="بستن"
+                >
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M18 6 6 18M6 6l12 12"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+
+                </button>
+
+            </div>
+
+
+            <!-- Sheet body -->
+
+            <div class="admin-orders-f__sheet-body">
+
+
+                <!-- Basic information -->
+
+                <section class="admin-orders-f__sheet-section">
+
+                    <h3 class="admin-orders-f__sheet-section-title">
+                        اطلاعات پایه
+                    </h3>
+
+                    <div id="adminSheetBasicF"></div>
+
+                </section>
+
+
+                <!-- Customer -->
+
+                <section class="admin-orders-f__sheet-section">
+
+                    <h3 class="admin-orders-f__sheet-section-title">
+                        اطلاعات مشتری
+                    </h3>
+
+                    <div id="adminSheetCustomerF"></div>
+
+                </section>
+
+
+                <!-- Products -->
+
+                <section class="admin-orders-f__sheet-section">
+
+                    <h3 class="admin-orders-f__sheet-section-title">
+                        اطلاعات محصولات
+                    </h3>
+
+                    <div
+                        class="admin-orders-f__sheet-products"
+                        id="adminSheetProductsF"
+                    ></div>
+
+                </section>
+
+
+                <!-- Financial -->
+
+                <section class="admin-orders-f__sheet-section">
+
+                    <h3 class="admin-orders-f__sheet-section-title">
+                        اطلاعات مالی
+                    </h3>
+
+                    <div id="adminSheetFinancialF"></div>
+
+                </section>
+
+
+                <!-- Payment -->
+
+                <section class="admin-orders-f__sheet-section">
+
+                    <h3 class="admin-orders-f__sheet-section-title">
+                        اطلاعات پرداخت
+                    </h3>
+
+                    <div id="adminSheetPaymentF"></div>
+
+                </section>
+
+
+                <!-- Status -->
+
+                <section
+                    class="admin-orders-f__sheet-section admin-orders-f__sheet-section--no-print-f"
+                >
+
+                    <h3 class="admin-orders-f__sheet-section-title">
+                        تغییر وضعیت سفارش
+                    </h3>
+
+
+                    <select
+                        class="admin-select-f"
+                        id="adminSheetStatusSelectF"
+                        style="width:100%;"
+                    >
+
+                        <option value="registered">
+                            ثبت‌شده
+                        </option>
+
+                        <option value="confirmed">
+                            تأییدشده
+                        </option>
+
+                        <option value="preparing">
+                            در حال آماده‌سازی
+                        </option>
+
+                        <option value="shipped">
+                            ارسال‌شده
+                        </option>
+
+                        <option value="delivered">
+                            تحویل داده‌شده
+                        </option>
+
+                        <option value="cancelled">
+                            لغوشده
+                        </option>
+
+                        <option value="returned">
+                            مرجوع‌شده
+                        </option>
+
+                    </select>
+
+
+                    <button
+                        type="button"
+                        class="admin-btn-f"
+                        id="adminSheetStatusBtnF"
+                        style="width:100%; justify-content:center; margin-top:8px;"
+                    >
+                        به‌روزرسانی وضعیت
+                    </button>
+
+                </section>
+
+            </div>
+
+
+            <!-- Sheet footer -->
+
+            <div class="admin-orders-f__sheet-footer">
+
+                <button
+                    type="button"
+                    class="admin-btn-f"
+                    id="adminSheetDownloadF"
+                >
+                    دانلود PDF فاکتور
+                </button>
+
+
+                <button
+                    type="button"
+                    class="admin-btn-f admin-btn-f--secondary-f"
+                    id="adminSheetEditF"
+                >
+                    ویرایش سفارش
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         NEW ORDER MODAL
+    ========================================================== -->
+
+    <div
+        class="modal"
+        id="adminNewOrderModalF"
+        hidden
+    >
+
+        <div class="modal__backdrop"></div>
+
+
+        <div class="modal__panel">
+
+
+            <button
+                type="button"
+                class="modal__close"
+                id="adminNewOrderCloseF"
+                aria-label="بستن"
+            >
+
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M18 6 6 18M6 6l12 12"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+
+            </button>
+
+
+            <h2 class="modal__title">
+                ثبت سفارش جدید
+            </h2>
+
+
+            <form
+                id="adminNewOrderFormF"
+                novalidate
+            >
+
+
+                <div class="admin-orders-f__new-order-field">
+
+                    <label
+                        for="adminNewOrderCustomerF"
+                        class="admin-orders-f__new-order-label"
+                    >
+                        مشتری
+                    </label>
+
+                    <select
+                        id="adminNewOrderCustomerF"
+                        class="admin-select-f"
+                    >
+
+                        <option value="">
+                            انتخاب مشتری
+                        </option>
+
+                        <option value="سارا احمدی">
+                            سارا احمدی
+                        </option>
+
+                        <option value="نگار محمدی">
+                            نگار محمدی
+                        </option>
+
+                        <option value="کیانا ملکی">
+                            کیانا ملکی
+                        </option>
+
+                        <option value="مریم رضایی">
+                            مریم رضایی
+                        </option>
+
+                        <option value="الهام کریمی">
+                            الهام کریمی
+                        </option>
+
+                        <option value="بهاره اسدی">
+                            بهاره اسدی
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="admin-orders-f__new-order-field">
+
+                    <label
+                        for="adminNewOrderProductF"
+                        class="admin-orders-f__new-order-label"
+                    >
+                        محصول
+                    </label>
+
+                    <input
+                        type="text"
+                        id="adminNewOrderProductF"
+                        class="admin-search-f__input admin-orders-f__new-order-input"
+                        placeholder="مثلاً کیف دستی چرم"
+                    >
+
+                </div>
+
+
+                <div class="admin-orders-f__new-order-grid">
+
+                    <div class="admin-orders-f__new-order-field">
+
+                        <label
+                            for="adminNewOrderQuantityF"
+                            class="admin-orders-f__new-order-label"
+                        >
+                            تعداد
+                        </label>
+
+                        <input
+                            type="number"
+                            id="adminNewOrderQuantityF"
+                            class="admin-orders-f__new-order-input"
+                            min="1"
+                            value="1"
+                        >
+
+                    </div>
+
+
+                    <div class="admin-orders-f__new-order-field">
+
+                        <label
+                            for="adminNewOrderPriceF"
+                            class="admin-orders-f__new-order-label"
+                        >
+                            قیمت واحد
+                        </label>
+
+                        <input
+                            type="number"
+                            id="adminNewOrderPriceF"
+                            class="admin-orders-f__new-order-input"
+                            min="0"
+                            placeholder="مثلاً 50"
+                        >
+
+                    </div>
+
+
+                    <div class="admin-orders-f__new-order-field">
+
+                        <label
+                            for="adminNewOrderCurrencyF"
+                            class="admin-orders-f__new-order-label"
+                        >
+                            ارز
+                        </label>
+
+                        <select
+                            id="adminNewOrderCurrencyF"
+                            class="admin-select-f"
+                        >
+
+                            <option value="USD">
+                                دلار
+                            </option>
+
+                            <option value="TRY">
+                                لیر
+                            </option>
+
+                            <option value="EUR">
+                                یورو
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="admin-orders-f__new-order-field">
+
+                    <label
+                        for="adminNewOrderPaymentF"
+                        class="admin-orders-f__new-order-label"
+                    >
+                        وضعیت پرداخت
+                    </label>
+
+                    <select
+                        id="adminNewOrderPaymentF"
+                        class="admin-select-f"
+                    >
+
+                        <option value="pending">
+                            در انتظار پرداخت
+                        </option>
+
+                        <option value="paid">
+                            پرداخت‌شده
+                        </option>
+
+                        <option value="partial">
+                            پرداخت ناقص
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="admin-orders-f__sheet-footer">
+
+                    <button
+                        type="button"
+                        class="admin-btn-f admin-btn-f--secondary-f"
+                        id="adminNewOrderCancelF"
+                    >
+                        انصراف
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="admin-btn-f"
+                    >
+                        ثبت سفارش
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         TOAST REGION
+    ========================================================== -->
+
+    <div
+        class="admin-toast-region-f"
+        id="adminToastRegionF"
+        aria-live="polite"
+        aria-atomic="true"
+    ></div>
+
+
+    <!-- =========================================================
+         PAGE SCRIPT
+    ========================================================== -->
+
+    <script
+        src="../statics/js/modules/admin-orders-f.js"
+        defer
+    ></script>
+
+</body>
+
+</html>

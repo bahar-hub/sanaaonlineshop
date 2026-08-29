@@ -1,0 +1,555 @@
+// ============================================================
+// Admin Panel — Order Management page (redesigned)
+// MODIFIED (full redesign of the previous simple order list).
+//
+// This page now has its own richer status vocabulary (order /
+// payment / invoice statuses — 16 distinct values total), which
+// the teammate's original .order-status component was never
+// designed to cover (it only has 3 shipping states for the
+// customer's own order history). So this page uses the new
+// generic .admin-badge-f color system from components/admin-ui-f
+// instead of .order-status — same visual language (pill + dot +
+// brand palette), just built for a bigger vocabulary.
+//
+// The desktop table and mobile cards are both new, admin-only
+// components — a shared read-only order card wasn't a fit for
+// 11 columns of data.
+// ============================================================
+
+.admin-orders-f {
+    padding: $spacing-md $spacing-md $spacing-2xl;
+}
+
+.admin-orders-f__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-md;
+}
+
+.admin-orders-f__title {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+
+// ----------------------------------------
+// Toolbar
+// ----------------------------------------
+
+.admin-orders-f__toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-md;
+}
+
+.admin-orders-f__toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+}
+
+.admin-orders-f__toolbar-row .admin-select-f {
+    flex: 1;
+    min-width: 140px;
+}
+
+.admin-orders-f__toolbar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+}
+
+.admin-orders-f__toolbar-actions .admin-btn-f {
+    justify-content: center;
+}
+
+// Mobile: filters collapse behind a toggle button
+.admin-orders-f__filters-toggle {
+    display: inline-flex;
+    align-self: flex-start;
+}
+
+.admin-orders-f__filters-panel[hidden] {
+    display: none;
+}
+
+
+// ----------------------------------------
+// Desktop table (hidden on mobile)
+// ----------------------------------------
+
+.admin-orders-f__table-wrap {
+    display: none;
+
+    overflow-x: auto;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+
+    background-color: $color-surface;
+}
+
+.admin-orders-f__table {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+
+    font-family: $font-family-persian;
+    font-size: 0.78rem;
+}
+
+.admin-orders-f__table th {
+    padding: $spacing-sm $spacing-sm;
+
+    color: $color-text-muted;
+
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-align: right;
+    white-space: nowrap;
+
+    background-color: $color-input-bg;
+    border-bottom: 1px solid $color-border;
+}
+
+.admin-orders-f__table td {
+    padding: $spacing-sm;
+
+    color: $color-text;
+
+    border-bottom: 1px solid $color-hairline;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.admin-orders-f__table tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-orders-f__table tbody tr {
+    cursor: pointer;
+    transition: background-color $transition-fast;
+}
+
+.admin-orders-f__table tbody tr:hover {
+    background-color: rgba(166, 21, 121, 0.03);
+}
+
+.admin-orders-f__table-product small {
+    display: block;
+
+    margin-top: 2px;
+
+    color: $color-text-muted;
+
+    font-size: 0.66rem;
+}
+
+.admin-orders-f__table-amount-rial {
+    color: $color-primary;
+    font-weight: 700;
+}
+
+.admin-orders-f__table-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+// Tablet: hide lower-priority columns (base currency tag,
+// invoice status) — full detail is still one tap away in the
+// details popup.
+.admin-orders-f__col--secondary-f {
+    display: none;
+}
+
+
+// ----------------------------------------
+// Mobile cards
+// ----------------------------------------
+
+.admin-orders-f__cards {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+}
+
+.admin-orders-f__card {
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+
+    padding: $spacing-md;
+
+    background-color: $color-surface;
+
+    cursor: pointer;
+
+    // a little breathing room + a subtle press feedback area
+    transition: border-color $transition-fast, box-shadow $transition-fast, transform $transition-fast;
+}
+
+.admin-orders-f__card:hover {
+    border-color: $color-primary;
+    box-shadow: 0 8px 20px -14px rgba(30, 20, 15, 0.35);
+}
+
+.admin-orders-f__card:active {
+    transform: scale(0.99);
+}
+
+.admin-orders-f__card-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-xs $spacing-sm;
+
+    margin-bottom: $spacing-sm;
+}
+
+.admin-orders-f__card-number {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.admin-orders-f__card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    margin-bottom: $spacing-sm;
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid $color-hairline;
+}
+
+.admin-orders-f__card-customer {
+    color: $color-text;
+
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.admin-orders-f__card-product,
+.admin-orders-f__card-date {
+    color: $color-text-muted;
+
+    font-size: 0.76rem;
+    line-height: 1.6;
+}
+
+.admin-orders-f__card-amount {
+    margin-top: 4px;
+
+    color: $color-primary;
+
+    font-family: $font-family-persian;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.admin-orders-f__card-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-sm;
+}
+
+.admin-orders-f__card-payment {
+    display: flex;
+}
+
+.admin-orders-f__card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-xs;
+
+    margin-inline-start: auto;
+}
+
+// Bigger, easier-to-tap touch targets specifically for the
+// mobile card actions (44px, per standard touch-target
+// guidance) — the desktop table keeps the smaller 32px version.
+.admin-orders-f__card-actions .admin-icon-btn-f {
+    width: 40px;
+    height: 40px;
+}
+
+.admin-orders-f__card-actions .admin-icon-btn-f svg {
+    width: 17px;
+    height: 17px;
+}
+
+// On very narrow phones, let the menu panel open from the left
+// edge of the button instead of overflowing past the screen edge.
+.admin-orders-f__card-actions .admin-menu-f__panel {
+    left: auto;
+    right: 0;
+}
+
+
+// ----------------------------------------
+// Empty / loading / error states
+// ----------------------------------------
+
+.admin-orders-f__state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-sm;
+
+    padding: $spacing-2xl $spacing-md;
+
+    text-align: center;
+}
+
+.admin-orders-f__state[hidden] {
+    display: none;
+}
+
+.admin-orders-f__state-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 44px;
+    height: 44px;
+
+    border-radius: 999px;
+
+    background-color: rgba(166, 21, 121, 0.08);
+    color: $color-primary;
+}
+
+.admin-orders-f__state--error-f .admin-orders-f__state-icon {
+    background-color: rgba(198, 40, 40, 0.1);
+    color: $color-error;
+}
+
+.admin-orders-f__state-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.admin-orders-f__state-title {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.admin-orders-f__state-text {
+    max-width: 280px;
+
+    color: $color-text-muted;
+
+    font-size: 0.76rem;
+}
+
+
+// ----------------------------------------
+// Order-details bottom sheet / modal
+// Sticky header + scrollable body, per spec.
+// Reuses .modal for the backdrop/panel shell;
+// everything inside is page-specific.
+// ----------------------------------------
+
+#adminOrderDetailsModalF .modal__panel {
+    display: flex;
+    flex-direction: column;
+
+    max-height: 88vh;
+    padding: 0;
+    overflow: hidden;
+}
+
+.admin-orders-f__sheet-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-sm;
+
+    padding: $spacing-md;
+
+    background-color: $color-surface;
+    border-bottom: 1px solid $color-hairline;
+}
+
+.admin-orders-f__sheet-title {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.admin-orders-f__sheet-body {
+    flex: 1;
+    overflow-y: auto;
+
+    padding: $spacing-md;
+}
+
+.admin-orders-f__sheet-section {
+    margin-bottom: $spacing-lg;
+}
+
+.admin-orders-f__sheet-section-title {
+    margin-bottom: $spacing-sm;
+
+    color: $color-primary;
+
+    font-family: $font-family-persian;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.admin-orders-f__sheet-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-sm;
+
+    padding: 6px 0;
+    border-bottom: 1px solid $color-hairline;
+
+    font-size: 0.78rem;
+}
+
+.admin-orders-f__sheet-row:last-child {
+    border-bottom: 0;
+}
+
+.admin-orders-f__sheet-row span:first-child {
+    color: $color-text-muted;
+}
+
+.admin-orders-f__sheet-row span:last-child {
+    color: $color-text;
+    font-weight: 600;
+    text-align: left;
+}
+
+.admin-orders-f__sheet-products {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+}
+
+.admin-orders-f__sheet-product {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-sm;
+
+    padding-bottom: $spacing-sm;
+    border-bottom: 1px solid $color-hairline;
+
+    font-size: 0.78rem;
+}
+
+.admin-orders-f__sheet-product:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.admin-orders-f__sheet-product-name {
+    color: $color-text;
+    font-weight: 600;
+}
+
+.admin-orders-f__sheet-product-qty {
+    display: block;
+
+    margin-top: 2px;
+
+    color: $color-text-muted;
+
+    font-size: 0.7rem;
+}
+
+.admin-orders-f__sheet-footer {
+    position: sticky;
+    bottom: 0;
+
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+
+    padding: $spacing-md;
+
+    background-color: $color-surface;
+    border-top: 1px solid $color-hairline;
+}
+
+.admin-orders-f__sheet-footer .admin-btn-f,
+.admin-orders-f__sheet-footer .admin-select-f {
+    flex: 1;
+    min-width: 130px;
+    justify-content: center;
+}
+
+
+// ----------------------------------------
+// Responsive
+// ----------------------------------------
+
+@include respond-to(sm) {
+    .admin-orders-f__toolbar-row .admin-select-f {
+        flex: none;
+        width: 160px;
+    }
+
+    .admin-orders-f__toolbar-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .admin-orders-f__toolbar-actions .admin-btn-f {
+        justify-content: flex-start;
+    }
+}
+
+@include respond-to(md) {
+    .admin-orders-f {
+        padding: $spacing-lg $spacing-lg $spacing-3xl;
+    }
+
+    .admin-orders-f__cards {
+        display: none;
+    }
+
+    .admin-orders-f__table-wrap {
+        display: block;
+    }
+
+    .admin-orders-f__filters-toggle {
+        display: none;
+    }
+
+    .admin-orders-f__filters-panel[hidden] {
+        display: flex;
+    }
+}
+
+@include respond-to(lg) {
+    .admin-orders-f__col--secondary-f {
+        display: table-cell;
+    }
+}

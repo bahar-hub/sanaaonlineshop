@@ -1,0 +1,40 @@
+<mxfile host="app.diagrams.net" agent="ChatGPT">
+  <diagram id="ecommerce-erd" name="ERD">
+    <mxGraphModel dx="544" dy="372" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="user" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;align=left;spacingLeft=10;spacingTop=8;" value="&lt;b&gt;USER&lt;/b&gt;&lt;hr&gt;PK id : BIGINT&lt;br&gt;first_name : VARCHAR&lt;br&gt;last_name : VARCHAR&lt;br&gt;phone : VARCHAR UNIQUE NOT NULL&lt;br&gt;address : TEXT NOT NULL&lt;br&gt;password_hash : VARCHAR NOT NULL&lt;br&gt;role : ENUM(admin, customer) NOT NULL" vertex="1">
+          <mxGeometry height="250" width="310" x="80" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="order" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;align=left;spacingLeft=10;spacingTop=8;" value="&lt;b&gt;ORDER&lt;/b&gt;&lt;hr&gt;PK id : BIGINT&lt;br&gt;FK user_id : BIGINT&lt;br&gt;registered_at : DATETIME&lt;br&gt;status : ENUM(registered, shipped, delivered)&lt;br&gt;total_usd : DECIMAL(12,2)&lt;br&gt;total_irr : DECIMAL(18,0)&lt;br&gt;usd_rate : DECIMAL(18,4)&lt;br&gt;shipping_cost : DECIMAL(12,2)&lt;br&gt;service_cost : DECIMAL(12,2)" vertex="1">
+          <mxGeometry height="270" width="330" x="500" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="item" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;align=left;spacingLeft=10;spacingTop=8;" value="&lt;b&gt;ORDER_ITEM&lt;/b&gt;&lt;hr&gt;PK id : BIGINT&lt;br&gt;FK order_id : BIGINT&lt;br&gt;photo_url : VARCHAR&lt;br&gt;product_name : VARCHAR&lt;br&gt;product_price_usd : DECIMAL(12,2)" vertex="1">
+          <mxGeometry height="190" width="320" x="970" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="invoice" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;align=left;spacingLeft=10;spacingTop=8;" value="&lt;b&gt;INVOICE&lt;/b&gt;&lt;hr&gt;PK id : BIGINT&lt;br&gt;FK order_id : BIGINT&lt;br&gt;type : ENUM(customer, admin)&lt;br&gt;issued_at : DATETIME&lt;br&gt;profit_usd : DECIMAL(12,2) NULL&lt;br&gt;UNIQUE(order_id, type)&lt;br&gt;&lt;i&gt;Admin invoice: profit is calculated&lt;/i&gt;" vertex="1">
+          <mxGeometry height="230" width="330" x="500" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="note" parent="1" style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;align=left;spacingLeft=10;spacingTop=8;" value="&lt;b&gt;Business Rules&lt;/b&gt;&lt;br&gt;• One USER can have 0..N ORDERs&lt;br&gt;• Each ORDER belongs to exactly 1 USER&lt;br&gt;• Each ORDER has 1..N ORDER_ITEMs&lt;br&gt;• Each ORDER has exactly 2 INVOICEs: one customer + one admin&lt;br&gt;• phone and address are single-valued attributes&lt;br&gt;• service fee is common across orders; shipping fee varies per order&lt;br&gt;• product data is stored as a snapshot in ORDER_ITEM" vertex="1">
+          <mxGeometry height="250" width="390" x="950" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_user_order" edge="1" parent="1" source="user" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;startArrow=none;" target="order" value="1 : 0..N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_order_item" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;startArrow=none;" value="1 : 1..N">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="830" y="239.99702702702697" as="sourcePoint" />
+            <mxPoint x="970" y="199.99702702702697" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="rel_order_invoice" edge="1" parent="1" source="order" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;startArrow=none;" target="invoice" value="has">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="label_order_invoice" connectable="0" parent="rel_order_invoice" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="1 : 2 (customer + admin)" vertex="1">
+          <mxGeometry relative="1" x="-0.02" y="-0.05" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

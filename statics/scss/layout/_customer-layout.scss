@@ -1,0 +1,118 @@
+.customer-page {
+    min-height: 100vh;
+
+    padding: $spacing-lg $spacing-md $spacing-3xl;
+
+    background-color: $color-background;
+}
+
+.customer-page[hidden] {
+    display: none;
+}
+
+.customer-page__container {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.customer-page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: $spacing-lg;
+}
+
+.customer-page__brand {
+    color: $color-primary;
+
+    font-family: $font-family-primary;
+    font-size: 1.6rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+}
+
+.customer-page__logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+
+    border: 1px solid $color-hairline;
+    border-radius: 999px;
+
+    background-color: $color-surface;
+    color: $color-text-muted;
+
+    transition:
+        color $transition-fast,
+        border-color $transition-fast;
+}
+
+.customer-page__logout svg {
+    width: 18px;
+    height: 18px;
+}
+
+.customer-page__logout:hover {
+    color: $color-primary;
+    border-color: $color-primary;
+}
+
+
+// ----------------------------------------
+// Panels (Profile / Orders)
+// ----------------------------------------
+
+.customer-panel {
+    display: none;
+}
+
+.customer-panel.is-active {
+    display: block;
+
+    animation: formFadeIn 300ms ease;
+}
+
+
+// ----------------------------------------
+// Panel Sub-sections
+// (e.g. Change Password inside Profile)
+// ----------------------------------------
+
+.panel-divider {
+    height: 1px;
+
+    margin: $spacing-2xl 0 $spacing-xl;
+
+    background-color: $color-hairline;
+}
+
+.panel-subtitle {
+    margin-bottom: $spacing-lg;
+
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+
+// ----------------------------------------
+// Desktop
+// ----------------------------------------
+
+@include respond-to(md) {
+    .customer-page {
+        padding: $spacing-3xl $spacing-lg;
+    }
+
+    .customer-page__container {
+        max-width: 560px;
+    }
+}
