@@ -1,7 +1,5 @@
 from django.shortcuts import render
-
-
-app_name = 'base'
+from django.contrib.auth import authenticate, login
 
 # Create your views here.
 def index_view(request):
