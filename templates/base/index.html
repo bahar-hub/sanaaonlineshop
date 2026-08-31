@@ -135,8 +135,10 @@
                         class="auth-form is-active"
                         id="loginForm"
                         data-auth-form="login"
+                        method="POST"
+                        action="{% url 'base:login' %}"
                     >
-
+                        {% csrf_token %}
                         <div class="form-group">
 
                             <label
@@ -236,7 +238,10 @@
                         class="auth-form"
                         id="signupForm"
                         data-auth-form="signup"
+                        method="POST"
+                        action="{% url 'base:signup' %}"
                     >
+                        {% csrf_token %}
 
                         <div class="form-group">
 
@@ -378,6 +383,60 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke-linecap="round" stroke-linejoin="round"/>
                 <circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+    </div>
+
+</div>
+<div class="form-group">
+
+    <label
+        class="form-label"
+        for="signupPasswordConfirm"
+    >
+        تکرار رمز عبور
+    </label>
+
+    <div class="password-field">
+
+        <input
+            class="form-input"
+            type="password"
+            id="signupPasswordConfirm"
+            name="passwordConfirm"
+            placeholder="رمز عبور را مجدداً وارد کنید"
+            autocomplete="new-password"
+            minlength="6"
+            required
+        >
+
+        <button
+            type="button"
+            class="password-toggle"
+            data-password-toggle="signupPasswordConfirm"
+            aria-label="نمایش رمز عبور"
+        >
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+            >
+                <path
+                    d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+                <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
             </svg>
         </button>
 
@@ -569,10 +628,11 @@
     <script src="{% static 'js/main.js' %}" defer></script>
 
     <!-- If already logged in, skip straight to the right panel -->
+    <!--
     <script>
         document.addEventListener("DOMContentLoaded", () => redirectIfAuthenticated());
     </script>
-
+-->
 </body>
 
 </html>

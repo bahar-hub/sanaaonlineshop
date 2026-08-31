@@ -52,17 +52,20 @@
                     SANAA
                 </h1>
 
-                <button
-                    type="button"
-                    class="customer-page__logout"
-                    data-logout
-                    aria-label="خروج از حساب"
-                >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </button>
+               <form method="POST" action="{% url 'base:logout' %}">
+                    {% csrf_token %}
+
+                    <button
+                        type="submit"
+                        class="customer-page__logout"
+                        aria-label="خروج از حساب"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </form>
 
             </header>
 

@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initForms();
 
-    initLogout();
 
     if (typeof initCustomerPanel === "function") {
         initCustomerPanel();
@@ -183,57 +182,7 @@ function initForms() {
 // ========================================
 
 function handleLogin(event) {
-
-    event.preventDefault();
-
-
-    const form = event.currentTarget;
-    clearAuthError("loginForm");
-
-
-    if (!form.checkValidity()) {
-
-        form.reportValidity();
-
-        return;
-    }
-
-
-    const formData =
-        new FormData(form);
-
-
-    const username =
-        formData.get("username");
-
-    const password =
-        formData.get("password");
-
-
-    const result =
-        login(
-            username,
-            password
-        );
-
-
-    if (!result.success) {
-
-        showAuthError(
-            "نام کاربری یا رمز عبور اشتباه است.",
-            "loginForm"
-        );
-
-        return;
-    }
-
-
-    // console.log(
-    //     "Authenticated user:",
-    //     result.user
-    // );
-    redirectToRoleHome(result.user);
-
+    // Django handles the login
 }
 
 
@@ -245,90 +194,34 @@ function handleSignup(event) {
 
     event.preventDefault();
 
-
     const form = event.currentTarget;
-
 
     clearAuthError("signupForm");
 
-
     if (!form.checkValidity()) {
-
         form.reportValidity();
-
         return;
     }
 
+    const formData = new FormData(form);
 
-    const formData =
-        new FormData(form);
+    const password = formData.get("password");
+    const passwordConfirm = formData.get("passwordConfirm");
 
+    // بررسی یکسان بودن رمزها
+    if (password !== passwordConfirm) {
 
-    const password =
-        formData.get("password");
-
-    // const passwordConfirm =
-    //     formData.get("passwordConfirm");
-
-
-    // if (password !== passwordConfirm) {
-
-    //     showAuthError(
-    //         "رمز عبور و تکرار رمز عبور یکسان نیستند.",
-    //         "signupForm"
-    //     );
-
-    //     return;
-    // }
-
-
-    const userData = {
-
-        firstName:
-            formData.get("firstName"),
-
-        lastName:
-            formData.get("lastName"),
-
-        phone:
-            formData.get("phone"),
-
-        address:
-            formData.get("address"),
-
-        username:
-            formData.get("username"),
-
-        password:
-            password
-
-    };
-
-
-    const result =
-        signup(userData);
-
-
-    if (!result.success) {
-
-        handleSignupError(
-            result.error
+        showAuthError(
+            "رمز عبور و تکرار رمز عبور یکسان نیستند.",
+            "signupForm"
         );
 
         return;
     }
 
-
-    // فقط در صورت موفقیت
-
-    form.reset();
-
-    redirectToRoleHome(
-        result.user
-    );
+    // ارسال فرم واقعی به Django
+    form.submit();
 }
-
-
 // ========================================
 // Signup Errors
 // ========================================
@@ -418,26 +311,3 @@ function clearAuthError(formId) {
 // handle logout
 // ========================================
 
-function initLogout() {
-
-    const logoutButtons =
-        document.querySelectorAll(
-            "[data-logout]"
-        );
-
-
-    logoutButtons.forEach((button) => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                logout();
-
-                window.location.href = "index.html";
-
-            }
-        );
-
-    });
-}
