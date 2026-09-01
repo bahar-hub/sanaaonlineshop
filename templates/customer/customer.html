@@ -118,13 +118,21 @@
                         <form
                             id="profileForm"
                             novalidate
+                            method="POST"
+                            action="{% url 'customer:profile' %}"
                         >
+
+                            {% csrf_token %}
 
                             <div
                                 class="auth-form__alert"
                                 data-form-alert
-                                hidden
-                            ></div>
+                                {% if not messages %}hidden{% endif %}
+                            >
+                                {% for message in messages %}
+                                    {{ message }}
+                                {% endfor %}
+                            </div>
 
                             <div class="form-group">
 
@@ -140,6 +148,7 @@
                                     type="tel"
                                     id="profilePhone"
                                     name="phone"
+                                    value="{{ customer.phone }}"
                                     placeholder="۰۹xxxxxxxxx"
                                     autocomplete="tel"
                                     inputmode="tel"
@@ -172,7 +181,7 @@
                                     placeholder="آدرس خود را وارد کنید"
                                     autocomplete="street-address"
                                     required
-                                ></textarea>
+                                >{{ customer.address }}</textarea>
 
                                 <span
                                     class="form-error"

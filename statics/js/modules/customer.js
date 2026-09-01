@@ -244,8 +244,6 @@ function validateProfileForm(data) {
 
 function handleProfileSubmit(event) {
 
-    event.preventDefault();
-
     const form = event.currentTarget;
 
     clearAuthError("profileForm");
@@ -253,49 +251,16 @@ function handleProfileSubmit(event) {
     const formData = new FormData(form);
 
     const data = {
-        phone: formData.get("phone"),
-        address: formData.get("address")
+        phone: formData.get("phone") || "",
+        address: formData.get("address") || ""
     };
 
     if (!validateProfileForm(data)) {
+        event.preventDefault();
         return;
     }
 
-    const currentUser = getCurrentUser();
-
-    if (!currentUser) {
-        return;
-    }
-
-    const users = getUsers();
-
-    const updatedUsers = users.map((user) => {
-
-        if (user.id !== currentUser.id) {
-            return user;
-        }
-
-        return {
-            ...user,
-            phone: data.phone.trim(),
-            address: data.address.trim()
-        };
-    });
-
-    saveUsers(updatedUsers);
-
-    const updatedCurrentUser = {
-        ...currentUser,
-        phone: data.phone.trim(),
-        address: data.address.trim()
-    };
-
-    saveCurrentUser(updatedCurrentUser);
-
-    showAuthError(
-        "اطلاعات با موفقیت ذخیره شد.",
-        "profileForm"
-    );
+    // اگر معتبر بود، اجازه بده فرم به Django ارسال شود.
 }
 
 
