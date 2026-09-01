@@ -26,10 +26,10 @@ def profile_view(request):
             "اطلاعات با موفقیت ذخیره شد."
         )
 
+    context = {'customer' : request.user}
+
     return render(
         request,
         "customer/customer.html",
-        {
-            "customer": request.user,
-        },
+        context
     )
