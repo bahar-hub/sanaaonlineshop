@@ -1,5 +1,3 @@
-
-
 .hero {
     position: relative;
     overflow: hidden;
@@ -144,19 +142,6 @@
     pointer-events: none;
 }
 
-
-
-.hero__tint {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-
-    background-color: $color-primary;
-    mix-blend-mode: color;
-    opacity: 0.4;
-
-    pointer-events: none;
-}
 
 
 .hero__grain {

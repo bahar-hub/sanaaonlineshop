@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initSplash();
 
+    initHero();
+
     initAuthTabs();
 
     initPasswordToggle();
@@ -20,12 +22,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ========================================
+// Hero
+// ========================================
+
+function initHero() {
+
+    const hero = document.getElementById("hero");
+    const cta = document.getElementById("heroCta");
+    const authPage = document.getElementById("authPage");
+
+    if (!cta) {
+        return;
+    }
+
+    cta.addEventListener("click", () => {
+
+        if (hero) {
+            hero.hidden = true;
+        }
+
+        if (authPage) {
+            authPage.hidden = false;
+
+            requestAnimationFrame(() => {
+                authPage.classList.add("is-visible");
+            });
+        }
+
+    });
+}
+
+
+// ========================================
 // Splash
 // ========================================
 
 function initSplash() {
     const splash = document.getElementById("splash");
-    const authPage = document.getElementById("authPage");
+    const hero = document.getElementById("hero");
 
     if (!splash) {
         return;
@@ -39,9 +73,9 @@ function initSplash() {
 
         requestAnimationFrame(() => {
 
-            if (authPage) {
-                authPage.hidden = false;
-                authPage.classList.add("is-visible");
+            if (hero) {
+                hero.hidden = false;
+                hero.classList.add("is-visible");
             }
 
         });
@@ -310,4 +344,3 @@ function clearAuthError(formId) {
 // ========================================
 // handle logout
 // ========================================
-
