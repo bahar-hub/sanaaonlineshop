@@ -282,18 +282,19 @@ function initProfileForm() {
 // Change Password
 // ========================================
 
-function validateChangePasswordForm(data, fullUser) {
+
+function validateChangePasswordForm(data) {
 
     let isValid = true;
 
     clearFieldError("password", "old");
     clearFieldError("password", "new");
 
-    if (!data.oldPassword || data.oldPassword !== fullUser.password) {
+    if (!data.oldPassword) {
 
         setFieldError(
             "password",
-            "رمز عبور فعلی صحیح نیست.",
+            "رمز عبور فعلی را وارد کنید.",
             "old"
         );
 
@@ -327,8 +328,6 @@ function validateChangePasswordForm(data, fullUser) {
 
 function handleChangePasswordSubmit(event) {
 
-    event.preventDefault();
-
     const form = event.currentTarget;
 
     clearAuthError("changePasswordForm");
@@ -336,49 +335,21 @@ function handleChangePasswordSubmit(event) {
     const formData = new FormData(form);
 
     const data = {
-        oldPassword: formData.get("oldPassword"),
-        newPassword: formData.get("newPassword")
+        oldPassword: formData.get("oldPassword") || "",
+        newPassword: formData.get("newPassword") || ""
     };
 
-    const currentUser = getCurrentUser();
+    if (!validateChangePasswordForm(data)) {
 
-    if (!currentUser) {
+        event.preventDefault();
+
         return;
     }
 
-    const users = getUsers();
-
-    const fullUser = users.find((user) => user.id === currentUser.id);
-
-    if (!fullUser) {
-        return;
-    }
-
-    if (!validateChangePasswordForm(data, fullUser)) {
-        return;
-    }
-
-    const updatedUsers = users.map((user) => {
-
-        if (user.id !== fullUser.id) {
-            return user;
-        }
-
-        return {
-            ...user,
-            password: data.newPassword
-        };
-    });
-
-    saveUsers(updatedUsers);
-
-    form.reset();
-
-    showAuthError(
-        "رمز عبور با موفقیت تغییر کرد.",
-        "changePasswordForm"
-    );
+    // اطلاعات معتبر است.
+    // اجازه بده فرم به صورت معمول به Django ارسال شود.
 }
+
 
 
 function initChangePasswordForm() {
