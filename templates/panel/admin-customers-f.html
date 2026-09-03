@@ -717,6 +717,13 @@
 <!-- ========================================
      JAVASCRIPT
 ========================================= -->
+{{ customers|json_script:"admin-customers-data" }}
+
+<script>
+    window.adminCustomersData = JSON.parse(
+        document.getElementById("admin-customers-data").textContent
+    );
+</script>
 
 <script
     src="{% static 'js/modules/admin-customers-f.js' %}"

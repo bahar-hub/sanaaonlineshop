@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, redirect
+import jdatetime
 
 
 def is_superuser(user):
@@ -33,9 +34,31 @@ def customer_view(request):
 
         return redirect("panel:customers")
 
-    customers = User.objects.filter(
-        is_superuser=False
-    ).order_by("-date_joined")
+    customers = list(
+        User.objects.filter(
+            is_superuser=False
+        ).order_by("-date_joined").values(
+            "id",
+            "first_name",
+            "last_name",
+            "phone",
+            "date_joined",
+        )
+    )
+
+    for customer in customers:
+        customer["ordersCount"] = 0
+        customer["totalSpent"] = 0
+        customer["status"] = "active"
+        customer["orders"] = []
+
+        customer["name"] = (
+            customer["first_name"] + " " + customer["last_name"]
+        )
+        customer["id"] = "C-" + str(customer["id"]).zfill(4)
+        customer["joinDate"] = jdatetime.datetime.fromgregorian(
+            datetime=customer["date_joined"]
+        ).strftime("%Y/%m/%d")  
 
     context = {
         "customers": customers,
@@ -46,6 +69,8 @@ def customer_view(request):
         "panel/admin-customers-f.html",
         context
     )
+
+
 @user_passes_test(is_superuser, login_url="base:index")
 def admin_manage_view(request):
     return render(request, "panel/adminpage.html")

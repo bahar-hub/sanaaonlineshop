@@ -11,38 +11,7 @@
      * Mock data
      * -------------------------------------------------------- */
 
-    var mockCustomersF = [
-        { id: "C-1042", name: "سارا احمدی", phone: "۰۹۱۲۳۴۵۶۷۸۹", joinDate: "۱۴۰۴/۰۲/۱۵", ordersCount: 12, totalSpent: 45340000, status: "active",
-            orders: [
-                { number: "SN-10482", date: "۱۴۰۴/۰۵/۱۲", amount: 45340000, status: "delivered" },
-                { number: "SN-10417", date: "۱۴۰۴/۰۴/۲۸", amount: 41230000, status: "shipped" },
-                { number: "SN-10355", date: "۱۴۰۴/۰۴/۰۳", amount: 39290000, status: "registered" }
-            ] },
-        { id: "C-1041", name: "مریم رضایی", phone: "۰۹۱۳۴۵۶۷۸۹۰", joinDate: "۱۴۰۴/۰۱/۰۸", ordersCount: 5, totalSpent: 12860000, status: "active",
-            orders: [
-                { number: "SN-10460", date: "۱۴۰۴/۰۵/۰۲", amount: 8600000, status: "shipped" },
-                { number: "SN-10298", date: "۱۴۰۳/۱۱/۲۰", amount: 4260000, status: "delivered" }
-            ] },
-        { id: "C-1040", name: "نگار محمدی", phone: "۰۹۱۹۸۷۶۵۴۳۲", joinDate: "۱۴۰۳/۱۲/۰۱", ordersCount: 21, totalSpent: 98450000, status: "active",
-            orders: [
-                { number: "SN-10475", date: "۱۴۰۴/۰۵/۰۸", amount: 21400000, status: "registered" },
-                { number: "SN-10412", date: "۱۴۰۴/۰۴/۲۵", amount: 15600000, status: "delivered" },
-                { number: "SN-10380", date: "۱۴۰۴/۰۴/۱۰", amount: 9800000, status: "delivered" }
-            ] },
-        { id: "C-1039", name: "الهام کریمی", phone: "۰۹۱۵۲۲۳۳۴۴۵", joinDate: "۱۴۰۳/۱۰/۱۹", ordersCount: 3, totalSpent: 5400000, status: "inactive",
-            orders: [
-                { number: "SN-10390", date: "۱۴۰۴/۰۳/۱۴", amount: 5400000, status: "delivered" }
-            ] },
-        { id: "C-1038", name: "کیانا ملکی", phone: "۰۹۱۷۷۶۵۴۳۲۱", joinDate: "۱۴۰۴/۰۳/۳۰", ordersCount: 8, totalSpent: 26700000, status: "active",
-            orders: [
-                { number: "SN-10470", date: "۱۴۰۴/۰۵/۰۵", amount: 12300000, status: "shipped" },
-                { number: "SN-10320", date: "۱۴۰۴/۰۳/۱۱", amount: 14400000, status: "delivered" }
-            ] },
-        { id: "C-1037", name: "بهاره اسدی", phone: "۰۹۱۴۴۵۵۶۶۷۷", joinDate: "۱۴۰۳/۰۹/۰۲", ordersCount: 1, totalSpent: 1980000, status: "inactive",
-            orders: [
-                { number: "SN-10201", date: "۱۴۰۳/۰۹/۰۵", amount: 1980000, status: "delivered" }
-            ] }
-    ];
+    var mockCustomersF = window.adminCustomersData || [];
 
     var CUSTOMER_STATUS_F = {
         active: { label: "فعال", color: "success" },
