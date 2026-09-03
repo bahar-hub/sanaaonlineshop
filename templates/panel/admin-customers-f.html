@@ -4,6 +4,7 @@
 <html lang="fa" dir="rtl">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -18,184 +19,695 @@
 
     <title>مشتریان | Sanaa Admin</title>
 
-    <!-- Main Stylesheet (unchanged — shared with the rest of the site) -->
+    <!-- Main Stylesheet -->
     <link
         rel="stylesheet"
         href="{% static 'css/main.css' %}"
     >
+
 </head>
 
 <body>
 
-    <div class="admin-layout-f">
 
-        <!-- Topbar -->
-        <header class="admin-topbar-f">
-            <div class="admin-topbar-f__brand" dir="ltr">SANAA <span>ADMIN</span></div>
-            <div class="admin-topbar-f__profile" aria-label="مدیر فروشگاه">ع.م</div>
-        </header>
-
-        <!-- Horizontal navigation tabs -->
-        <nav class="admin-navigation-f" aria-label="بخش‌های پنل ادمین">
-
-            <a href="{% url 'panel:orders' %}" class="admin-navigation-f__item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <rect x="4" y="7" width="16" height="13" rx="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                سفارش‌ها
-            </a>
-
-            <a href="{% url 'panel:customers' %}" class="admin-navigation-f__item admin-navigation-f__item--active" aria-current="page">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <circle cx="12" cy="8" r="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M4.5 20c1.2-3.6 4.2-5.5 7.5-5.5s6.3 1.9 7.5 5.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                مشتریان
-            </a>
-
-            
-
-            <a href="{% url 'panel:report' %}" class="admin-navigation-f__item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path d="M4 20V10M11 20V4M18 20v-7" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                گزارش‌ها
-            </a>
-
-        </nav>
+<div class="admin-layout-f" id="adminPage">
 
 
-        <!-- Content -->
-        <div class="admin-content-f">
+    <!-- ========================================
+         TOPBAR
+    ========================================= -->
 
-            <main class="admin-customers-f">
+    <header class="admin-topbar-f">
 
-                <div class="admin-customers-f__header">
-                    <h1 class="admin-customers-f__title">مشتریان</h1>
+        <!-- Brand -->
 
-                    <button type="button" class="admin-btn-f" id="adminAddCustomerBtnF">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                            <path d="M12 5v14M5 12h14" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        افزودن مشتری
-                    </button>
+        <div
+            class="admin-topbar-f__brand"
+            dir="ltr"
+        >
+            SANAA <span>ADMIN</span>
+        </div>
+
+
+        <!-- Admin Logout Button -->
+
+        <button
+            type="button"
+            class="admin-topbar-f__logout"
+            id="adminLogoutBtnF"
+            data-logout
+            aria-label="خروج از حساب ادمین"
+            title="خروج"
+        >
+
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.7"
+                aria-hidden="true"
+            >
+
+                <path
+                    d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10"
+                />
+
+                <path
+                    d="M14 8l4 4-4 4"
+                />
+
+                <path
+                    d="M18 12H9"
+                />
+
+            </svg>
+
+            <span>
+                خروج
+            </span>
+
+        </button>
+
+    </header>
+
+
+
+    <!-- ========================================
+         ADMIN NAVIGATION
+    ========================================= -->
+
+    <nav
+        class="admin-navigation-f"
+        aria-label="بخش‌های پنل ادمین"
+    >
+
+        <!-- Orders -->
+
+        <a
+            href="{% url 'panel:orders' %}"
+            class="admin-navigation-f__item"
+        >
+
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+            >
+
+                <rect
+                    x="4"
+                    y="7"
+                    width="16"
+                    height="13"
+                    rx="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+                <path
+                    d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+            </svg>
+
+            سفارش‌ها
+
+        </a>
+
+
+
+        <!-- Customers -->
+
+        <a
+            href="{% url 'panel:customers' %}"
+            class="admin-navigation-f__item admin-navigation-f__item--active"
+            aria-current="page"
+        >
+
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+            >
+
+                <circle
+                    cx="12"
+                    cy="8"
+                    r="3.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+                <path
+                    d="M4.5 20c1.2-3.6 4.2-5.5 7.5-5.5s6.3 1.9 7.5 5.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+            </svg>
+
+            مشتریان
+
+        </a>
+
+
+
+        <!-- Reports -->
+
+        <a
+            href="{% url 'panel:report' %}"
+            class="admin-navigation-f__item"
+        >
+
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+            >
+
+                <path
+                    d="M4 20V10M11 20V4M18 20v-7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+            </svg>
+
+            گزارش‌ها
+
+        </a>
+
+    </nav>
+
+
+
+    <!-- ========================================
+         CONTENT
+    ========================================= -->
+
+    <div class="admin-content-f">
+
+        <main class="admin-customers-f">
+
+
+            <!-- Header -->
+
+            <div class="admin-customers-f__header">
+
+                <h1 class="admin-customers-f__title">
+                    مشتریان
+                </h1>
+
+
+                <button
+                    type="button"
+                    class="admin-btn-f"
+                    id="adminAddCustomerBtnF"
+                >
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        aria-hidden="true"
+                    >
+
+                        <path
+                            d="M12 5v14M5 12h14"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+
+                    </svg>
+
+                    افزودن مشتری
+
+                </button>
+
+            </div>
+
+
+
+            <!-- ========================================
+                 TOOLBAR
+            ========================================= -->
+
+            <div class="admin-customers-f__toolbar">
+
+
+                <!-- Search -->
+
+                <div class="admin-search-f">
+
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        aria-hidden="true"
+                    >
+
+                        <circle
+                            cx="11"
+                            cy="11"
+                            r="7"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+
+                        <path
+                            d="m20 20-3.5-3.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+
+                    </svg>
+
+
+                    <input
+                        type="text"
+                        class="admin-search-f__input"
+                        id="adminCustomerSearchF"
+                        placeholder="جستجوی نام، شماره موبایل یا شناسه مشتری"
+                    >
+
                 </div>
 
 
-                <!-- Toolbar: search + sort -->
-                <div class="admin-customers-f__toolbar">
 
-                    <div class="admin-search-f">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                            <circle cx="11" cy="11" r="7" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="m20 20-3.5-3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <input
-                            type="text"
-                            class="admin-search-f__input"
-                            id="adminCustomerSearchF"
-                            placeholder="جستجوی نام، شماره موبایل یا شناسه مشتری"
-                        >
-                    </div>
+                <!-- Sort -->
 
-                    <select class="admin-select-f" id="adminCustomerSortF" aria-label="مرتب‌سازی بر اساس">
-                        <option value="newest">مرتب‌سازی: جدیدترین</option>
-                        <option value="oldest">قدیمی‌ترین</option>
-                        <option value="most-spent">بیشترین خرید</option>
-                        <option value="most-orders">بیشترین سفارش</option>
-                        <option value="name">نام (الفبا)</option>
-                    </select>
+                <select
+                    class="admin-select-f"
+                    id="adminCustomerSortF"
+                    aria-label="مرتب‌سازی بر اساس"
+                >
+
+                    <option value="newest">
+                        مرتب‌سازی: جدیدترین
+                    </option>
+
+                    <option value="oldest">
+                        قدیمی‌ترین
+                    </option>
+
+                    <option value="most-spent">
+                        بیشترین خرید
+                    </option>
+
+                    <option value="most-orders">
+                        بیشترین سفارش
+                    </option>
+
+                    <option value="name">
+                        نام (الفبا)
+                    </option>
+
+                </select>
+
+
+            </div>
+
+
+
+            <!-- ========================================
+                 CUSTOMER LIST
+            ========================================= -->
+
+            <ul
+                class="admin-customers-f__list"
+                id="adminCustomersListF"
+            ></ul>
+
+
+            <p
+                class="admin-customers-f__empty"
+                id="adminCustomersEmptyF"
+                hidden
+            >
+                مشتری‌ای با این مشخصات پیدا نشد.
+            </p>
+
+
+        </main>
+
+    </div>
+
+</div>
+
+
+
+<!-- ========================================
+     ADD CUSTOMER MODAL
+========================================= -->
+
+<div
+    class="modal"
+    id="adminAddCustomerModalF"
+    hidden
+>
+
+    <div class="modal__backdrop"></div>
+
+
+    <div class="modal__panel">
+
+
+        <!-- Close -->
+
+        <button
+            type="button"
+            class="modal__close"
+            id="adminAddCustomerCloseF"
+            aria-label="بستن"
+        >
+
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+            >
+
+                <path
+                    d="M18 6 6 18M6 6l12 12"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+            </svg>
+
+        </button>
+
+
+
+        <h2 class="modal__title">
+            افزودن مشتری جدید
+        </h2>
+
+
+
+        <form
+            id="adminAddCustomerFormF"
+            novalidate
+        >
+
+
+            <!-- ردیف اول: نام و نام خانوادگی -->
+
+            <div class="admin-customers-f__form-row">
+
+
+                <!-- نام -->
+
+                <div class="admin-customers-f__form-group">
+
+                    <label
+                        class="admin-customers-f__form-label"
+                        for="adminNewCustomerFirstNameF"
+                    >
+                        نام
+                    </label>
+
+                    <input
+                        type="text"
+                        class="admin-customers-f__form-input"
+                        id="adminNewCustomerFirstNameF"
+                        placeholder="مثلاً سارا"
+                    >
+
+                    <p class="admin-customers-f__form-error">
+                        وارد کردن نام الزامی است.
+                    </p>
 
                 </div>
 
 
-                <!-- Customer list -->
-                <ul class="admin-customers-f__list" id="adminCustomersListF"></ul>
 
-                <p class="admin-customers-f__empty" id="adminCustomersEmptyF" hidden>
-                    مشتری‌ای با این مشخصات پیدا نشد.
+                <!-- نام خانوادگی -->
+
+                <div class="admin-customers-f__form-group">
+
+                    <label
+                        class="admin-customers-f__form-label"
+                        for="adminNewCustomerLastNameF"
+                    >
+                        نام خانوادگی
+                    </label>
+
+                    <input
+                        type="text"
+                        class="admin-customers-f__form-input"
+                        id="adminNewCustomerLastNameF"
+                        placeholder="مثلاً احمدی"
+                    >
+
+                    <p class="admin-customers-f__form-error">
+                        وارد کردن نام خانوادگی الزامی است.
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- ردیف دوم: شماره تلفن و نام کاربری -->
+
+            <div class="admin-customers-f__form-row">
+
+
+                <!-- شماره تلفن -->
+
+                <div class="admin-customers-f__form-group">
+
+                    <label
+                        class="admin-customers-f__form-label"
+                        for="adminNewCustomerPhoneF"
+                    >
+                        شماره تلفن
+                    </label>
+
+                    <input
+                        type="tel"
+                        class="admin-customers-f__form-input"
+                        id="adminNewCustomerPhoneF"
+                        placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                        dir="ltr"
+                    >
+
+                    <p class="admin-customers-f__form-error">
+                        شماره موبایل معتبر الزامی است.
+                    </p>
+
+                </div>
+
+
+
+                <!-- نام کاربری -->
+
+                <div class="admin-customers-f__form-group">
+
+                    <label
+                        class="admin-customers-f__form-label"
+                        for="adminNewCustomerUsernameF"
+                    >
+                        نام کاربری
+                    </label>
+
+                    <input
+                        type="text"
+                        class="admin-customers-f__form-input"
+                        id="adminNewCustomerUsernameF"
+                        placeholder="sara_ahmadi"
+                        dir="ltr"
+                    >
+
+                    <p class="admin-customers-f__form-error">
+                        نام کاربری الزامی است.
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- ردیف سوم: رمز عبور -->
+
+            <div class="admin-customers-f__form-group">
+
+                <label
+                    class="admin-customers-f__form-label"
+                    for="adminNewCustomerPasswordF"
+                >
+                    رمز عبور
+                </label>
+
+                <input
+                    type="password"
+                    class="admin-customers-f__form-input"
+                    id="adminNewCustomerPasswordF"
+                    placeholder="••••••••"
+                    dir="ltr"
+                >
+
+                <p class="admin-customers-f__form-error">
+                    حداقل ۶ کاراکتر الزامی است.
                 </p>
 
-            </main>
-
-        </div>
-
-    </div>
+            </div>
 
 
-    <!-- ============ Add customer modal ============ -->
-    <!-- Reuses the shared .modal component from
-         components/modal (same one used for the invoice
-         popup in the storefront) -->
 
-    <div class="modal" id="adminAddCustomerModalF" hidden>
-        <div class="modal__backdrop"></div>
+            <!-- ردیف چهارم: آدرس -->
 
-        <div class="modal__panel">
-            <button type="button" class="modal__close" id="adminAddCustomerCloseF" aria-label="بستن">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+            <div class="admin-customers-f__form-group">
+
+                <label
+                    class="admin-customers-f__form-label"
+                    for="adminNewCustomerAddressF"
+                >
+                    آدرس
+                </label>
+
+                <textarea
+                    class="admin-customers-f__form-input admin-customers-f__form-textarea"
+                    id="adminNewCustomerAddressF"
+                    rows="3"
+                    placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد"
+                ></textarea>
+
+                <p class="admin-customers-f__form-error">
+                    وارد کردن آدرس الزامی است.
+                </p>
+
+            </div>
+
+
+
+            <!-- Submit -->
+
+            <button
+                type="submit"
+                class="admin-btn-f admin-customers-f__form-submit"
+            >
+                ثبت مشتری
             </button>
 
-            <h2 class="modal__title">افزودن مشتری جدید</h2>
 
-            <form id="adminAddCustomerFormF" novalidate>
+        </form>
 
-                <div class="admin-customers-f__form-group">
-                    <label class="admin-customers-f__form-label" for="adminNewCustomerNameF">نام و نام خانوادگی</label>
-                    <input type="text" class="admin-customers-f__form-input" id="adminNewCustomerNameF" placeholder="مثلاً سارا احمدی">
-                    <p class="admin-customers-f__form-error">وارد کردن نام الزامی است.</p>
-                </div>
-
-                <div class="admin-customers-f__form-group">
-                    <label class="admin-customers-f__form-label" for="adminNewCustomerPhoneF">شماره موبایل</label>
-                    <input type="tel" class="admin-customers-f__form-input" id="adminNewCustomerPhoneF" placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr">
-                    <p class="admin-customers-f__form-error">وارد کردن شماره موبایل الزامی است.</p>
-                </div>
-
-                <div class="admin-customers-f__form-group">
-                    <label class="admin-customers-f__form-label" for="adminNewCustomerEmailF">ایمیل (اختیاری)</label>
-                    <input type="email" class="admin-customers-f__form-input" id="adminNewCustomerEmailF" placeholder="example@mail.com" dir="ltr">
-                </div>
-
-                <button type="submit" class="admin-btn-f admin-customers-f__form-submit">ثبت مشتری</button>
-
-            </form>
-        </div>
     </div>
 
+</div>
 
-    <!-- ============ Customer orders modal ============ -->
-    <!-- Reuses .modal + the real .order-list / .order-card /
-         .order-status classes from components/orders, so this
-         looks identical to the storefront "سفارش‌های من" page. -->
 
-    <div class="modal" id="adminCustomerOrdersModalF" hidden>
-        <div class="modal__backdrop"></div>
 
-        <div class="modal__panel">
-            <button type="button" class="modal__close" id="adminCustomerOrdersCloseF" aria-label="بستن">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                    <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
+<!-- ========================================
+     CUSTOMER ORDERS MODAL
+========================================= -->
 
-            <h2 class="modal__title" id="adminCustomerOrdersTitleF">سفارش‌های مشتری</h2>
+<div
+    class="modal"
+    id="adminCustomerOrdersModalF"
+    hidden
+>
 
-            <p class="admin-customers-f__orders-summary" id="adminCustomerOrdersSummaryF"></p>
+    <div class="modal__backdrop"></div>
 
-            <ul class="order-list" id="adminCustomerOrdersListF"></ul>
 
-            <p class="order-empty" id="adminCustomerOrdersEmptyF" hidden>
-                این مشتری تا امروز سفارشی ثبت نکرده است.
-            </p>
-        </div>
+    <div class="modal__panel">
+
+
+        <!-- Close -->
+
+        <button
+            type="button"
+            class="modal__close"
+            id="adminCustomerOrdersCloseF"
+            aria-label="بستن"
+        >
+
+            <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+            >
+
+                <path
+                    d="M18 6 6 18M6 6l12 12"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
+
+            </svg>
+
+        </button>
+
+
+
+        <h2
+            class="modal__title"
+            id="adminCustomerOrdersTitleF"
+        >
+            سفارش‌های مشتری
+        </h2>
+
+
+
+        <p
+            class="admin-customers-f__orders-summary"
+            id="adminCustomerOrdersSummaryF"
+        ></p>
+
+
+
+        <ul
+            class="order-list"
+            id="adminCustomerOrdersListF"
+        ></ul>
+
+
+
+        <p
+            class="order-empty"
+            id="adminCustomerOrdersEmptyF"
+            hidden
+        >
+            این مشتری تا امروز سفارشی ثبت نکرده است.
+        </p>
+
+
     </div>
 
+</div>
 
-    <script src="{% static 'js/modules/admin-customers-f.js' %}" defer></script>
+
+
+<!-- ========================================
+     JAVASCRIPT
+========================================= -->
+
+<script
+    src="{% static 'js/modules/admin-customers-f.js' %}"
+    defer
+></script>
+
 
 </body>
 

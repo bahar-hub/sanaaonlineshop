@@ -167,17 +167,31 @@
 // Add-customer form (inside .modal__panel)
 // ----------------------------------------
 
+.admin-customers-f__form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+
+    @include respond-to(sm) {
+        flex-direction: row;
+        gap: $spacing-md;
+
+        .admin-customers-f__form-group {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+}
+
 .admin-customers-f__form-group {
     margin-bottom: $spacing-md;
 }
 
 .admin-customers-f__form-label {
     display: block;
-
     margin-bottom: 6px;
 
     color: $color-text;
-
     font-family: $font-family-persian;
     font-size: 0.8rem;
     font-weight: 500;
@@ -185,6 +199,7 @@
 
 .admin-customers-f__form-input {
     width: 100%;
+    box-sizing: border-box;
 
     padding: $spacing-sm $spacing-md;
     border: 1px solid $color-border;
@@ -197,36 +212,40 @@
     font-size: 0.85rem;
 
     transition: border-color $transition-fast, background-color $transition-fast;
+
+    &:focus {
+        outline: none;
+        border-color: $color-primary;
+        background-color: $color-input-bg-focus;
+    }
 }
 
-.admin-customers-f__form-input:focus {
-    outline: none;
-    border-color: $color-primary;
-    background-color: $color-input-bg-focus;
+.admin-customers-f__form-textarea {
+    resize: vertical;
+    min-height: 72px;
+    line-height: 1.6;
 }
 
 .admin-customers-f__form-error {
     display: none;
-
     margin-top: 4px;
 
     color: $color-error;
-
     font-size: 0.7rem;
 }
 
-.admin-customers-f__form-group.has-error .admin-customers-f__form-input {
-    border-color: $color-error;
-}
-
-.admin-customers-f__form-group.has-error .admin-customers-f__form-error {
-    display: block;
+.admin-customers-f__form-group.has-error {
+    .admin-customers-f__form-input {
+        border-color: $color-error;
+    }
+    .admin-customers-f__form-error {
+        display: block;
+    }
 }
 
 .admin-customers-f__form-submit {
     width: 100%;
     justify-content: center;
-
     margin-top: $spacing-sm;
 }
 
