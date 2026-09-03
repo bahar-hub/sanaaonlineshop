@@ -4,13 +4,20 @@
 
 $color-primary: #A61579;
 $color-secondary: #B9C3B9;
-$color-background: #F1ECE4;
-$color-surface: #FFFFFF;
-$color-input-bg: #F6F2EC;
-$color-input-bg-focus: #FBF8F4;
 
-$color-text: #1E1B19;
-$color-text-muted: #96908A;
+// Warm cream/beige — splash, gallery captions n/a, customer pages, and
+// the auth card (which sits on top of the dark auth-page background).
+$color-background: #F3EFE8;
+
+// Dark — the auth page's own background, and dark text everywhere.
+$color-dark: #191715;
+
+$color-surface: #FFFFFF;
+$color-input-bg: #FFFFFF;
+$color-input-bg-focus: #FFFFFF;
+
+$color-text: #191715;
+$color-text-muted: #8A8178;
 $color-border: #E3DCD2;
 
 
@@ -19,8 +26,8 @@ $color-hairline: #DCD4C8;
 $color-error: #C62828;
 $color-success: #2E7D32;
 
-$shadow-card: 0 24px 48px -24px rgba(30, 20, 15, 0.22),
-    0 2px 8px rgba(30, 20, 15, 0.05);
+$shadow-card: 0 24px 48px -24px rgba(25, 23, 21, 0.28),
+    0 2px 8px rgba(25, 23, 21, 0.08);
 
 
 // ========================================

@@ -63,7 +63,7 @@
 
 
     <!-- ========================================
-         Hero (Landing)
+         Hero (Brand Gallery)
     ========================================= -->
 
     <main
@@ -74,53 +74,62 @@
 
         <div class="hero__scroll" aria-hidden="true">
 
-            <div class="hero__track">
+            <div class="hero__gallery">
 
-                <img class="hero__image" src="{% static 'img/IMG_2774.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2775.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2777.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2778.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2779.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2780.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2781.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2782.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2783.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2784.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2785.JPG' %}" alt="">
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/1.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/2.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/3.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/5.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/4.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/6.JPEG' %}" alt="">
+            </div>
 
-                <!-- Duplicate set — required for a seamless loop -->
-                <img class="hero__image" src="{% static 'img/IMG_2774.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2775.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2777.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2778.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2779.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2780.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2781.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2782.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2783.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2784.JPG' %}" alt="">
-                <img class="hero__image" src="{% static 'img/IMG_2785.JPG' %}" alt="">
-
+            <!-- Duplicate set — required for a seamless loop -->
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/1.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/2.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/3.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/5.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/4.JPEG' %}" alt="">
+            </div>
+            <div class="hero__item">
+                <img class="hero__item-img" src="{% static 'img/6.JPEG' %}" alt="">
             </div>
 
         </div>
 
-        <div class="hero__overlay" aria-hidden="true"></div>
+        <div class="hero__bar">
 
-        <div class="hero__grain" aria-hidden="true"></div>
+            <span class="hero__bar-logo" dir="ltr">SANAA</span>
 
-        <h1 class="hero__brand" dir="ltr">SANAA</h1>
+            <button
+                type="button"
+                class="hero__bar-cta"
+                id="heroCta"
+            >
+                ورود / ثبت نام
+            </button>
 
-        <button
-            type="button"
-            class="hero__cta"
-            id="heroCta"
-        >
-            <span class="hero__cta-label">ورود / ثبت نام</span>
-            <svg class="hero__cta-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </button>
+        </div>
 
     </main>
 
@@ -268,9 +277,6 @@
                             class="auth-submit"
                         >
                             <span class="auth-submit__label">ورود</span>
-                            <svg class="auth-submit__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                                <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
                         </button>
 
 
@@ -519,9 +525,6 @@
                             class="auth-submit"
                         >
                             <span class="auth-submit__label">ثبت نام</span>
-                            <svg class="auth-submit__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                                <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
                         </button>
 
 
@@ -584,9 +587,6 @@
                                 data-forgot-send
                             >
                                 <span class="auth-submit__label">ارسال رمز</span>
-                                <svg class="auth-submit__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                                    <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
                             </button>
 
 
@@ -644,9 +644,6 @@
                                 class="auth-submit"
                             >
                                 <span class="auth-submit__label">تایید</span>
-                                <svg class="auth-submit__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                                    <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
                             </button>
 
 
