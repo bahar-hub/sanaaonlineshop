@@ -210,71 +210,93 @@
      * -------------------------------------------------------- */
 
     function initAddCustomerModalF() {
-        var modal = document.getElementById("adminAddCustomerModalF");
-        var openBtn = document.getElementById("adminAddCustomerBtnF");
-        var closeBtn = document.getElementById("adminAddCustomerCloseF");
-        var form = document.getElementById("adminAddCustomerFormF");
+    var modal = document.getElementById("adminAddCustomerModalF");
+    var openBtn = document.getElementById("adminAddCustomerBtnF");
+    var closeBtn = document.getElementById("adminAddCustomerCloseF");
+    var form = document.getElementById("adminAddCustomerFormF");
 
-        if (!modal || !openBtn || !form) return;
+    if (!modal || !openBtn || !form) return;
 
-        function openModal() {
-            modal.hidden = false;
-        }
+    function openModal() {
+        modal.hidden = false;
+    }
 
-        function closeModal() {
-            modal.hidden = true;
-            form.reset();
-            form.querySelectorAll(".admin-customers-f__form-group").forEach(function (group) {
-                group.classList.remove("has-error");
-            });
-        }
+    function closeModal() {
+        modal.hidden = true;
+        form.reset();
 
-        openBtn.addEventListener("click", openModal);
-        if (closeBtn) closeBtn.addEventListener("click", closeModal);
-
-        modal.querySelector(".modal__backdrop").addEventListener("click", closeModal);
-
-        document.addEventListener("keydown", function (event) {
-            if (event.key === "Escape" && !modal.hidden) closeModal();
-        });
-
-        form.addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            var nameInput = document.getElementById("adminNewCustomerNameF");
-            var phoneInput = document.getElementById("adminNewCustomerPhoneF");
-
-            var nameGroup = nameInput.closest(".admin-customers-f__form-group");
-            var phoneGroup = phoneInput.closest(".admin-customers-f__form-group");
-
-            nameGroup.classList.toggle("has-error", nameInput.value.trim() === "");
-            phoneGroup.classList.toggle("has-error", phoneInput.value.trim() === "");
-
-            if (nameInput.value.trim() === "" || phoneInput.value.trim() === "") {
-                return;
-            }
-
-            var emailInput = document.getElementById("adminNewCustomerEmailF");
-            var newId = "C-" + (1043 + mockCustomersF.length);
-
-            mockCustomersF.unshift({
-                id: newId,
-                name: nameInput.value.trim(),
-                phone: phoneInput.value.trim(),
-                joinDate: "امروز",
-                ordersCount: 0,
-                totalSpent: 0,
-                status: "active",
-                orders: []
-            });
-
-            closeModal();
-            currentSortF = "newest";
-            var sortSelect = document.getElementById("adminCustomerSortF");
-            if (sortSelect) sortSelect.value = "newest";
-            applyFiltersF();
+        form.querySelectorAll(".admin-customers-f__form-group").forEach(function (group) {
+            group.classList.remove("has-error");
         });
     }
+
+    openBtn.addEventListener("click", openModal);
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", closeModal);
+    }
+
+    var backdrop = modal.querySelector(".modal__backdrop");
+
+    if (backdrop) {
+        backdrop.addEventListener("click", closeModal);
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && !modal.hidden) {
+            closeModal();
+        }
+    });
+
+    form.addEventListener("submit", function (event) {
+
+        var firstNameInput = document.getElementById("adminNewCustomerFirstNameF");
+        var lastNameInput = document.getElementById("adminNewCustomerLastNameF");
+        var phoneInput = document.getElementById("adminNewCustomerPhoneF");
+        var usernameInput = document.getElementById("adminNewCustomerUsernameF");
+        var passwordInput = document.getElementById("adminNewCustomerPasswordF");
+        var addressInput = document.getElementById("adminNewCustomerAddressF");
+
+        var firstNameGroup = firstNameInput.closest(".admin-customers-f__form-group");
+        var lastNameGroup = lastNameInput.closest(".admin-customers-f__form-group");
+        var phoneGroup = phoneInput.closest(".admin-customers-f__form-group");
+        var usernameGroup = usernameInput.closest(".admin-customers-f__form-group");
+        var passwordGroup = passwordInput.closest(".admin-customers-f__form-group");
+        var addressGroup = addressInput.closest(".admin-customers-f__form-group");
+
+        var firstName = firstNameInput.value.trim();
+        var lastName = lastNameInput.value.trim();
+        var phone = phoneInput.value.trim();
+        var username = usernameInput.value.trim();
+        var password = passwordInput.value;
+        var address = addressInput.value.trim();
+
+        var phonePattern = /^09\d{9}$/;
+
+        var hasError = false;
+
+        firstNameGroup.classList.toggle("has-error", firstName === "");
+        lastNameGroup.classList.toggle("has-error", lastName === "");
+        phoneGroup.classList.toggle("has-error", !phonePattern.test(phone));
+        usernameGroup.classList.toggle("has-error", username === "");
+        passwordGroup.classList.toggle("has-error", password.length < 6);
+        addressGroup.classList.toggle("has-error", address === "");
+
+        if (firstName === "") hasError = true;
+        if (lastName === "") hasError = true;
+        if (!phonePattern.test(phone)) hasError = true;
+        if (username === "") hasError = true;
+        if (password.length < 6) hasError = true;
+        if (address === "") hasError = true;
+
+        if (hasError) {
+            event.preventDefault();
+            return;
+        }
+
+        // فرم معتبر است؛ اجازه می‌دهیم POST به Django انجام شود.
+    });
+}
 
 
     /* --------------------------------------------------------

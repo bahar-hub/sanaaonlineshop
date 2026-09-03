@@ -42,27 +42,30 @@
             </div>
 
             <!-- Admin Logout Button -->
-            <button
-                type="button"
-                class="admin-topbar-f__logout"
-                id="adminLogoutBtnF"
-                aria-label="خروج از پنل مدیریت"
-                title="خروج"
-            >
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    aria-hidden="true"
+             <form method="POST" action="{% url 'base:logout' %}">
+                {% csrf_token %}
+                <button
+                    type="submit"
+                    class="admin-topbar-f__logout"
+                    id="adminLogoutBtnF"
+                    aria-label="خروج از پنل مدیریت"
+                    title="خروج"
                 >
-                    <path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10" />
-                    <path d="M14 8l4 4-4 4" />
-                    <path d="M18 12H9" />
-                </svg>
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        aria-hidden="true"
+                    >
+                        <path d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10" />
+                        <path d="M14 8l4 4-4 4" />
+                        <path d="M18 12H9" />
+                    </svg>
 
-                <span>خروج</span>
-            </button>
+                    <span>خروج</span>
+                </button>
+            </form>
 
         </header>
 

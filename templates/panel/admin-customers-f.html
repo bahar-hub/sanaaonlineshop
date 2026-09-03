@@ -50,43 +50,45 @@
 
 
         <!-- Admin Logout Button -->
-
-        <button
-            type="button"
-            class="admin-topbar-f__logout"
-            id="adminLogoutBtnF"
-            data-logout
-            aria-label="خروج از حساب ادمین"
-            title="خروج"
-        >
-
-            <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.7"
-                aria-hidden="true"
+        <form method="POST" action="{% url 'base:logout' %}">
+                {% csrf_token %}
+            <button
+                type="submit"
+                class="admin-topbar-f__logout"
+                id="adminLogoutBtnF"
+                data-logout
+                aria-label="خروج از حساب ادمین"
+                title="خروج"
             >
 
-                <path
-                    d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10"
-                />
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    aria-hidden="true"
+                >
 
-                <path
-                    d="M14 8l4 4-4 4"
-                />
+                    <path
+                        d="M10 5H6.5A1.5 1.5 0 0 0 5 6.5v11A1.5 1.5 0 0 0 6.5 19H10"
+                    />
 
-                <path
-                    d="M18 12H9"
-                />
+                    <path
+                        d="M14 8l4 4-4 4"
+                    />
 
-            </svg>
+                    <path
+                        d="M18 12H9"
+                    />
 
-            <span>
-                خروج
-            </span>
+                </svg>
 
-        </button>
+                <span>
+                    خروج
+                </span>
+
+            </button>
+        </form>
 
     </header>
 
@@ -419,8 +421,13 @@
 
         <form
             id="adminAddCustomerFormF"
+            method="POST"
+            action="{% url 'panel:customers' %}"
+            autocomplete="off"
             novalidate
+
         >
+            {% csrf_token %}
 
 
             <!-- ردیف اول: نام و نام خانوادگی -->
@@ -443,6 +450,7 @@
                         type="text"
                         class="admin-customers-f__form-input"
                         id="adminNewCustomerFirstNameF"
+                        name="first_name"
                         placeholder="مثلاً سارا"
                     >
 
@@ -469,6 +477,7 @@
                         type="text"
                         class="admin-customers-f__form-input"
                         id="adminNewCustomerLastNameF"
+                        name="last_name"
                         placeholder="مثلاً احمدی"
                     >
 
@@ -503,6 +512,7 @@
                         type="tel"
                         class="admin-customers-f__form-input"
                         id="adminNewCustomerPhoneF"
+                        name="phone"
                         placeholder="۰۹۱۲۳۴۵۶۷۸۹"
                         dir="ltr"
                     >
@@ -530,8 +540,10 @@
                         type="text"
                         class="admin-customers-f__form-input"
                         id="adminNewCustomerUsernameF"
+                        name="username"
                         placeholder="sara_ahmadi"
                         dir="ltr"
+                        autocomplete="new-username"
                     >
 
                     <p class="admin-customers-f__form-error">
@@ -560,8 +572,10 @@
                     type="password"
                     class="admin-customers-f__form-input"
                     id="adminNewCustomerPasswordF"
+                    name="password"
                     placeholder="••••••••"
                     dir="ltr"
+                    autocomplete="new-password"
                 >
 
                 <p class="admin-customers-f__form-error">
@@ -586,6 +600,7 @@
                 <textarea
                     class="admin-customers-f__form-input admin-customers-f__form-textarea"
                     id="adminNewCustomerAddressF"
+                    name="address"
                     rows="3"
                     placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد"
                 ></textarea>
