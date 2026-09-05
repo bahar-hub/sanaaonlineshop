@@ -772,7 +772,13 @@
 
     </div>
 
+    {{ customer_join_dates|json_script:"admin-customer-join-dates" }}
 
+    <script>
+        window.adminCustomerJoinDates = JSON.parse(
+            document.getElementById("admin-customer-join-dates").textContent
+        );
+    </script>
     <script
         src="{% static 'js/modules/admin-reports-f.js' %}"
         defer

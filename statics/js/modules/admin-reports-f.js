@@ -374,13 +374,36 @@
         el.classList.toggle("is-down", direction === "down");
     }
 
+
+    function countNewCustomersF(jy, jm) {
+    var dates = window.adminCustomerJoinDates || [];
+
+    return dates.filter(function (dateString) {
+        var date = new Date(dateString);
+
+        if (isNaN(date.getTime())) {
+            return false;
+        }
+
+        var jalali = toJalaliF(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
+        );
+
+        return jalali[0] === jy && jalali[1] === jm;
+    }).length;
+}
+    
+
     function renderMonthlyViewF(jy, jm) {
         var report = generateMonthlyReportF(jy, jm);
 
         document.getElementById("monthlySalesValueF").textContent = formatNumberF(report.total);
         document.getElementById("monthlyOrdersValueF").textContent = formatNumberF(report.orders);
         document.getElementById("monthlyInvoicesValueF").textContent = formatNumberF(report.invoices);
-        document.getElementById("monthlyNewCustomersValueF").textContent = formatNumberF(report.newCustomers);
+        document.getElementById("monthlyNewCustomersValueF").textContent =
+            formatNumberF(countNewCustomersF(jy, jm));        
         setChangeF("monthlySalesChangeF", report.changePercent, report.changeDirection);
 
         document.getElementById("adminMonthlyChartTotalF").textContent = formatNumberF(report.total);
@@ -394,6 +417,7 @@
         document.getElementById("yearlySalesValueF").textContent = formatNumberF(report.total);
         document.getElementById("yearlyOrdersValueF").textContent = formatNumberF(report.orders);
         document.getElementById("yearlyInvoicesValueF").textContent = formatNumberF(report.invoices);
+        
         setChangeF("yearlySalesChangeF", report.changePercent, report.changeDirection);
 
         document.getElementById("adminYearlyChartTotalF").textContent = formatNumberF(report.total);

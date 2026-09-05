@@ -78,8 +78,24 @@ def admin_manage_view(request):
 
 @user_passes_test(is_superuser, login_url="base:index")
 def report_view(request):
-    return render(request, "panel/admin-reports-f.html")
+    User = get_user_model()
 
+    customer_join_dates = [
+        dt.isoformat()
+        for dt in User.objects.filter(
+            is_superuser=False
+        ).values_list("date_joined", flat=True)
+    ]
+
+    context = {
+        "customer_join_dates": customer_join_dates,
+    }
+
+    return render(
+        request,
+        "panel/admin-reports-f.html",
+        context
+    )
 
 @user_passes_test(is_superuser, login_url="base:index")
 def orders_view(request):
