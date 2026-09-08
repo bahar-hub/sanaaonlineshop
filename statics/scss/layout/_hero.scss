@@ -65,7 +65,7 @@
     width: 100%;
     padding: $spacing-sm;
 
-    animation: heroScroll 48s linear infinite;
+    animation: heroScroll 26s linear infinite;
 }
 
 @keyframes heroScroll {
@@ -200,12 +200,20 @@
     }
 
     .hero__gallery {
-        max-width: 480px;
+        max-width: 640px;
         padding: $spacing-md;
+
+        animation-duration: 20s;
     }
 }
 
 @include respond-to(lg) {
+    .hero__gallery {
+        max-width: 820px;
+
+        animation-duration: 20s;
+    }
+
     .hero__bar {
         height: 76px;
         padding: 0 $spacing-2xl;
@@ -219,5 +227,13 @@
         height: 46px;
         padding: 0 $spacing-xl;
         font-size: 0.85rem;
+    }
+}
+
+@include respond-to(xl) {
+    .hero__gallery {
+        max-width: 980px;
+
+        animation-duration: 26s;
     }
 }

@@ -1,0 +1,579 @@
+// ============================================================
+// Admin — New Order Form + Invoices
+// Isolated with the "-f" naming convention, built only from
+// existing design tokens (admin-ui-f.scss / _variables.scss).
+// ============================================================
+
+
+// ----------------------------------------
+// Wide modal variant (the default .modal__panel max-width is
+// too narrow for a multi-item form or an invoice layout).
+// ----------------------------------------
+
+@include respond-to(md) {
+    .modal__panel--wide-f {
+        max-width: 640px;
+    }
+}
+
+
+// ----------------------------------------
+// Generic field styles reused by the new-order form
+// ----------------------------------------
+
+.admin-orders-f__new-order-field {
+    margin-bottom: $spacing-md;
+}
+
+.admin-orders-f__new-order-label {
+    display: block;
+
+    margin-bottom: $spacing-xs;
+
+    color: $color-text-muted;
+
+    font-family: $font-family-persian;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.admin-orders-f__new-order-input {
+    width: 100%;
+
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    background-color: $color-surface;
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.85rem;
+
+    transition: border-color $transition-fast;
+}
+
+.admin-orders-f__new-order-input::placeholder {
+    color: $color-text-muted;
+    font-size: 0.78rem;
+}
+
+.admin-orders-f__new-order-input:focus {
+    outline: none;
+    border-color: $color-primary;
+}
+
+.admin-orders-f__new-order-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-md;
+}
+
+.admin-select-f--block-f {
+    width: 100%;
+    background-position: left $spacing-sm center;
+}
+
+
+// ----------------------------------------
+// Items list — header + add button
+// ----------------------------------------
+
+.admin-order-items-f__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: $spacing-sm;
+}
+
+.admin-order-items-f__add-btn {
+    min-height: 34px;
+    padding: 6px $spacing-md;
+    font-size: 0.75rem;
+}
+
+.admin-order-items-f {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+
+    margin-bottom: $spacing-lg;
+}
+
+.admin-order-items-f__hint {
+    margin: -#{$spacing-sm} 0 $spacing-md;
+
+    color: $color-error;
+
+    font-family: $font-family-persian;
+    font-size: 0.78rem;
+}
+
+
+// ----------------------------------------
+// A single order item card
+// ----------------------------------------
+
+.admin-order-item-f {
+    position: relative;
+
+    padding: $spacing-md;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+
+    background-color: $color-input-bg;
+}
+
+.admin-order-item-f__remove {
+    @include button-reset;
+
+    position: absolute;
+    top: $spacing-sm;
+    left: $spacing-sm;
+    z-index: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 30px;
+    height: 30px;
+    border-radius: $radius-md;
+
+    background-color: $color-surface;
+    color: $color-error;
+    border: 1px solid $color-border;
+
+    transition:
+        background-color $transition-fast,
+        border-color $transition-fast;
+}
+
+.admin-order-item-f__remove svg {
+    width: 15px;
+    height: 15px;
+}
+
+.admin-order-item-f__remove:hover {
+    background-color: rgba(198, 40, 40, 0.08);
+    border-color: rgba(198, 40, 40, 0.35);
+}
+
+.admin-order-item-f__row {
+    display: flex;
+    gap: $spacing-md;
+}
+
+
+// Image upload dropzone
+
+.admin-order-item-f__upload {
+    position: relative;
+    flex-shrink: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    width: 84px;
+    height: 84px;
+
+    border: 1.5px dashed $color-border;
+    border-radius: $radius-md;
+
+    background-color: $color-surface;
+    color: $color-text-muted;
+
+    text-align: center;
+    cursor: pointer;
+
+    overflow: hidden;
+
+    transition: border-color $transition-fast;
+}
+
+.admin-order-item-f__upload:hover {
+    border-color: $color-primary;
+}
+
+.admin-order-item-f__upload-icon {
+    width: 22px;
+    height: 22px;
+}
+
+.admin-order-item-f__upload-label {
+    font-family: $font-family-persian;
+    font-size: 0.62rem;
+    line-height: 1.3;
+}
+
+.admin-order-item-f__preview {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+.admin-order-item-f__preview[hidden] {
+    display: none;
+}
+
+.admin-order-item-f__upload:has(.admin-order-item-f__preview:not([hidden]))
+    .admin-order-item-f__upload-icon,
+.admin-order-item-f__upload:has(.admin-order-item-f__preview:not([hidden]))
+    .admin-order-item-f__upload-label {
+    display: none;
+}
+
+
+// Fields next to the upload box
+
+.admin-order-item-f__fields {
+    flex: 1;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+}
+
+.admin-order-item-f__price-row {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: $spacing-sm;
+}
+
+.admin-order-item-f__cost {
+    border-style: dashed;
+}
+
+.admin-order-item-f__qty-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.admin-order-item-f__qty-label {
+    color: $color-text-muted;
+
+    font-family: $font-family-persian;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+
+// Quantity stepper
+
+.admin-qty-stepper-f {
+    display: flex;
+    align-items: stretch;
+
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    overflow: hidden;
+}
+
+.admin-qty-stepper-f__btn {
+    @include button-reset;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 32px;
+
+    background-color: $color-surface;
+    color: $color-text;
+
+    font-size: 1.1rem;
+    line-height: 1;
+
+    transition: background-color $transition-fast;
+}
+
+.admin-qty-stepper-f__btn:hover {
+    background-color: $color-input-bg;
+    color: $color-primary;
+}
+
+.admin-qty-stepper-f__input {
+    width: 42px;
+
+    border: 0;
+    border-inline: 1px solid $color-border;
+
+    background-color: $color-surface;
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.85rem;
+    text-align: center;
+
+    -moz-appearance: textfield;
+}
+
+.admin-qty-stepper-f__input::-webkit-outer-spin-button,
+.admin-qty-stepper-f__input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+// ----------------------------------------
+// Desktop: row layout for item fields
+// ----------------------------------------
+
+@include respond-to(sm) {
+    .admin-order-item-f__price-row {
+        grid-template-columns: 1fr 110px;
+    }
+}
+
+
+// ============================================================
+// Invoices — customer + admin, shared layout
+// ============================================================
+
+.admin-invoice-modal-f .modal__panel {
+    padding-top: $spacing-2xl;
+}
+
+.admin-invoice-f {
+    font-family: $font-family-persian;
+    color: $color-text;
+}
+
+.admin-invoice-f__brand {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: $spacing-lg;
+    padding-bottom: $spacing-md;
+
+    border-bottom: 2px solid $color-dark;
+}
+
+.admin-invoice-f__logo {
+    color: $color-primary;
+
+    font-family: $font-family-primary;
+    font-size: 1.6rem;
+    letter-spacing: 0.12em;
+}
+
+.admin-invoice-f__kind {
+    padding: 4px 12px;
+    border-radius: 999px;
+
+    background-color: $color-input-bg;
+    color: $color-text-muted;
+
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.admin-invoice-f__kind--admin-f {
+    background-color: rgba(166, 21, 121, 0.12);
+    color: $color-primary;
+}
+
+.admin-invoice-f__meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-sm $spacing-md;
+
+    margin-bottom: $spacing-lg;
+    padding: $spacing-md;
+    border-radius: $radius-md;
+
+    background-color: $color-input-bg;
+
+    font-size: 0.78rem;
+}
+
+.admin-invoice-f__meta-row dt {
+    color: $color-text-muted;
+    margin-bottom: 2px;
+}
+
+.admin-invoice-f__meta-row dd {
+    font-weight: 600;
+}
+
+
+// Items table
+
+.admin-invoice-f__table {
+    width: 100%;
+    margin-bottom: $spacing-lg;
+    border-collapse: collapse;
+}
+
+.admin-invoice-f__table th {
+    padding: $spacing-sm;
+    border-bottom: 1.5px solid $color-dark;
+
+    color: $color-text-muted;
+
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-align: right;
+}
+
+.admin-invoice-f__table td {
+    padding: $spacing-sm;
+    border-bottom: 1px solid $color-hairline;
+
+    font-size: 0.8rem;
+    vertical-align: middle;
+}
+
+.admin-invoice-f__item-cell {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+}
+
+.admin-invoice-f__item-img {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: $radius-sm;
+    object-fit: cover;
+    background-color: $color-input-bg;
+}
+
+.admin-invoice-f__table td[data-num] {
+    font-family: $font-family-primary;
+    white-space: nowrap;
+}
+
+
+// Summary
+
+.admin-invoice-f__summary {
+    margin-right: auto;
+    width: 100%;
+    max-width: 320px;
+
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+}
+
+.admin-invoice-f__summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    font-size: 0.8rem;
+    color: $color-text-muted;
+}
+
+.admin-invoice-f__summary-row span:last-child {
+    font-family: $font-family-primary;
+    color: $color-text;
+}
+
+.admin-invoice-f__summary-row--total-f {
+    margin-top: $spacing-xs;
+    padding-top: $spacing-sm;
+    border-top: 1.5px solid $color-dark;
+
+    font-size: 1rem;
+    font-weight: 700;
+    color: $color-text;
+}
+
+.admin-invoice-f__summary-row--total-f span:last-child {
+    color: $color-primary;
+}
+
+.admin-invoice-f__profit-f {
+    margin-top: $spacing-lg;
+    padding: $spacing-md;
+    border-radius: $radius-md;
+    border: 1.5px dashed $color-primary;
+
+    background-color: rgba(166, 21, 121, 0.05);
+}
+
+.admin-invoice-f__profit-f-title {
+    margin-bottom: $spacing-sm;
+
+    color: $color-primary;
+
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.admin-invoice-f__footer-note {
+    margin-top: $spacing-xl;
+    padding-top: $spacing-md;
+    border-top: 1px solid $color-hairline;
+
+    color: $color-text-muted;
+    font-size: 0.7rem;
+    text-align: center;
+}
+
+.admin-invoice-f__actions {
+    display: flex;
+    gap: $spacing-sm;
+    margin-top: $spacing-lg;
+    flex-wrap: wrap;
+}
+
+.admin-invoice-f__actions .admin-btn-f {
+    flex: 1;
+    min-width: 140px;
+}
+
+
+// ----------------------------------------
+// Print — only the invoice content itself, nothing else on
+// the page. Everything with .admin-invoice-f__no-print (close
+// buttons, action buttons) is hidden.
+// ----------------------------------------
+
+@media print {
+
+    body * {
+        visibility: hidden;
+    }
+
+    .admin-invoice-f,
+    .admin-invoice-f * {
+        visibility: visible;
+    }
+
+    .admin-invoice-f {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        margin: 0;
+        padding: $spacing-lg;
+    }
+
+    .admin-invoice-f__no-print,
+    .modal__backdrop {
+        display: none !important;
+    }
+
+    .modal,
+    .modal__panel {
+        position: static;
+        max-height: none;
+        overflow: visible;
+        box-shadow: none;
+        padding: 0;
+    }
+}

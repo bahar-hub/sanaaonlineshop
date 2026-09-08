@@ -839,7 +839,7 @@
         <div class="modal__backdrop"></div>
 
 
-        <div class="modal__panel">
+        <div class="modal__panel modal__panel--wide-f">
 
 
             <button
@@ -876,6 +876,7 @@
                 novalidate
             >
 
+                <!-- Customer -->
 
                 <div class="admin-orders-f__new-order-field">
 
@@ -888,98 +889,79 @@
 
                     <select
                         id="adminNewOrderCustomerF"
-                        class="admin-select-f"
+                        class="admin-select-f admin-select-f--block-f"
                     >
 
                         <option value="">
                             انتخاب مشتری
                         </option>
 
-                        <option value="سارا احمدی">
-                            سارا احمدی
-                        </option>
-
-                        <option value="نگار محمدی">
-                            نگار محمدی
-                        </option>
-
-                        <option value="کیانا ملکی">
-                            کیانا ملکی
-                        </option>
-
-                        <option value="مریم رضایی">
-                            مریم رضایی
-                        </option>
-
-                        <option value="الهام کریمی">
-                            الهام کریمی
-                        </option>
-
-                        <option value="بهاره اسدی">
-                            بهاره اسدی
-                        </option>
+                        <!-- Populated from mockUsersForOrderF in admin-orders-f.js
+                             — swap for a real customer list from the backend
+                             when it's ready. -->
 
                     </select>
 
                 </div>
 
 
-                <div class="admin-orders-f__new-order-field">
+                <!-- Items -->
 
-                    <label
-                        for="adminNewOrderProductF"
-                        class="admin-orders-f__new-order-label"
-                    >
-                        محصول
-                    </label>
+                <div class="admin-order-items-f__header">
 
-                    <input
-                        type="text"
-                        id="adminNewOrderProductF"
-                        class="admin-search-f__input admin-orders-f__new-order-input"
-                        placeholder="مثلاً کیف دستی چرم"
+                    <span class="admin-orders-f__new-order-label">
+                        اقلام سفارش
+                    </span>
+
+                    <button
+                        type="button"
+                        class="admin-btn-f admin-btn-f--secondary-f admin-order-items-f__add-btn"
+                        id="adminAddOrderItemF"
                     >
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            aria-hidden="true"
+                        >
+                            <path
+                                d="M12 5v14M5 12h14"
+                                stroke-linecap="round"
+                            />
+                        </svg>
+
+                        افزودن آیتم
+                    </button>
 
                 </div>
 
+                <div
+                    class="admin-order-items-f"
+                    id="adminOrderItemsF"
+                ></div>
+
+
+                <!-- Fees -->
 
                 <div class="admin-orders-f__new-order-grid">
 
                     <div class="admin-orders-f__new-order-field">
 
                         <label
-                            for="adminNewOrderQuantityF"
+                            for="adminNewOrderShippingF"
                             class="admin-orders-f__new-order-label"
                         >
-                            تعداد
+                            هزینه باربری (ریال)
                         </label>
 
                         <input
                             type="number"
-                            id="adminNewOrderQuantityF"
-                            class="admin-orders-f__new-order-input"
-                            min="1"
-                            value="1"
-                        >
-
-                    </div>
-
-
-                    <div class="admin-orders-f__new-order-field">
-
-                        <label
-                            for="adminNewOrderPriceF"
-                            class="admin-orders-f__new-order-label"
-                        >
-                            قیمت واحد
-                        </label>
-
-                        <input
-                            type="number"
-                            id="adminNewOrderPriceF"
+                            id="adminNewOrderShippingF"
                             class="admin-orders-f__new-order-input"
                             min="0"
-                            placeholder="مثلاً 50"
+                            value="0"
+                            inputmode="numeric"
                         >
 
                     </div>
@@ -988,30 +970,20 @@
                     <div class="admin-orders-f__new-order-field">
 
                         <label
-                            for="adminNewOrderCurrencyF"
+                            for="adminNewOrderServiceF"
                             class="admin-orders-f__new-order-label"
                         >
-                            ارز
+                            هزینه خدمات (ریال)
                         </label>
 
-                        <select
-                            id="adminNewOrderCurrencyF"
-                            class="admin-select-f"
+                        <input
+                            type="number"
+                            id="adminNewOrderServiceF"
+                            class="admin-orders-f__new-order-input"
+                            min="0"
+                            value="0"
+                            inputmode="numeric"
                         >
-
-                            <option value="USD">
-                                دلار
-                            </option>
-
-                            <option value="TRY">
-                                لیر
-                            </option>
-
-                            <option value="EUR">
-                                یورو
-                            </option>
-
-                        </select>
 
                     </div>
 
@@ -1029,7 +1001,7 @@
 
                     <select
                         id="adminNewOrderPaymentF"
-                        class="admin-select-f"
+                        class="admin-select-f admin-select-f--block-f"
                     >
 
                         <option value="pending">
@@ -1049,6 +1021,13 @@
                 </div>
 
 
+                <p
+                    class="admin-order-items-f__hint"
+                    id="adminNewOrderErrorF"
+                    hidden
+                ></p>
+
+
                 <div class="admin-orders-f__sheet-footer">
 
                     <button
@@ -1063,8 +1042,9 @@
                     <button
                         type="submit"
                         class="admin-btn-f"
+                        id="adminSubmitInvoiceF"
                     >
-                        ثبت سفارش
+                        ثبت فاکتور
                     </button>
 
                 </div>
@@ -1074,6 +1054,302 @@
         </div>
 
     </div>
+
+
+    <!-- =========================================================
+         INVOICE TEMPLATE (hidden — cloned per line item by JS)
+    ========================================================== -->
+
+    <template id="adminOrderItemTemplateF">
+
+        <div class="admin-order-item-f">
+
+            <button
+                type="button"
+                class="admin-order-item-f__remove"
+                aria-label="حذف آیتم"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M4 7h16M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7m2 0v12.5A1.5 1.5 0 0 1 15.5 21h-7A1.5 1.5 0 0 1 7 19.5V7h10Z"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    />
+                    <path
+                        d="M10 11v6M14 11v6"
+                        stroke-linecap="round"
+                    />
+                </svg>
+            </button>
+
+
+            <div class="admin-order-item-f__row">
+
+                <label class="admin-order-item-f__upload">
+
+                    <input
+                        type="file"
+                        accept="image/*"
+                        class="admin-order-item-f__file-input"
+                        hidden
+                    >
+
+                    <img
+                        class="admin-order-item-f__preview"
+                        alt=""
+                        hidden
+                    >
+
+                    <svg
+                        class="admin-order-item-f__upload-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        aria-hidden="true"
+                    >
+                        <rect
+                            x="3.5"
+                            y="5.5"
+                            width="17"
+                            height="14"
+                            rx="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                        <circle cx="9" cy="10.5" r="1.5" />
+                        <path
+                            d="m5 17 4.5-4.5a2 2 0 0 1 2.8 0L17 17"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+
+                    <span class="admin-order-item-f__upload-label">
+                        عکس محصول
+                    </span>
+
+                </label>
+
+
+                <div class="admin-order-item-f__fields">
+
+                    <input
+                        type="text"
+                        class="admin-orders-f__new-order-input admin-order-item-f__name"
+                        placeholder="اسم محصول"
+                    >
+
+                    <div class="admin-order-item-f__price-row">
+
+                        <input
+                            type="number"
+                            class="admin-orders-f__new-order-input admin-order-item-f__price"
+                            min="0"
+                            step="0.01"
+                            placeholder="قیمت واحد"
+                            inputmode="decimal"
+                        >
+
+                        <select class="admin-select-f admin-order-item-f__currency">
+
+                            <option value="USD">دلار</option>
+                            <option value="TRY">لیر</option>
+                            <option value="GBP">پوند</option>
+                            <option value="EUR">یورو</option>
+                            <option value="AED">درهم امارات</option>
+
+                        </select>
+
+                    </div>
+
+
+                    <input
+                        type="number"
+                        class="admin-orders-f__new-order-input admin-order-item-f__cost"
+                        min="0"
+                        step="0.01"
+                        placeholder="قیمت خرید ادمین (برای محاسبه سود — روی فاکتور مشتری نمایش داده نمی‌شود)"
+                        inputmode="decimal"
+                    >
+
+
+                    <div class="admin-order-item-f__qty-row">
+
+                        <span class="admin-order-item-f__qty-label">
+                            تعداد
+                        </span>
+
+                        <div class="admin-qty-stepper-f">
+
+                            <button
+                                type="button"
+                                class="admin-qty-stepper-f__btn"
+                                data-qty-action="decrease"
+                                aria-label="کاهش تعداد"
+                            >
+                                −
+                            </button>
+
+                            <input
+                                type="number"
+                                class="admin-qty-stepper-f__input admin-order-item-f__qty"
+                                min="1"
+                                value="1"
+                                inputmode="numeric"
+                            >
+
+                            <button
+                                type="button"
+                                class="admin-qty-stepper-f__btn"
+                                data-qty-action="increase"
+                                aria-label="افزایش تعداد"
+                            >
+                                +
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </template>
+
+
+    <!-- =========================================================
+         CUSTOMER INVOICE MODAL
+    ========================================================== -->
+
+    <div
+        class="modal admin-invoice-modal-f"
+        id="adminCustomerInvoiceModalF"
+        hidden
+    >
+
+        <div class="modal__backdrop"></div>
+
+        <div class="modal__panel modal__panel--wide-f">
+
+            <button
+                type="button"
+                class="modal__close admin-invoice-f__no-print"
+                data-invoice-close="customer"
+                aria-label="بستن"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+
+            <div
+                class="admin-invoice-f"
+                id="adminCustomerInvoiceF"
+            ></div>
+
+            <div class="admin-invoice-f__actions admin-invoice-f__no-print">
+
+                <button
+                    type="button"
+                    class="admin-btn-f admin-btn-f--secondary-f"
+                    data-invoice-print="adminCustomerInvoiceF"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path d="M6 9V4h12v5M6 18h12v-5H6v5ZM6 13H4.5A1.5 1.5 0 0 1 3 11.5v-3A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v3a1.5 1.5 0 0 1-1.5 1.5H18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    دانلود / چاپ PDF
+                </button>
+
+                <button
+                    type="button"
+                    class="admin-btn-f"
+                    id="adminGoToAdminInvoiceF"
+                >
+                    مشاهده فاکتور ادمین
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         ADMIN INVOICE MODAL
+    ========================================================== -->
+
+    <div
+        class="modal admin-invoice-modal-f"
+        id="adminInternalInvoiceModalF"
+        hidden
+    >
+
+        <div class="modal__backdrop"></div>
+
+        <div class="modal__panel modal__panel--wide-f">
+
+            <button
+                type="button"
+                class="modal__close admin-invoice-f__no-print"
+                data-invoice-close="admin"
+                aria-label="بستن"
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                    <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+
+            <div
+                class="admin-invoice-f"
+                id="adminInternalInvoiceF"
+            ></div>
+
+            <div class="admin-invoice-f__actions admin-invoice-f__no-print">
+
+                <button
+                    type="button"
+                    class="admin-btn-f admin-btn-f--secondary-f"
+                    data-invoice-print="adminInternalInvoiceF"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path d="M6 9V4h12v5M6 18h12v-5H6v5ZM6 13H4.5A1.5 1.5 0 0 1 3 11.5v-3A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v3a1.5 1.5 0 0 1-1.5 1.5H18" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    دانلود / چاپ PDF
+                </button>
+
+                <button
+                    type="button"
+                    class="admin-btn-f admin-btn-f--secondary-f"
+                    id="adminBackToCustomerInvoiceF"
+                >
+                    فاکتور مشتری
+                </button>
+
+                <button
+                    type="button"
+                    class="admin-btn-f"
+                    id="adminFinishInvoiceF"
+                >
+                    پایان
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
 
 
     <!-- =========================================================

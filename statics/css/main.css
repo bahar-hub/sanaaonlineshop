@@ -1,27 +1,27 @@
 @font-face {
   font-family: "Belleza";
-  src: url("../fonts/Belleza-Regular.woff2") format("woff2");
+  src: url("../../fonts/Belleza-Regular.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: "Sanaa Persian";
-  src: url("../fonts/PersianFont-Regular.woff2") format("woff2");
+  src: url("../../fonts/PersianFont-Regular.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: "Sanaa Persian";
-  src: url("../fonts/PersianFont-Medium.woff2") format("woff2");
+  src: url("../../fonts/PersianFont-Medium.woff2") format("woff2");
   font-style: normal;
   font-weight: 500;
   font-display: swap;
 }
 @font-face {
   font-family: "Sanaa Persian";
-  src: url("../fonts/PersianFont-Bold.woff2") format("woff2");
+  src: url("../../fonts/PersianFont-Bold.woff2") format("woff2");
   font-style: normal;
   font-weight: 700;
   font-display: swap;
@@ -1021,7 +1021,7 @@ body {
   gap: 8px;
   width: 100%;
   padding: 8px;
-  animation: heroScroll 48s linear infinite;
+  animation: heroScroll 26s linear infinite;
 }
 
 @keyframes heroScroll {
@@ -1043,7 +1043,6 @@ body {
   width: 100%;
   aspect-ratio: 4/5;
   overflow: hidden;
-  background-color: #191715;
 }
 
 .hero__item-img {
@@ -1057,7 +1056,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(25, 23, 21, 0.55) 0%, rgba(25, 23, 21, 0) 55%);
+  background: linear-gradient(to bottom, rgba(25, 23, 21, 0.55) 0%, rgba(25, 23, 21, 0) 55%);
   pointer-events: none;
 }
 
@@ -1111,11 +1110,16 @@ body {
     justify-content: center;
   }
   .hero__gallery {
-    max-width: 480px;
+    max-width: 640px;
     padding: 16px;
+    animation-duration: 20s;
   }
 }
 @media (min-width: 992px) {
+  .hero__gallery {
+    max-width: 820px;
+    animation-duration: 20s;
+  }
   .hero__bar {
     height: 76px;
     padding: 0 48px;
@@ -1127,6 +1131,12 @@ body {
     height: 46px;
     padding: 0 32px;
     font-size: 0.85rem;
+  }
+}
+@media (min-width: 1200px) {
+  .hero__gallery {
+    max-width: 980px;
+    animation-duration: 26s;
   }
 }
 .auth-page {
@@ -1978,6 +1988,465 @@ scss .admin-layout-f[hidden] {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+@media (min-width: 768px) {
+  .modal__panel--wide-f {
+    max-width: 640px;
+  }
+}
+.admin-orders-f__new-order-field {
+  margin-bottom: 16px;
+}
+
+.admin-orders-f__new-order-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #8A8178;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-orders-f__new-order-input {
+  width: 100%;
+  padding: 8px 16px;
+  border: 1px solid #E3DCD2;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  color: #191715;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.85rem;
+  transition: border-color 180ms ease;
+}
+
+.admin-orders-f__new-order-input::placeholder {
+  color: #8A8178;
+  font-size: 0.78rem;
+}
+
+.admin-orders-f__new-order-input:focus {
+  outline: none;
+  border-color: #A61579;
+}
+
+.admin-orders-f__new-order-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.admin-select-f--block-f {
+  width: 100%;
+  background-position: left 8px center;
+}
+
+.admin-order-items-f__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.admin-order-items-f__add-btn {
+  min-height: 34px;
+  padding: 6px 16px;
+  font-size: 0.75rem;
+}
+
+.admin-order-items-f {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-order-items-f__hint {
+  margin: -8px 0 16px;
+  color: #C62828;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.78rem;
+}
+
+.admin-order-item-f {
+  position: relative;
+  padding: 16px;
+  border: 1px solid #E3DCD2;
+  border-radius: 12px;
+  background-color: #FFFFFF;
+}
+
+.admin-order-item-f__remove {
+  border: 0;
+  outline: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  color: #C62828;
+  border: 1px solid #E3DCD2;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.admin-order-item-f__remove svg {
+  width: 15px;
+  height: 15px;
+}
+
+.admin-order-item-f__remove:hover {
+  background-color: rgba(198, 40, 40, 0.08);
+  border-color: rgba(198, 40, 40, 0.35);
+}
+
+.admin-order-item-f__row {
+  display: flex;
+  gap: 16px;
+}
+
+.admin-order-item-f__upload {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 84px;
+  height: 84px;
+  border: 1.5px dashed #E3DCD2;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  color: #8A8178;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 180ms ease;
+}
+
+.admin-order-item-f__upload:hover {
+  border-color: #A61579;
+}
+
+.admin-order-item-f__upload-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.admin-order-item-f__upload-label {
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.62rem;
+  line-height: 1.3;
+}
+
+.admin-order-item-f__preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-order-item-f__preview[hidden] {
+  display: none;
+}
+
+.admin-order-item-f__upload:has(.admin-order-item-f__preview:not([hidden])) .admin-order-item-f__upload-icon,
+.admin-order-item-f__upload:has(.admin-order-item-f__preview:not([hidden])) .admin-order-item-f__upload-label {
+  display: none;
+}
+
+.admin-order-item-f__fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-order-item-f__price-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 8px;
+}
+
+.admin-order-item-f__cost {
+  border-style: dashed;
+}
+
+.admin-order-item-f__qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-order-item-f__qty-label {
+  color: #8A8178;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-qty-stepper-f {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid #E3DCD2;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.admin-qty-stepper-f__btn {
+  border: 0;
+  outline: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  background-color: #FFFFFF;
+  color: #191715;
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: background-color 180ms ease;
+}
+
+.admin-qty-stepper-f__btn:hover {
+  background-color: #FFFFFF;
+  color: #A61579;
+}
+
+.admin-qty-stepper-f__input {
+  width: 42px;
+  border: 0;
+  border-inline: 1px solid #E3DCD2;
+  background-color: #FFFFFF;
+  color: #191715;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.85rem;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.admin-qty-stepper-f__input::-webkit-outer-spin-button,
+.admin-qty-stepper-f__input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@media (min-width: 576px) {
+  .admin-order-item-f__price-row {
+    grid-template-columns: 1fr 110px;
+  }
+}
+.admin-invoice-modal-f .modal__panel {
+  padding-top: 48px;
+}
+
+.admin-invoice-f {
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  color: #191715;
+}
+
+.admin-invoice-f__brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #191715;
+}
+
+.admin-invoice-f__logo {
+  color: #A61579;
+  font-family: "Belleza", Arial, sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.12em;
+}
+
+.admin-invoice-f__kind {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background-color: #FFFFFF;
+  color: #8A8178;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.admin-invoice-f__kind--admin-f {
+  background-color: rgba(166, 21, 121, 0.12);
+  color: #A61579;
+}
+
+.admin-invoice-f__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  font-size: 0.78rem;
+}
+
+.admin-invoice-f__meta-row dt {
+  color: #8A8178;
+  margin-bottom: 2px;
+}
+
+.admin-invoice-f__meta-row dd {
+  font-weight: 600;
+}
+
+.admin-invoice-f__table {
+  width: 100%;
+  margin-bottom: 24px;
+  border-collapse: collapse;
+}
+
+.admin-invoice-f__table th {
+  padding: 8px;
+  border-bottom: 1.5px solid #191715;
+  color: #8A8178;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.admin-invoice-f__table td {
+  padding: 8px;
+  border-bottom: 1px solid #DCD4C8;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+.admin-invoice-f__item-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-invoice-f__item-img {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  object-fit: cover;
+  background-color: #FFFFFF;
+}
+
+.admin-invoice-f__table td[data-num] {
+  font-family: "Belleza", Arial, sans-serif;
+  white-space: nowrap;
+}
+
+.admin-invoice-f__summary {
+  margin-right: auto;
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-invoice-f__summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #8A8178;
+}
+
+.admin-invoice-f__summary-row span:last-child {
+  font-family: "Belleza", Arial, sans-serif;
+  color: #191715;
+}
+
+.admin-invoice-f__summary-row--total-f {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1.5px solid #191715;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #191715;
+}
+
+.admin-invoice-f__summary-row--total-f span:last-child {
+  color: #A61579;
+}
+
+.admin-invoice-f__profit-f {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1.5px dashed #A61579;
+  background-color: rgba(166, 21, 121, 0.05);
+}
+
+.admin-invoice-f__profit-f-title {
+  margin-bottom: 8px;
+  color: #A61579;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-invoice-f__footer-note {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #DCD4C8;
+  color: #8A8178;
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.admin-invoice-f__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.admin-invoice-f__actions .admin-btn-f {
+  flex: 1;
+  min-width: 140px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .admin-invoice-f,
+  .admin-invoice-f * {
+    visibility: visible;
+  }
+  .admin-invoice-f {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+  }
+  .admin-invoice-f__no-print,
+  .modal__backdrop {
+    display: none !important;
+  }
+  .modal,
+  .modal__panel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+    padding: 0;
   }
 }
 .admin-reports-f {

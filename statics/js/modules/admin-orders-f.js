@@ -29,6 +29,16 @@
         EUR: {
             label: "یورو",
             rate: 655000
+        },
+
+        GBP: {
+            label: "پوند",
+            rate: 765000
+        },
+
+        AED: {
+            label: "درهم امارات",
+            rate: 165000
         }
 
     };
@@ -535,15 +545,36 @@
             return product.unitPriceTry;
         }
 
+        if (typeof product.unitPriceGbp === "number") {
+            return product.unitPriceGbp;
+        }
+
+        if (typeof product.unitPriceAed === "number") {
+            return product.unitPriceAed;
+        }
+
         return 0;
+
+    }
+
+
+    // Admin's own cost for the item (what Sanaa actually paid) —
+    // used only for the internal profit calculation, never shown
+    // on the customer invoice. Defaults to 0 (full price counted
+    // as margin) when not entered.
+    function unitCostF(product) {
+
+        return typeof product.costPrice === "number"
+            ? product.costPrice
+            : 0;
 
     }
 
 
     function orderTotalsF(order) {
 
-        var rate = EXCHANGE_RATES_F[order.currency].rate;
-
+        // Per-item currency, falling back to the order-level
+        // currency for older/simple single-currency orders.
         var baseAmount = order.products.reduce(function (sum, product) {
 
             return sum + unitPriceF(product) * product.qty;
@@ -551,7 +582,17 @@
         }, 0);
 
 
-        var productsRial = baseAmount * rate;
+        var productsRial = order.products.reduce(function (sum, product) {
+
+            var currency = product.currency || order.currency;
+            var rate = EXCHANGE_RATES_F[currency]
+                ? EXCHANGE_RATES_F[currency].rate
+                : 0;
+
+            return sum + unitPriceF(product) * product.qty * rate;
+
+        }, 0);
+
 
         var totalRial =
             productsRial -
@@ -564,7 +605,9 @@
             baseAmount: baseAmount,
             productsRial: productsRial,
             totalRial: totalRial,
-            rate: rate
+            rate: EXCHANGE_RATES_F[order.currency]
+                ? EXCHANGE_RATES_F[order.currency].rate
+                : 0
 
         };
 
@@ -2803,6 +2846,809 @@
      * NEW ORDER
      * ============================================================ */
 
+    // Mock user list for the customer dropdown. The backend will
+    // eventually inject the real list (same pattern already used
+    // on the Customers page via window.adminCustomersData) — this
+    // is only a stand-in so the form is usable/demoable now.
+    var mockUsersForOrderF = [
+        { id: "u1", name: "سارا احمدی" },
+        { id: "u2", name: "نگار محمدی" },
+        { id: "u3", name: "کیانا ملکی" },
+        { id: "u4", name: "مریم رضایی" },
+        { id: "u5", name: "الهام کریمی" },
+        { id: "u6", name: "بهاره اسدی" }
+    ];
+
+
+    // Maps a currency code to the product field name used
+    // elsewhere in this file (unitPriceUsd, unitPriceEur, ...).
+    var CURRENCY_FIELD_MAP_F = {
+        USD: "unitPriceUsd",
+        EUR: "unitPriceEur",
+        TRY: "unitPriceTry",
+        GBP: "unitPriceGbp",
+        AED: "unitPriceAed"
+    };
+
+
+    function populateOrderCustomersF() {
+
+        var select =
+            document.getElementById(
+                "adminNewOrderCustomerF"
+            );
+
+        if (!select) {
+            return;
+        }
+
+        mockUsersForOrderF.forEach(function (user) {
+
+            var option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value = user.name;
+            option.textContent = user.name;
+
+            select.appendChild(option);
+
+        });
+
+    }
+
+
+    /* ----------------------------------------------------------
+     * Item rows (image upload, price+currency, qty stepper,
+     * remove) — cloned from <template id="adminOrderItemTemplateF">
+     * ---------------------------------------------------------- */
+
+    function createOrderItemRowF() {
+
+        var template =
+            document.getElementById(
+                "adminOrderItemTemplateF"
+            );
+
+        if (!template) {
+            return null;
+        }
+
+        var row =
+            template.content.firstElementChild.cloneNode(true);
+
+
+        // Remove item
+
+        var removeBtn =
+            row.querySelector(
+                ".admin-order-item-f__remove"
+            );
+
+        removeBtn.addEventListener(
+            "click",
+            function () {
+                row.remove();
+            }
+        );
+
+
+        // Image upload
+
+        var fileInput =
+            row.querySelector(
+                ".admin-order-item-f__file-input"
+            );
+
+        var preview =
+            row.querySelector(
+                ".admin-order-item-f__preview"
+            );
+
+        fileInput.addEventListener(
+            "change",
+            function () {
+
+                var file = fileInput.files[0];
+
+                if (!file) {
+                    return;
+                }
+
+                var reader = new FileReader();
+
+                reader.onload = function () {
+
+                    preview.src = reader.result;
+                    preview.hidden = false;
+
+                };
+
+                reader.readAsDataURL(file);
+
+            }
+        );
+
+
+        // Quantity stepper
+
+        var qtyInput =
+            row.querySelector(
+                ".admin-order-item-f__qty"
+            );
+
+        row.querySelectorAll(
+            "[data-qty-action]"
+        ).forEach(function (btn) {
+
+            btn.addEventListener(
+                "click",
+                function () {
+
+                    var current =
+                        Number(qtyInput.value) || 1;
+
+                    var next =
+                        btn.dataset.qtyAction === "increase"
+                            ? current + 1
+                            : current - 1;
+
+                    qtyInput.value =
+                        Math.max(1, next);
+
+                }
+            );
+
+        });
+
+
+        return row;
+
+    }
+
+
+    function resetOrderItemsF() {
+
+        var container =
+            document.getElementById(
+                "adminOrderItemsF"
+            );
+
+        if (!container) {
+            return;
+        }
+
+        container.innerHTML = "";
+
+        var firstRow = createOrderItemRowF();
+
+        if (firstRow) {
+            container.appendChild(firstRow);
+        }
+
+    }
+
+
+    function initOrderItemsF() {
+
+        var addBtn =
+            document.getElementById(
+                "adminAddOrderItemF"
+            );
+
+        var container =
+            document.getElementById(
+                "adminOrderItemsF"
+            );
+
+        if (!addBtn || !container) {
+            return;
+        }
+
+        addBtn.addEventListener(
+            "click",
+            function () {
+
+                var row = createOrderItemRowF();
+
+                if (row) {
+                    container.appendChild(row);
+                }
+
+            }
+        );
+
+    }
+
+
+    // Reads + validates every item row. Returns { items, error }
+    // — items is null when validation fails, with error set to a
+    // user-facing message.
+    function readOrderItemsF() {
+
+        var container =
+            document.getElementById(
+                "adminOrderItemsF"
+            );
+
+        if (!container) {
+            return { items: null, error: "خطای داخلی فرم." };
+        }
+
+        var rows =
+            container.querySelectorAll(
+                ".admin-order-item-f"
+            );
+
+        if (!rows.length) {
+            return {
+                items: null,
+                error: "حداقل یک آیتم به سفارش اضافه کنید."
+            };
+        }
+
+        var items = [];
+        var error = null;
+
+        rows.forEach(function (row) {
+
+            if (error) {
+                return;
+            }
+
+            var name =
+                row.querySelector(
+                    ".admin-order-item-f__name"
+                ).value.trim();
+
+            var price =
+                Number(
+                    row.querySelector(
+                        ".admin-order-item-f__price"
+                    ).value
+                );
+
+            var currency =
+                row.querySelector(
+                    ".admin-order-item-f__currency"
+                ).value;
+
+            var cost =
+                Number(
+                    row.querySelector(
+                        ".admin-order-item-f__cost"
+                    ).value
+                ) || 0;
+
+            var qty =
+                Number(
+                    row.querySelector(
+                        ".admin-order-item-f__qty"
+                    ).value
+                );
+
+            var preview =
+                row.querySelector(
+                    ".admin-order-item-f__preview"
+                );
+
+            var image =
+                !preview.hidden ? preview.src : "";
+
+
+            if (!name || !price || price <= 0 || !qty || qty < 1) {
+
+                error =
+                    "برای هر آیتم، نام و قیمت معتبر و حداقل ۱ عدد تعداد وارد کنید.";
+
+                return;
+
+            }
+
+
+            items.push({
+                name: name,
+                price: price,
+                currency: currency,
+                cost: cost,
+                qty: qty,
+                image: image
+            });
+
+        });
+
+        return { items: error ? null : items, error: error };
+
+    }
+
+
+    /* ----------------------------------------------------------
+     * Exchange rate "fetch"
+     *
+     * NOTE for backend integration: this is a MOCK stand-in. It
+     * simulates an API round-trip and resolves with the same
+     * static EXCHANGE_RATES_F table already used across this
+     * file. Replace the body of this function with a real fetch()
+     * to the live-rate endpoint — keep the same resolved shape
+     * ({ USD: { label, rate }, ... }) so nothing else has to
+     * change.
+     * ---------------------------------------------------------- */
+
+    function fetchExchangeRatesF() {
+
+        return new Promise(function (resolve) {
+
+            setTimeout(function () {
+                resolve(EXCHANGE_RATES_F);
+            }, 700);
+
+        });
+
+    }
+
+
+    /* ----------------------------------------------------------
+     * Invoice calculation
+     * ---------------------------------------------------------- */
+
+    function buildInvoiceCalcF(items, rates, shippingRial, serviceRial) {
+
+        // Per-currency subtotal in that currency's own units —
+        // covers orders that mix currencies across items.
+        var byCurrency = {};
+
+        var itemsRial = 0;
+        var profitRial = 0;
+
+        var lines = items.map(function (item) {
+
+            var rate =
+                rates[item.currency]
+                    ? rates[item.currency].rate
+                    : 0;
+
+            var lineForeign = item.price * item.qty;
+            var lineRial = lineForeign * rate;
+            var lineProfitRial =
+                (item.price - item.cost) * item.qty * rate;
+
+            itemsRial += lineRial;
+            profitRial += lineProfitRial;
+
+            byCurrency[item.currency] =
+                (byCurrency[item.currency] || 0) + lineForeign;
+
+            return {
+                name: item.name,
+                image: item.image,
+                qty: item.qty,
+                currency: item.currency,
+                price: item.price,
+                lineForeign: lineForeign,
+                lineRial: lineRial,
+                rate: rate
+            };
+
+        });
+
+        var grandTotalRial =
+            itemsRial + shippingRial + serviceRial;
+
+        return {
+            lines: lines,
+            byCurrency: byCurrency,
+            itemsRial: itemsRial,
+            shippingRial: shippingRial,
+            serviceRial: serviceRial,
+            grandTotalRial: grandTotalRial,
+            profitRial: profitRial
+        };
+
+    }
+
+
+    /* ----------------------------------------------------------
+     * Invoice rendering — one shared layout, two content sets
+     * (the admin version adds the profit block).
+     * ---------------------------------------------------------- */
+
+    function renderInvoiceHtmlF(calc, meta, isAdminF) {
+
+        var currencyRows = Object.keys(calc.byCurrency).map(
+            function (code) {
+
+                var label =
+                    EXCHANGE_RATES_F[code]
+                        ? EXCHANGE_RATES_F[code].label
+                        : code;
+
+                var rate =
+                    EXCHANGE_RATES_F[code]
+                        ? EXCHANGE_RATES_F[code].rate
+                        : 0;
+
+                return (
+                    '<div class="admin-invoice-f__summary-row">' +
+                    "<span>جمع کل (" + label + ") — نرخ روز: " +
+                    formatNumberF(rate) + " ریال</span>" +
+                    "<span>" +
+                    calc.byCurrency[code].toLocaleString("en-US") +
+                    " " + code + "</span>" +
+                    "</div>"
+                );
+
+            }
+        ).join("");
+
+
+        var itemRows = calc.lines.map(function (line) {
+
+            return (
+                "<tr>" +
+                '<td><div class="admin-invoice-f__item-cell">' +
+                (line.image
+                    ? '<img class="admin-invoice-f__item-img" src="' + line.image + '" alt="">'
+                    : '<div class="admin-invoice-f__item-img"></div>') +
+                "<span>" + line.name + "</span>" +
+                "</div></td>" +
+                "<td data-num>" + line.price.toLocaleString("en-US") + " " + line.currency + "</td>" +
+                "<td data-num>" + line.qty.toLocaleString("fa-IR") + "</td>" +
+                "<td data-num>" + line.lineForeign.toLocaleString("en-US") + " " + line.currency + "</td>" +
+                "<td data-num>" + formatNumberF(line.lineRial) + " ریال</td>" +
+                "</tr>"
+            );
+
+        }).join("");
+
+
+        var profitBlock = "";
+
+        if (isAdminF) {
+
+            profitBlock =
+                '<div class="admin-invoice-f__profit-f">' +
+                '<p class="admin-invoice-f__profit-f-title">سود ادمین</p>' +
+                '<div class="admin-invoice-f__summary-row">' +
+                "<span>سود این سفارش (قیمت فروش − قیمت خرید)</span>" +
+                "<span>" + formatNumberF(calc.profitRial) + " ریال</span>" +
+                "</div>" +
+                "</div>";
+
+        }
+
+
+        return (
+            '<div class="admin-invoice-f__brand">' +
+            '<span class="admin-invoice-f__logo" dir="ltr">SANAA</span>' +
+            '<span class="admin-invoice-f__kind' +
+            (isAdminF ? " admin-invoice-f__kind--admin-f" : "") + '">' +
+            (isAdminF ? "فاکتور داخلی (ادمین)" : "فاکتور مشتری") +
+            "</span>" +
+            "</div>" +
+
+            '<dl class="admin-invoice-f__meta">' +
+            '<div class="admin-invoice-f__meta-row"><dt>شماره سفارش</dt><dd>' + meta.orderNumber + "</dd></div>" +
+            '<div class="admin-invoice-f__meta-row"><dt>تاریخ صدور</dt><dd>' + meta.date + "</dd></div>" +
+            '<div class="admin-invoice-f__meta-row"><dt>مشتری</dt><dd>' + meta.customerName + "</dd></div>" +
+            '<div class="admin-invoice-f__meta-row"><dt>وضعیت پرداخت</dt><dd>' + meta.paymentLabel + "</dd></div>" +
+            "</dl>" +
+
+            '<table class="admin-invoice-f__table">' +
+            "<thead><tr>" +
+            "<th>محصول</th><th>قیمت واحد</th><th>تعداد</th><th>جمع (ارز اصلی)</th><th>جمع (ریال)</th>" +
+            "</tr></thead>" +
+            "<tbody>" + itemRows + "</tbody>" +
+            "</table>" +
+
+            '<div class="admin-invoice-f__summary">' +
+            currencyRows +
+            '<div class="admin-invoice-f__summary-row">' +
+            "<span>هزینه خدمات</span><span>" + formatNumberF(calc.serviceRial) + " ریال</span>" +
+            "</div>" +
+            '<div class="admin-invoice-f__summary-row">' +
+            "<span>هزینه باربری</span><span>" + formatNumberF(calc.shippingRial) + " ریال</span>" +
+            "</div>" +
+            '<div class="admin-invoice-f__summary-row admin-invoice-f__summary-row--total-f">' +
+            "<span>مجموع کل</span><span>" + formatNumberF(calc.grandTotalRial) + " ریال</span>" +
+            "</div>" +
+            "</div>" +
+
+            profitBlock +
+
+            '<p class="admin-invoice-f__footer-note">' +
+            "این فاکتور بر اساس نرخ ارز لحظه‌ی ثبت سفارش صادر شده است — Sanaa Online Shop" +
+            "</p>"
+        );
+
+    }
+
+
+    /* ----------------------------------------------------------
+     * Invoice modals — open/close/navigate/print
+     * ---------------------------------------------------------- */
+
+    function openInvoiceModalF(id) {
+
+        var modal = document.getElementById(id);
+
+        if (modal) {
+            modal.hidden = false;
+        }
+
+    }
+
+
+    function closeInvoiceModalF(id) {
+
+        var modal = document.getElementById(id);
+
+        if (modal) {
+            modal.hidden = true;
+        }
+
+    }
+
+
+    /* ----------------------------------------------------------
+     * Printing — instead of hiding the rest of the admin page
+     * with CSS (fragile across this page's nested layout/scroll
+     * containers and produced blank PDFs), open the invoice
+     * markup alone in a fresh window with just the site
+     * stylesheet, then print that. Much more reliable.
+     * ---------------------------------------------------------- */
+
+    function printInvoiceF(containerId) {
+
+        var content =
+            document.getElementById(containerId);
+
+        if (!content) {
+            return;
+        }
+
+
+        // Inlined directly so the print window never depends on a
+        // second network request for the site's stylesheet (which
+        // was the actual cause of blank/empty PDFs — that request
+        // doesn't always finish before print() fires, especially
+        // right after a fresh page load).
+        var printCss =
+            "body{margin:0;padding:32px;background:#fff;" +
+            "font-family:Tahoma,Arial,sans-serif;color:#191715;}" +
+            ".admin-invoice-f{max-width:640px;margin:0 auto;}" +
+            ".admin-invoice-f__brand{display:flex;align-items:center;" +
+            "justify-content:space-between;margin-bottom:24px;" +
+            "padding-bottom:16px;border-bottom:2px solid #191715;}" +
+            ".admin-invoice-f__logo{color:#A61579;font-size:1.6rem;" +
+            "letter-spacing:0.12em;font-weight:700;}" +
+            ".admin-invoice-f__kind{padding:4px 12px;border-radius:999px;" +
+            "background:#F6F2EC;color:#8A8178;font-size:0.7rem;" +
+            "font-weight:600;}" +
+            ".admin-invoice-f__kind--admin-f{background:rgba(166,21,121,.12);" +
+            "color:#A61579;}" +
+            ".admin-invoice-f__meta{display:grid;" +
+            "grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:24px;" +
+            "padding:16px;border-radius:8px;background:#F6F2EC;" +
+            "font-size:0.78rem;}" +
+            ".admin-invoice-f__meta-row dt{color:#8A8178;margin-bottom:2px;}" +
+            ".admin-invoice-f__meta-row dd{margin:0;font-weight:600;}" +
+            ".admin-invoice-f__table{width:100%;margin-bottom:24px;" +
+            "border-collapse:collapse;}" +
+            ".admin-invoice-f__table th{padding:8px;" +
+            "border-bottom:1.5px solid #191715;color:#8A8178;" +
+            "font-size:0.7rem;font-weight:600;text-align:right;}" +
+            ".admin-invoice-f__table td{padding:8px;" +
+            "border-bottom:1px solid #DCD4C8;font-size:0.8rem;" +
+            "vertical-align:middle;}" +
+            ".admin-invoice-f__item-cell{display:flex;align-items:center;" +
+            "gap:8px;}" +
+            ".admin-invoice-f__item-img{width:40px;height:40px;" +
+            "flex-shrink:0;border-radius:4px;object-fit:cover;" +
+            "background:#F6F2EC;}" +
+            ".admin-invoice-f__summary{margin-right:auto;width:100%;" +
+            "max-width:320px;display:flex;flex-direction:column;gap:4px;}" +
+            ".admin-invoice-f__summary-row{display:flex;" +
+            "align-items:center;justify-content:space-between;" +
+            "font-size:0.8rem;color:#8A8178;}" +
+            ".admin-invoice-f__summary-row span:last-child{color:#191715;}" +
+            ".admin-invoice-f__summary-row--total-f{margin-top:4px;" +
+            "padding-top:8px;border-top:1.5px solid #191715;" +
+            "font-size:1rem;font-weight:700;color:#191715;}" +
+            ".admin-invoice-f__summary-row--total-f span:last-child{" +
+            "color:#A61579;}" +
+            ".admin-invoice-f__profit-f{margin-top:24px;padding:16px;" +
+            "border-radius:8px;border:1.5px dashed #A61579;" +
+            "background:rgba(166,21,121,.05);}" +
+            ".admin-invoice-f__profit-f-title{margin:0 0 8px;color:#A61579;" +
+            "font-size:0.78rem;font-weight:700;}" +
+            ".admin-invoice-f__footer-note{margin-top:32px;" +
+            "padding-top:16px;border-top:1px solid #DCD4C8;" +
+            "color:#8A8178;font-size:0.7rem;text-align:center;}" +
+            "@media print{body{padding:0;}}";
+
+
+        var printWindow =
+            window.open(
+                "",
+                "_blank",
+                "width=850,height=1000"
+            );
+
+        if (!printWindow) {
+
+            showToastF(
+                "مرورگر اجازه‌ی باز کردن پنجره‌ی چاپ را نداد — لطفاً پاپ‌آپ‌بلاکر را غیرفعال کنید.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        printWindow.document.write(
+            "<!DOCTYPE html>" +
+            '<html lang="fa" dir="rtl">' +
+            "<head>" +
+            '<meta charset="UTF-8">' +
+            "<title>فاکتور — Sanaa</title>" +
+            "<style>" + printCss + "</style>" +
+            "</head>" +
+            "<body>" +
+            content.outerHTML +
+            "</body>" +
+            "</html>"
+        );
+
+        printWindow.document.close();
+
+
+        // Give the new document a moment to finish painting
+        // (images especially) before the print dialog opens —
+        // waiting only on "load" isn't always enough for content
+        // written via document.write().
+        printWindow.addEventListener(
+            "load",
+            function () {
+
+                setTimeout(function () {
+
+                    printWindow.focus();
+                    printWindow.print();
+
+                }, 250);
+
+            }
+        );
+
+    }
+
+
+    function initInvoiceModalsF() {
+
+        document.querySelectorAll(
+            "[data-invoice-close]"
+        ).forEach(function (btn) {
+
+            btn.addEventListener(
+                "click",
+                function () {
+
+                    closeInvoiceModalF(
+                        "adminCustomerInvoiceModalF"
+                    );
+
+                    closeInvoiceModalF(
+                        "adminInternalInvoiceModalF"
+                    );
+
+                }
+            );
+
+        });
+
+
+        document.querySelectorAll(
+            "[data-invoice-print]"
+        ).forEach(function (btn) {
+
+            btn.addEventListener(
+                "click",
+                function () {
+
+                    var containerId =
+                        btn.dataset.invoicePrint;
+
+                    printInvoiceF(containerId);
+
+                }
+            );
+
+        });
+
+
+        var goToAdminBtn =
+            document.getElementById(
+                "adminGoToAdminInvoiceF"
+            );
+
+        if (goToAdminBtn) {
+
+            goToAdminBtn.addEventListener(
+                "click",
+                function () {
+
+                    closeInvoiceModalF(
+                        "adminCustomerInvoiceModalF"
+                    );
+
+                    openInvoiceModalF(
+                        "adminInternalInvoiceModalF"
+                    );
+
+                }
+            );
+
+        }
+
+
+        var backToCustomerBtn =
+            document.getElementById(
+                "adminBackToCustomerInvoiceF"
+            );
+
+        if (backToCustomerBtn) {
+
+            backToCustomerBtn.addEventListener(
+                "click",
+                function () {
+
+                    closeInvoiceModalF(
+                        "adminInternalInvoiceModalF"
+                    );
+
+                    openInvoiceModalF(
+                        "adminCustomerInvoiceModalF"
+                    );
+
+                }
+            );
+
+        }
+
+
+        var finishBtn =
+            document.getElementById(
+                "adminFinishInvoiceF"
+            );
+
+        if (finishBtn) {
+
+            finishBtn.addEventListener(
+                "click",
+                function () {
+
+                    closeInvoiceModalF(
+                        "adminCustomerInvoiceModalF"
+                    );
+
+                    closeInvoiceModalF(
+                        "adminInternalInvoiceModalF"
+                    );
+
+                }
+            );
+
+        }
+
+    }
+
+
+    /* ----------------------------------------------------------
+     * New order form — wiring
+     * ---------------------------------------------------------- */
+
     function initNewOrderF() {
 
         var openBtn =
@@ -2835,26 +3681,59 @@
             );
 
 
+        var submitBtn =
+            document.getElementById(
+                "adminSubmitInvoiceF"
+            );
+
+
+        var errorEl =
+            document.getElementById(
+                "adminNewOrderErrorF"
+            );
+
+
         if (!openBtn || !modal || !form) {
             return;
         }
 
 
+        populateOrderCustomersF();
+        initOrderItemsF();
+
+
+        function showFormErrorF(message) {
+
+            if (!errorEl) {
+                return;
+            }
+
+            errorEl.textContent = message;
+            errorEl.hidden = !message;
+
+        }
+
+
         function closeNewOrderModal() {
-
-            modal.hidden =
-                true;
-
+            modal.hidden = true;
         }
 
 
         function openNewOrderModal() {
 
-            modal.hidden =
-                false;
+            form.reset();
+            resetOrderItemsF();
+            showFormErrorF("");
+
+            modal.hidden = false;
 
         }
 
+
+        openBtn.addEventListener(
+            "click",
+            openNewOrderModal
+        );
 
 
         if (closeBtn) {
@@ -2899,6 +3778,8 @@
 
                 event.preventDefault();
 
+                showFormErrorF("");
+
 
                 var customer =
                     document.getElementById(
@@ -2906,32 +3787,20 @@
                     ).value;
 
 
-                var product =
-                    document.getElementById(
-                        "adminNewOrderProductF"
-                    ).value.trim();
-
-
-                var quantity =
+                var shippingRial =
                     Number(
                         document.getElementById(
-                            "adminNewOrderQuantityF"
+                            "adminNewOrderShippingF"
                         ).value
-                    );
+                    ) || 0;
 
 
-                var price =
+                var serviceRial =
                     Number(
                         document.getElementById(
-                            "adminNewOrderPriceF"
+                            "adminNewOrderServiceF"
                         ).value
-                    );
-
-
-                var currency =
-                    document.getElementById(
-                        "adminNewOrderCurrencyF"
-                    ).value;
+                    ) || 0;
 
 
                 var paymentStatus =
@@ -2940,16 +3809,10 @@
                     ).value;
 
 
-                if (
-                    !customer ||
-                    !product ||
-                    !quantity ||
-                    price < 0
-                ) {
+                if (!customer) {
 
-                    showToastF(
-                        "لطفاً اطلاعات سفارش را کامل وارد کنید.",
-                        "error"
+                    showFormErrorF(
+                        "لطفاً مشتری سفارش را انتخاب کنید."
                     );
 
                     return;
@@ -2957,173 +3820,197 @@
                 }
 
 
-                var nextNumber =
-                    10522 +
-                    mockOrdersF.length;
+                var itemsResult = readOrderItemsF();
 
+                if (!itemsResult.items) {
 
-                var orderNumber =
-                    "SN-" +
-                    nextNumber;
+                    showFormErrorF(itemsResult.error);
 
+                    return;
 
-                var newOrder = {
-
-                    number:
-                        orderNumber,
-
-                    date:
-                        "۱۴۰۵/۰۵/۲۱",
-
-                    lastChangeDate:
-                        "۱۴۰۵/۰۵/۲۱",
-
-
-                    customer: {
-
-                        name:
-                            customer,
-
-                        phone:
-                            "—",
-
-                        address:
-                            "—",
-
-                        note:
-                            "ثبت سفارش توسط ادمین"
-
-                    },
-
-
-                    products: [
-
-                        {
-
-                            name:
-                                product,
-
-                            qty:
-                                quantity,
-
-                            ...(currency === "USD"
-                                ? {
-                                    unitPriceUsd:
-                                        price
-                                }
-                                : {}),
-
-                            ...(currency === "EUR"
-                                ? {
-                                    unitPriceEur:
-                                        price
-                                }
-                                : {}),
-
-                            ...(currency === "TRY"
-                                ? {
-                                    unitPriceTry:
-                                        price
-                                }
-                                : {})
-
-                        }
-
-                    ],
-
-
-                    currency:
-                        currency,
-
-
-                    discountRial:
-                        0,
-
-                    shippingRial:
-                        0,
-
-
-                    paymentStatus:
-                        paymentStatus,
-
-                    orderStatus:
-                        "registered",
-
-                    invoiceStatus:
-                        "waiting",
-
-
-                    payment: {
-
-                        method:
-                            "ثبت دستی توسط ادمین",
-
-                        trackingCode:
-                            "—",
-
-                        paidDate:
-                            paymentStatus === "paid"
-                                ? "۱۴۰۵/۰۵/۲۱"
-                                : "—",
-
-                        paidRial:
-                            0,
-
-                        remainingRial:
-                            null
-
-                    }
-
-                };
-
-
-                mockOrdersF.unshift(
-                    newOrder
-                );
-
-
-                form.reset();
-
-
-                document.getElementById(
-                    "adminNewOrderQuantityF"
-                ).value = "1";
-
-
-                closeNewOrderModal();
-
-
-                filtersF = {
-
-                    search: "",
-                    orderStatus: "all",
-                    paymentStatus: "all",
-                    invoiceStatus: "all",
-                    sort: "newest"
-
-                };
-
-
-                var searchInput =
-                    document.getElementById(
-                        "adminOrderSearchF"
-                    );
-
-
-                if (searchInput) {
-                    searchInput.value = "";
                 }
 
 
-                applyFiltersF();
+                var items = itemsResult.items;
 
 
-                showToastF(
-                    "سفارش " +
-                    orderNumber +
-                    " با موفقیت ثبت شد.",
-                    "success"
-                );
+                // Loading state while "fetching" today's rates.
+
+                submitBtn.disabled = true;
+
+                var originalLabel = submitBtn.textContent;
+
+                submitBtn.textContent =
+                    "در حال دریافت نرخ ارز...";
+
+
+                fetchExchangeRatesF().then(function (rates) {
+
+                    var calc = buildInvoiceCalcF(
+                        items,
+                        rates,
+                        shippingRial,
+                        serviceRial
+                    );
+
+
+                    var nextNumber =
+                        10522 + mockOrdersF.length;
+
+                    var orderNumber = "SN-" + nextNumber;
+
+                    var todayLabel = "۱۴۰۵/۰۶/۱۲";
+
+
+                    // Build the mockOrdersF entry using the same
+                    // product shape the rest of this file already
+                    // expects (unitPriceXxx per currency), so the
+                    // orders list/detail sheet keep working as-is.
+
+                    var products = items.map(function (item) {
+
+                        var product = {
+                            name: item.name,
+                            qty: item.qty,
+                            currency: item.currency,
+                            image: item.image
+                        };
+
+                        product[CURRENCY_FIELD_MAP_F[item.currency]] =
+                            item.price;
+
+                        return product;
+
+                    });
+
+
+                    var newOrder = {
+
+                        number: orderNumber,
+                        date: todayLabel,
+                        lastChangeDate: todayLabel,
+
+                        customer: {
+                            name: customer,
+                            phone: "—",
+                            address: "—",
+                            note: "ثبت سفارش توسط ادمین"
+                        },
+
+                        products: products,
+
+                        // Kept for backward compatibility with the
+                        // single-currency helpers elsewhere — set
+                        // to the first item's currency.
+                        currency: items[0].currency,
+
+                        discountRial: 0,
+                        shippingRial: shippingRial,
+                        serviceRial: serviceRial,
+
+                        paymentStatus: paymentStatus,
+                        orderStatus: "registered",
+                        invoiceStatus: "issued",
+
+                        payment: {
+                            method: "ثبت دستی توسط ادمین",
+                            trackingCode: "—",
+                            paidDate:
+                                paymentStatus === "paid"
+                                    ? todayLabel
+                                    : "—",
+                            paidRial: 0,
+                            remainingRial: null
+                        }
+
+                    };
+
+
+                    mockOrdersF.unshift(newOrder);
+
+
+                    var paymentLabels = {
+                        pending: "در انتظار پرداخت",
+                        paid: "پرداخت‌شده",
+                        partial: "پرداخت ناقص"
+                    };
+
+                    var meta = {
+                        orderNumber: orderNumber,
+                        date: todayLabel,
+                        customerName: customer,
+                        paymentLabel:
+                            paymentLabels[paymentStatus] || paymentStatus
+                    };
+
+
+                    var customerInvoiceEl =
+                        document.getElementById(
+                            "adminCustomerInvoiceF"
+                        );
+
+                    var adminInvoiceEl =
+                        document.getElementById(
+                            "adminInternalInvoiceF"
+                        );
+
+                    if (customerInvoiceEl) {
+
+                        customerInvoiceEl.innerHTML =
+                            renderInvoiceHtmlF(calc, meta, false);
+
+                    }
+
+                    if (adminInvoiceEl) {
+
+                        adminInvoiceEl.innerHTML =
+                            renderInvoiceHtmlF(calc, meta, true);
+
+                    }
+
+
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalLabel;
+
+                    closeNewOrderModal();
+
+
+                    filtersF = {
+
+                        search: "",
+                        orderStatus: "all",
+                        paymentStatus: "all",
+                        invoiceStatus: "all",
+                        sort: "newest"
+
+                    };
+
+
+                    var searchInput =
+                        document.getElementById(
+                            "adminOrderSearchF"
+                        );
+
+                    if (searchInput) {
+                        searchInput.value = "";
+                    }
+
+
+                    applyFiltersF();
+
+
+                    openInvoiceModalF(
+                        "adminCustomerInvoiceModalF"
+                    );
+
+
+                    showToastF(
+                        "سفارش " + orderNumber +
+                        " ثبت و دو فاکتور صادر شد.",
+                        "success"
+                    );
+
+                });
 
             }
         );
@@ -3144,6 +4031,8 @@
         initGlobalActionsF();
 
         initNewOrderF();
+
+        initInvoiceModalsF();
 
         applyFiltersF();
 
