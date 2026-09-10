@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+<<<<<<< HEAD
 
+=======
+from decouple import config
+>>>>>>> origin/main
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -41,7 +45,10 @@ INSTALLED_APPS = [
     'base',
     'panel',
     'customer',
+<<<<<<< HEAD
     'orders',
+=======
+>>>>>>> origin/main
 ]
 
 MIDDLEWARE = [
@@ -131,5 +138,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+<<<<<<< HEAD
 
 AUTH_USER_MODEL = "customer.User"
+=======
+MELIPAYAMAK_OTP_URL = config("MELIPAYAMAK_OTP_URL")
+AUTH_USER_MODEL = "customer.User"
+>>>>>>> origin/main

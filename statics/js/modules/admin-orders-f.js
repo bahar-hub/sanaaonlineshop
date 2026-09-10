@@ -4350,6 +4350,25 @@
                             form.dataset
                                 .createUrl;
 
+
+                    console.log(
+                        isEditing
+                            ? "Update order URL:"
+                            : "Create order URL:",
+                        requestUrl
+                    );
+
+
+                    console.log(
+                        "Customer ID:",
+                        customer
+                    );
+
+
+                    console.log(
+                        "Items:",
+                        backendItems
+                    );
                     // =====================
                     // Django request
                     // =====================
@@ -4414,6 +4433,14 @@
                 // =========================
 
                 .then(function (result) {
+
+                    console.log(
+                        isEditing
+                            ? "Update order response:"
+                            : "Create order response:",
+                        result
+                    );
+
 
                     if (!result.ok) {
 

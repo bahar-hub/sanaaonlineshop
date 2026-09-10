@@ -18,7 +18,6 @@ venv/
 
 # Environment variables
 .env
-.env.*
 
 # Node
 node_modules/
