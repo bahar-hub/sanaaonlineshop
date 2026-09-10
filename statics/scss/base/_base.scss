@@ -1,0 +1,28 @@
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-width: 320px;
+    min-height: 100vh;
+
+    background-color: $color-background;
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    line-height: 1.7;
+
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+::selection {
+    background-color: $color-primary;
+    color: #ffffff;
+}
+
+input,
+textarea,
+button {
+    -webkit-tap-highlight-color: transparent;
+}

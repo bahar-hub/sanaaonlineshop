@@ -1,0 +1,466 @@
+
+
+.order-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+
+    list-style: none;
+}
+
+.order-card {
+    width: 100%;
+
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    padding: $spacing-md;
+
+    background-color: $color-surface;
+    color: inherit;
+
+    text-align: right;
+
+    cursor: pointer;
+
+    transition:
+        border-color $transition-fast,
+        box-shadow $transition-fast;
+}
+
+.order-card:hover,
+.order-card:focus-visible {
+    border-color: $color-primary;
+    box-shadow: 0 8px 20px -14px rgba(30, 20, 15, 0.35);
+}
+
+.order-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: $spacing-sm;
+}
+
+.order-card__number {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.order-card__date {
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+}
+
+.order-card__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.order-card__total {
+    color: $color-primary;
+
+    font-family: $font-family-persian;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+
+// ----------------------------------------
+// Status badge
+// ----------------------------------------
+
+.order-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 4px $spacing-sm;
+    border-radius: 999px;
+
+    font-size: 0.68rem;
+    font-weight: 500;
+}
+
+.order-status::before {
+    content: "";
+
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+
+    background-color: currentColor;
+}
+
+.order-status--pending {
+    background-color: rgba(201, 161, 90, 0.16);
+    color: #A6812F;
+}
+
+.order-status--shipped {
+    background-color: rgba(166, 21, 121, 0.1);
+    color: $color-primary;
+}
+
+.order-status--delivered {
+    background-color: rgba(46, 125, 50, 0.12);
+    color: $color-success;
+}
+
+
+// ----------------------------------------
+// Empty state
+// ----------------------------------------
+
+.order-empty {
+    padding: $spacing-2xl $spacing-md;
+
+    color: $color-text-muted;
+
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+
+// ----------------------------------------
+// Invoice (inside modal)
+// ----------------------------------------
+
+.invoice-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    margin-bottom: $spacing-lg;
+
+    color: $color-text-muted;
+
+    font-size: 0.78rem;
+}
+
+.invoice-items {
+    display: flex;
+    flex-direction: column;
+
+    border-top: 1px solid $color-hairline;
+}
+
+.invoice-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-sm;
+
+    padding: $spacing-sm 0;
+
+    border-bottom: 1px solid $color-hairline;
+}
+
+.invoice-item__name {
+    color: $color-text;
+
+    font-size: 0.82rem;
+}
+
+.invoice-item__qty {
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+}
+
+.invoice-item__price {
+    color: $color-text;
+
+
+.order-list {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+
+    list-style: none;
+}
+
+.order-card {
+    width: 100%;
+
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    padding: $spacing-md;
+
+    background-color: $color-surface;
+    color: inherit;
+
+    text-align: right;
+
+    cursor: pointer;
+
+    transition:
+        border-color $transition-fast,
+        box-shadow $transition-fast;
+}
+
+.order-card:hover,
+.order-card:focus-visible {
+    border-color: $color-primary;
+    box-shadow: 0 8px 20px -14px rgba(30, 20, 15, 0.35);
+}
+
+.order-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: $spacing-sm;
+}
+
+.order-card__thumbs {
+    display: flex;
+    margin-bottom: $spacing-sm;
+}
+
+.order-card__thumb {
+    width: 40px;
+    height: 40px;
+
+    border: 2px solid $color-surface;
+    border-radius: $radius-sm;
+
+    object-fit: cover;
+
+    background-color: $color-input-bg;
+}
+
+.order-card__thumb:not(:first-child) {
+    margin-right: -12px;
+}
+
+.order-card__number {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.order-card__date {
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+}
+
+.order-card__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.order-card__total {
+    color: $color-primary;
+
+    font-family: $font-family-persian;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+
+// ----------------------------------------
+// Status badge
+// ----------------------------------------
+
+.order-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 4px $spacing-sm;
+    border-radius: 999px;
+
+    font-size: 0.68rem;
+    font-weight: 500;
+}
+
+.order-status::before {
+    content: "";
+
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+
+    background-color: currentColor;
+}
+
+.order-status--registered {
+    background-color: rgba(201, 161, 90, 0.16);
+    color: #A6812F;
+}
+
+.order-status--shipped {
+    background-color: rgba(166, 21, 121, 0.1);
+    color: $color-primary;
+}
+
+.order-status--delivered {
+    background-color: rgba(46, 125, 50, 0.12);
+    color: $color-success;
+}
+
+
+// ----------------------------------------
+// Empty state
+// ----------------------------------------
+
+.order-empty {
+    padding: $spacing-2xl $spacing-md;
+
+    color: $color-text-muted;
+
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+
+// ----------------------------------------
+// Invoice (inside modal)
+// ----------------------------------------
+
+.invoice-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    margin-bottom: $spacing-lg;
+
+    color: $color-text-muted;
+
+    font-size: 0.78rem;
+}
+
+.invoice-items {
+    display: flex;
+    flex-direction: column;
+
+    border-top: 1px solid $color-hairline;
+}
+
+.invoice-item {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    padding: $spacing-sm 0;
+
+    border-bottom: 1px solid $color-hairline;
+}
+
+.invoice-item__image {
+    flex-shrink: 0;
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: $radius-sm;
+
+    object-fit: cover;
+
+    background-color: $color-input-bg;
+}
+
+.invoice-item__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.invoice-item__name {
+    color: $color-text;
+
+    font-size: 0.82rem;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.invoice-item__qty {
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+}
+
+.invoice-item__price {
+    flex-shrink: 0;
+
+    color: $color-text;
+
+    font-family: $font-family-primary;
+    font-size: 0.8rem;
+
+    white-space: nowrap;
+    text-align: left;
+}
+
+.invoice-summary {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+
+    margin-top: $spacing-md;
+    padding-top: $spacing-md;
+
+    border-top: 1px solid $color-hairline;
+}
+
+.invoice-summary__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    font-size: 0.8rem;
+    color: $color-text-muted;
+}
+
+.invoice-summary__row--total {
+    margin-top: $spacing-xs;
+
+    color: $color-text;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+    font-family: $font-family-persian;
+    font-size: 0.82rem;
+
+    white-space: nowrap;
+}
+
+.invoice-summary {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-xs;
+
+    margin-top: $spacing-md;
+    padding-top: $spacing-md;
+
+    border-top: 1px solid $color-hairline;
+}
+
+.invoice-summary__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    font-size: 0.8rem;
+    color: $color-text-muted;
+}
+
+.invoice-summary__row--total {
+    margin-top: $spacing-xs;
+
+    color: $color-text;
+    font-weight: 600;
+    font-size: 0.95rem;
+}

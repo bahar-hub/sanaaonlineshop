@@ -1,0 +1,239 @@
+// Brand gallery: an auto-scrolling, infinitely-looping vertical
+// column of uniform (4:5) grayscale photos with even gaps between
+// them, and a fixed glass bar pinned to the bottom of the viewport
+// holding the logo and the entry CTA.
+
+.hero {
+    position: relative;
+    overflow: hidden;
+
+    min-height: 100vh;
+
+    background-color: $color-background;
+
+    opacity: 0;
+    transform: translateY(8px);
+
+    transition:
+        opacity 600ms ease,
+        transform 600ms ease;
+}
+
+.hero[hidden] {
+    display: none;
+}
+
+.hero.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+// ----------------------------------------
+// Looping scroll container
+// ----------------------------------------
+
+.hero__scroll {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+
+    overflow: hidden;
+
+    // Soften the loop point at the very top/bottom of the viewport.
+    // mask-image: linear-gradient(
+    //     to bottom,
+    //     transparent 0%,
+    //     black 12%,
+    //     black 92%,
+    //     transparent 100%
+    // );
+    // -webkit-mask-image: linear-gradient(
+    //     to bottom,
+    //     transparent 0%,
+    //     black 12%,
+    //     black 92%,
+    //     transparent 100%
+    // );
+}
+
+.hero__gallery {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+
+    width: 100%;
+    padding: $spacing-sm;
+
+    animation: heroScroll 26s linear infinite;
+}
+
+@keyframes heroScroll {
+    from {
+        transform: translateY(0);
+    }
+
+    to {
+        // Exactly one full (un-duplicated) set of items tall —
+        // the loop point is invisible.
+        transform: translateY(-50%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero__gallery {
+        animation-play-state: paused;
+    }
+}
+
+
+// ----------------------------------------
+// Gallery items
+// ----------------------------------------
+
+.hero__item {
+    position: relative;
+    flex-shrink: 0;
+
+    width: 100%;
+    aspect-ratio: 4 / 5;
+
+    overflow: hidden;
+
+    // background-color: $color-dark;
+}
+
+.hero__item-img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    filter: grayscale(1);
+}
+
+// Legibility-only fade, solid-color based (no decorative gradients
+// elsewhere) — bottom of each photo darkens slightly so a future
+// caption/logo would stay readable.
+.hero__item::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    background: linear-gradient(
+        to bottom,
+        rgba(25, 23, 21, 0.55) 0%,
+        rgba(25, 23, 21, 0) 55%
+    );
+
+    pointer-events: none;
+}
+
+
+// ----------------------------------------
+// Fixed bottom bar — glass effect
+// ----------------------------------------
+
+.hero__bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    height: 64px;
+    padding: 0 $spacing-md;
+
+    background-color: rgba(25, 23, 21, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hero__bar-logo {
+    color: $color-primary;
+
+    font-family: $font-family-primary;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+}
+
+.hero__bar-cta {
+    height: 40px;
+    padding: 0 $spacing-lg;
+
+    border: 0;
+    border-radius: 999px;
+
+    background-color: $color-surface;
+    color: $color-primary;
+
+    font-family: $font-family-persian;
+    font-size: 0.8rem;
+    font-weight: 500;
+
+    transition: background-color $transition-fast;
+}
+
+.hero__bar-cta:hover,
+.hero__bar-cta:focus-visible {
+    background-color: $color-primary;
+    color: $color-background;
+}
+
+
+// ----------------------------------------
+// Desktop
+// ----------------------------------------
+
+@include respond-to(md) {
+    .hero__scroll {
+        display: flex;
+        justify-content: center;
+    }
+
+    .hero__gallery {
+        max-width: 640px;
+        padding: $spacing-md;
+
+        animation-duration: 20s;
+    }
+}
+
+@include respond-to(lg) {
+    .hero__gallery {
+        max-width: 820px;
+
+        animation-duration: 20s;
+    }
+
+    .hero__bar {
+        height: 76px;
+        padding: 0 $spacing-2xl;
+    }
+
+    .hero__bar-logo {
+        font-size: 1.6rem;
+    }
+
+    .hero__bar-cta {
+        height: 46px;
+        padding: 0 $spacing-xl;
+        font-size: 0.85rem;
+    }
+}
+
+@include respond-to(xl) {
+    .hero__gallery {
+        max-width: 980px;
+
+        animation-duration: 26s;
+    }
+}

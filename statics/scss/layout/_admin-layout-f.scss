@@ -1,0 +1,589 @@
+scss
+// ============================================================
+// Admin Panel — Layout Shell
+// ============================================================
+
+.admin-layout-f {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background-color: $color-background;
+
+    // Keep the admin panel hidden when the router sets [hidden].
+    &[hidden] {
+        display: none;
+    }
+}
+
+
+// ----------------------------------------
+// Topbar
+// ----------------------------------------
+
+.admin-topbar-f {
+    @include flex-between;
+
+    position: sticky;
+    top: 0;
+    z-index: 10;
+
+    height: 56px;
+    padding: 0 $spacing-md;
+
+    background-color: $color-surface;
+    border-bottom: 1px solid $color-hairline;
+}
+
+.admin-topbar-f__brand {
+    color: $color-primary;
+
+    font-family: $font-family-primary;
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+}
+
+.admin-topbar-f__brand span {
+    margin-right: 4px;
+
+    color: $color-text-muted;
+
+    font-family: $font-family-primary;
+    font-size: 0.55rem;
+    letter-spacing: 0.24em;
+}
+
+
+// ----------------------------------------
+// Logout button
+// Front-end visual change
+// ----------------------------------------
+
+.admin-topbar-f__logout {
+    @include button-reset;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    flex-shrink: 0;
+
+    padding: 7px 10px;
+
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    background-color: transparent;
+    color: $color-text-muted;
+
+    font-family: $font-family-persian;
+    font-size: 0.78rem;
+    font-weight: 500;
+
+    transition:
+        color $transition-fast,
+        background-color $transition-fast,
+        border-color $transition-fast;
+}
+
+.admin-topbar-f__logout svg {
+    width: 17px;
+    height: 17px;
+
+    flex-shrink: 0;
+}
+
+.admin-topbar-f__logout:hover {
+    color: $color-primary;
+
+    background-color: rgba(166, 21, 121, 0.05);
+
+    border-color: rgba(166, 21, 121, 0.2);
+}
+
+
+// ----------------------------------------
+// Horizontal navigation tabs
+// ----------------------------------------
+
+.admin-navigation-f {
+    display: flex;
+    align-items: center;
+    gap: $spacing-lg;
+
+    padding: 0 $spacing-md;
+
+    background-color: $color-surface;
+    border-bottom: 1px solid $color-hairline;
+
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.admin-navigation-f::-webkit-scrollbar {
+    display: none;
+}
+
+.admin-navigation-f__item {
+    @include button-reset;
+
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 6px;
+
+    padding: $spacing-sm 2px;
+
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+
+    color: $color-text-muted;
+
+    font-family: $font-family-persian;
+    font-size: 0.82rem;
+    font-weight: 500;
+
+    white-space: nowrap;
+
+    transition:
+        color $transition-fast,
+        border-color $transition-fast;
+}
+
+.admin-navigation-f__item svg {
+    width: 17px;
+    height: 17px;
+
+    flex-shrink: 0;
+}
+
+.admin-navigation-f__item:hover {
+    color: $color-text;
+    border-bottom-color: $color-hairline;
+}
+
+.admin-navigation-f__item--active {
+    color: $color-primary;
+    border-bottom-color: $color-primary;
+
+    font-weight: 600;
+}
+
+
+// ----------------------------------------
+// Content area
+// ----------------------------------------
+
+.admin-content-f {
+    flex: 1;
+    min-width: 0;
+}
+
+
+// ----------------------------------------
+// Placeholder pages
+// ----------------------------------------
+
+.admin-placeholder-f {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-sm;
+
+    min-height: 50vh;
+    padding: $spacing-xl;
+
+    text-align: center;
+}
+
+.admin-placeholder-f__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 52px;
+    height: 52px;
+
+    border-radius: 999px;
+
+    background-color: rgba(166, 21, 121, 0.08);
+    color: $color-primary;
+}
+
+.admin-placeholder-f__icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.admin-placeholder-f__title {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.admin-placeholder-f__text {
+    max-width: 280px;
+
+    color: $color-text-muted;
+
+    font-size: 0.78rem;
+}
+
+
+// ----------------------------------------
+// Admin welcome
+// ----------------------------------------
+
+.admin-welcome-f {
+    position: relative;
+
+    width: calc(100% - 48px);
+    max-width: 920px;
+    min-height: 420px;
+
+    margin: 36px auto;
+    padding: 56px 40px;
+
+    box-sizing: border-box;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    background: $color-surface;
+
+    border: 1px solid $color-border;
+    border-radius: $radius-xl;
+
+    box-shadow:
+        0 18px 45px rgba(30, 27, 25, 0.06);
+
+    overflow: hidden;
+
+    animation:
+        adminWelcomeAppear 700ms ease-out both;
+}
+
+
+// ----------------------------------------
+// Welcome decorative circles
+// ----------------------------------------
+
+.admin-welcome-f::before,
+.admin-welcome-f::after {
+    content: "";
+
+    position: absolute;
+
+    width: 230px;
+    height: 230px;
+
+    border: 1px solid rgba(166, 21, 121, 0.08);
+    border-radius: 50%;
+
+    pointer-events: none;
+}
+
+.admin-welcome-f::before {
+    top: -145px;
+    right: -70px;
+}
+
+.admin-welcome-f::after {
+    bottom: -160px;
+    left: -80px;
+
+    border-color: rgba(185, 195, 185, 0.22);
+}
+
+
+// ----------------------------------------
+// Welcome icon
+// ----------------------------------------
+
+.admin-welcome-f__icon {
+    position: relative;
+    z-index: 1;
+
+    width: 92px;
+    height: 92px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 28px;
+
+    color: $color-primary;
+
+    background: rgba(166, 21, 121, 0.05);
+
+    border: 2px solid rgba(166, 21, 121, 0.18);
+    border-radius: 50%;
+
+    animation:
+        adminWelcomeIconFloat 3.5s ease-in-out infinite;
+}
+
+.admin-welcome-f__icon svg {
+    width: 52px;
+    height: 52px;
+
+    animation:
+        adminWelcomeIconSparkle 2.8s ease-in-out infinite;
+}
+
+
+// ----------------------------------------
+// Welcome text
+// ----------------------------------------
+
+.admin-welcome-f__text {
+    position: relative;
+    z-index: 1;
+}
+
+.admin-welcome-f__eyebrow {
+    position: relative;
+    z-index: 1;
+
+    display: block;
+
+    margin-bottom: 14px;
+
+    color: $color-text-muted;
+
+    font-family: Belleza, sans-serif;
+    font-size: 16px;
+    letter-spacing: 5px;
+
+    direction: ltr;
+}
+
+.admin-welcome-f__title {
+    position: relative;
+    z-index: 1;
+
+    margin: 0;
+
+    color: $color-primary;
+
+    font-family: "Vazirmatn", sans-serif;
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1.3;
+
+    animation:
+        adminWelcomeTitle 700ms ease both;
+}
+
+.admin-welcome-f__description {
+    position: relative;
+    z-index: 1;
+
+    margin: 22px 0 0;
+
+    color: $color-text-muted;
+
+    font-family: "Vazirmatn", sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 2;
+
+    animation:
+        adminWelcomeDescription 900ms ease both;
+}
+
+
+// ----------------------------------------
+// Animations
+// ----------------------------------------
+
+@keyframes adminWelcomeAppear {
+
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes adminWelcomeIconFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes adminWelcomeIconSparkle {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+
+    50% {
+        transform: scale(1.08) rotate(5deg);
+    }
+}
+
+@keyframes adminWelcomeTitle {
+
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes adminWelcomeDescription {
+
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+// ----------------------------------------
+// Desktop
+// ----------------------------------------
+
+@include respond-to(lg) {
+
+    .admin-topbar-f,
+    .admin-navigation-f {
+        padding-left: $spacing-lg;
+        padding-right: $spacing-lg;
+    }
+
+    .admin-navigation-f {
+        gap: $spacing-xl;
+    }
+}
+
+
+// ----------------------------------------
+// Tablet / Mobile
+// ----------------------------------------
+
+@media (max-width: 768px) {
+
+    .admin-content-f {
+        min-height: calc(100vh - 120px);
+
+        padding: 24px 16px 32px;
+    }
+
+    .admin-welcome-f {
+        width: calc(100% - 0px);
+        min-height: 360px;
+
+        margin: 0 auto;
+        padding: 40px 20px;
+
+        border-radius: $radius-lg;
+    }
+
+    .admin-welcome-f__icon {
+        width: 76px;
+        height: 76px;
+
+        margin-bottom: 22px;
+    }
+
+    .admin-welcome-f__icon svg {
+        width: 43px;
+        height: 43px;
+    }
+
+    .admin-welcome-f__eyebrow {
+        font-size: 13px;
+        letter-spacing: 4px;
+    }
+
+    .admin-welcome-f__title {
+        font-size: 40px;
+    }
+
+    .admin-welcome-f__description {
+        margin-top: 16px;
+
+        font-size: 15px;
+        line-height: 1.9;
+    }
+}
+
+
+// ----------------------------------------
+// Small mobile
+// ----------------------------------------
+
+@media (max-width: 480px) {
+
+    .admin-content-f {
+        padding: 18px 12px 24px;
+    }
+
+    .admin-welcome-f {
+        min-height: 330px;
+
+        padding: 32px 16px;
+    }
+
+    .admin-welcome-f__icon {
+        width: 68px;
+        height: 68px;
+
+        margin-bottom: 18px;
+    }
+
+    .admin-welcome-f__icon svg {
+        width: 38px;
+        height: 38px;
+    }
+
+    .admin-welcome-f__eyebrow {
+        font-size: 11px;
+        letter-spacing: 3px;
+    }
+
+    .admin-welcome-f__title {
+        font-size: 34px;
+    }
+
+    .admin-welcome-f__description {
+        font-size: 14px;
+    }
+}
+

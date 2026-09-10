@@ -1,0 +1,290 @@
+// ============================================================
+// Admin Panel — Reports page
+// NEW FILE — replaces the old pages/_admin-dashboard-f.scss.
+// The stat-card / chart-card visual language is carried over
+// from the previous Dashboard (same tokens, same card shape),
+// but rebuilt under the admin-reports-f namespace and
+// reorganized around the Monthly / Yearly report switch.
+// ============================================================
+
+.admin-reports-f {
+    padding: $spacing-md $spacing-md $spacing-2xl;
+}
+
+
+// ----------------------------------------
+// Header: title + monthly/yearly switch
+// ----------------------------------------
+
+.admin-reports-f__header {
+    @include flex-between;
+    flex-wrap: wrap;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-md;
+}
+
+.admin-reports-f__title {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.admin-reports-f__mode {
+    display: flex;
+    gap: 4px;
+
+    padding: 3px;
+    border-radius: 999px;
+
+    background-color: $color-input-bg;
+}
+
+.admin-reports-f__mode-btn {
+    @include button-reset;
+
+    padding: 6px $spacing-md;
+    border-radius: 999px;
+
+    color: $color-text-muted;
+
+    font-family: $font-family-persian;
+    font-size: 0.78rem;
+    font-weight: 500;
+
+    white-space: nowrap;
+
+    transition:
+        background-color $transition-fast,
+        color $transition-fast;
+}
+
+.admin-reports-f__mode-btn.is-active {
+    background-color: $color-surface;
+    color: $color-primary;
+    box-shadow: 0 1px 4px rgba(30, 20, 15, 0.12);
+}
+
+
+// ----------------------------------------
+// Period selector (month / year <select>)
+// Uses the shared .admin-select-f component
+// from layout/admin-ui-f — only the width
+// constraint is report-specific.
+// ----------------------------------------
+
+.admin-reports-f__selector {
+    margin-bottom: $spacing-lg;
+}
+
+.admin-reports-f__selector .admin-select-f {
+    width: 100%;
+    max-width: 220px;
+}
+
+
+// ----------------------------------------
+// Stat cards — uniform icon color/shape,
+// compact single-row layout, one column
+// on mobile.
+// ----------------------------------------
+
+.admin-reports-f__stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-lg;
+}
+
+.admin-reports-f__card {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    padding: $spacing-sm $spacing-md;
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+
+    background-color: $color-surface;
+
+    transition: box-shadow $transition-fast, border-color $transition-fast;
+}
+
+.admin-reports-f__card:hover {
+    border-color: $color-primary;
+    box-shadow: $shadow-card;
+}
+
+.admin-reports-f__card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    width: 38px;
+    height: 38px;
+
+    border-radius: $radius-md;
+
+    background-color: $color-primary;
+    color: $color-surface;
+}
+
+.admin-reports-f__card-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.admin-reports-f__card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-reports-f__card-label {
+    color: $color-text-muted;
+
+    font-size: 0.72rem;
+}
+
+.admin-reports-f__card-value {
+    margin-top: 2px;
+
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 1.05rem;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.admin-reports-f__card-value small {
+    margin-right: 3px;
+
+    color: $color-text-muted;
+
+    font-size: 0.62rem;
+    font-weight: 500;
+}
+
+.admin-reports-f__card-change {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 2px;
+
+    color: $color-success;
+
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
+.admin-reports-f__card-change svg {
+    width: 12px;
+    height: 12px;
+
+    transition: transform $transition-fast;
+}
+
+.admin-reports-f__card-change.is-down {
+    color: $color-error;
+}
+
+.admin-reports-f__card-change.is-down svg {
+    transform: rotate(180deg);
+}
+
+
+// ----------------------------------------
+// Chart card (shared shell for the monthly
+// line chart and the yearly bar chart)
+// ----------------------------------------
+
+.admin-reports-f__section {
+    border: 1px solid $color-border;
+    border-radius: $radius-lg;
+
+    padding: $spacing-md;
+
+    background-color: $color-surface;
+}
+
+.admin-reports-f__section-head {
+    margin-bottom: $spacing-md;
+}
+
+.admin-reports-f__section-title {
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.admin-reports-f__chart-total {
+    margin-bottom: $spacing-sm;
+
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+.admin-reports-f__chart-total small {
+    margin-right: 4px;
+
+    color: $color-text-muted;
+
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.admin-reports-f__chart-wrap {
+    width: 100%;
+}
+
+.admin-reports-f__chart-svg {
+    display: block;
+
+    width: 100%;
+    height: auto;
+}
+
+.admin-reports-f__chart-labels {
+    display: flex;
+    justify-content: space-between;
+
+    margin-top: $spacing-xs;
+
+    color: $color-text-muted;
+
+    font-size: 0.62rem;
+}
+
+
+// ----------------------------------------
+// Responsive
+// ----------------------------------------
+
+@include respond-to(sm) {
+    .admin-reports-f__stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@include respond-to(md) {
+    .admin-reports-f {
+        padding: $spacing-lg $spacing-lg $spacing-3xl;
+    }
+}
+
+@include respond-to(lg) {
+    .admin-reports-f__stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+

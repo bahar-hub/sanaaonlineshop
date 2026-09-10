@@ -1,0 +1,16 @@
+{
+  "name": "sanaaonlineshop",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+  "sass": "sass statics/scss/main.scss statics/css/main.css --watch",
+  "sass:build": "sass statics/scss/main.scss statics/css/main.css --style=compressed"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "sass": "^1.102.0"
+  }
+}
