@@ -866,15 +866,29 @@
             </button>
 
 
-            <h2 class="modal__title">
+            <h2
+                class="modal__title"
+                id="adminNewOrderTitleF"
+            >
                 ثبت سفارش جدید
             </h2>
 
 
             <form
                 id="adminNewOrderFormF"
+
+                data-create-url=
+                    "{% url 'panel:create_order' %}"
+
+                data-update-url-template=
+                    "{% url 'panel:update_order' 0 %}"
+
+                data-delete-url-template=
+                    "{% url 'panel:delete_order' 0 %}"
+
                 novalidate
             >
+            {% csrf_token %}
 
                 <!-- Customer -->
 
@@ -891,15 +905,32 @@
                         id="adminNewOrderCustomerF"
                         class="admin-select-f admin-select-f--block-f"
                     >
-
                         <option value="">
                             انتخاب مشتری
                         </option>
 
-                        <!-- Populated from mockUsersForOrderF in admin-orders-f.js
-                             — swap for a real customer list from the backend
-                             when it's ready. -->
+                        {% for customer in customers %}
 
+                            <option value="{{ customer.id }}">
+
+                                {% if customer.first_name or customer.last_name %}
+
+                                    {{ customer.first_name }}
+                                    {{ customer.last_name }}
+
+                                {% else %}
+
+                                    {{ customer.username }}
+
+                                {% endif %}
+
+                                {% if customer.phone %}
+                                    - {{ customer.phone }}
+                                {% endif %}
+
+                            </option>
+
+                        {% endfor %}
                     </select>
 
                 </div>
@@ -1367,11 +1398,11 @@
     <!-- =========================================================
          PAGE SCRIPT
     ========================================================== -->
-
+{{ orders_data|json_script:"orders-data-f" }}
     <script
-        src="{% static 'js/modules/admin-orders-f.js' %}"
+        src="{% static 'js/modules/admin-orders-f.js' %}?v=4"
         defer
-    ></script>
+    ></script>  
 
 </body>
 

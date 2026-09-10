@@ -2,14 +2,20 @@
  * Admin Panel — Order Management
  * Standalone Orders Page
  * Vanilla JS only
- * Mock data only
+ * Orders are loaded from Django / database
  * ============================================================ */
 
 (function () {
 
     "use strict";
 
-
+    const CURRENCY_FIELD_MAP_F = {
+        USD: "unitPriceUsd",
+        EUR: "unitPriceEur",
+        TRY: "unitPriceTry",
+        GBP: "unitPriceGbp",
+        AED: "unitPriceAed"
+    };
     /* ============================================================
      * EXCHANGE RATES
      * ============================================================ */
@@ -45,380 +51,163 @@
 
 
     /* ============================================================
-     * MOCK ORDERS
+     * ORDERS DATA — injected by Django via json_script
      * ============================================================ */
 
-    var mockOrdersF = [
+    var ordersF = [];
 
-        {
-            number: "SN-10482",
-            date: "۱۴۰۵/۰۵/۱۲",
-            lastChangeDate: "۱۴۰۵/۰۵/۱۴",
+    var ordersDataElementF =
+        document.getElementById(
+            "orders-data-f"
+        );
 
-            customer: {
-                name: "سارا احمدی",
-                phone: "۰۹۱۲۳۴۵۶۷۸۹",
-                address: "تهران، خیابان ولیعصر، پلاک ۱۲",
-                note: ""
-            },
+    if (ordersDataElementF) {
 
-            products: [
-                {
-                    name: "کیف دستی چرم",
-                    qty: 1,
-                    unitPriceUsd: 75
-                }
-            ],
+        try {
 
-            currency: "USD",
+            var parsedOrdersF =
+                JSON.parse(
+                    ordersDataElementF.textContent
+                );
 
-            discountRial: 0,
-            shippingRial: 0,
+            ordersF =
+                Array.isArray(parsedOrdersF)
+                    ? parsedOrdersF
+                    : [];
 
-            paymentStatus: "paid",
-            orderStatus: "delivered",
-            invoiceStatus: "issued",
+        } catch (error) {
 
-            payment: {
-                method: "درگاه بانکی",
-                trackingCode: "TRX-88213",
-                paidDate: "۱۴۰۵/۰۵/۱۲",
-                paidRial: null,
-                remainingRial: 0
+            console.error(
+                "Could not parse orders data:",
+                error
+            );
+
+            ordersF = [];
+        }
+    }
+
+
+    function findOrderByNumberF(orderNumber) {
+
+        return ordersF.find(
+            function (order) {
+
+                return (
+                    order.number ===
+                    orderNumber
+                );
+
             }
-        },
+        );
+    }
 
 
-        {
-            number: "SN-10417",
-            date: "۱۴۰۵/۰۴/۲۸",
-            lastChangeDate: "۱۴۰۵/۰۵/۰۱",
+    function replaceOrderF(savedOrder) {
 
-            customer: {
-                name: "سارا احمدی",
-                phone: "۰۹۱۲۳۴۵۶۷۸۹",
-                address: "تهران، خیابان ولیعصر، پلاک ۱۲",
-                note: ""
-            },
+        var index =
+            ordersF.findIndex(
+                function (order) {
 
-            products: [
-                {
-                    name: "کیف دستی چرم",
-                    qty: 1,
-                    unitPriceUsd: 68
+                    return (
+                        Number(order.id) ===
+                        Number(savedOrder.id)
+                    );
+
                 }
-            ],
-
-            currency: "USD",
-
-            discountRial: 0,
-            shippingRial: 0,
-
-            paymentStatus: "paid",
-            orderStatus: "shipped",
-            invoiceStatus: "sent",
-
-            payment: {
-                method: "درگاه بانکی",
-                trackingCode: "TRX-88011",
-                paidDate: "۱۴۰۵/۰۴/۲۸",
-                paidRial: null,
-                remainingRial: 0
-            }
-        },
+            );
 
 
-        {
-            number: "SN-10475",
-            date: "۱۴۰۵/۰۵/۰۸",
-            lastChangeDate: "۱۴۰۵/۰۵/۰۹",
+        if (index === -1) {
 
-            customer: {
-                name: "نگار محمدی",
-                phone: "۰۹۱۹۸۷۶۵۴۳۲",
-                address: "اصفهان، خیابان چهارباغ، پلاک ۴۵",
-                note: "مشتری ویژه"
-            },
+            ordersF.unshift(
+                savedOrder
+            );
 
-            products: [
-                {
-                    name: "روسری ابریشمی",
-                    qty: 2,
-                    unitPriceUsd: 22
-                },
+        } else {
 
-                {
-                    name: "دستبند نقره",
-                    qty: 1,
-                    unitPriceUsd: 19
-                }
-            ],
-
-            currency: "USD",
-
-            discountRial: 500000,
-            shippingRial: 0,
-
-            paymentStatus: "pending",
-            orderStatus: "registered",
-            invoiceStatus: "waiting",
-
-            payment: {
-                method: "—",
-                trackingCode: "—",
-                paidDate: "—",
-                paidRial: 0,
-                remainingRial: null
-            }
-        },
+            ordersF[index] =
+                savedOrder;
+        }
+    }
 
 
-        {
-            number: "SN-10470",
-            date: "۱۴۰۵/۰۵/۰۵",
-            lastChangeDate: "۱۴۰۵/۰۵/۰۶",
+    function buildOrderUrlF(template, orderId) {
 
-            customer: {
-                name: "کیانا ملکی",
-                phone: "۰۹۱۷۷۶۵۴۳۲۱",
-                address: "شیراز، بلوار زند، پلاک ۹",
-                note: ""
-            },
-
-            products: [
-                {
-                    name: "کفش اسپرت زنانه",
-                    qty: 1,
-                    unitPriceUsd: 54
-                }
-            ],
-
-            currency: "USD",
-
-            discountRial: 0,
-            shippingRial: 150000,
-
-            paymentStatus: "partial",
-            orderStatus: "preparing",
-            invoiceStatus: "waiting",
-
-            payment: {
-                method: "درگاه بانکی",
-                trackingCode: "TRX-88190",
-                paidDate: "۱۴۰۵/۰۵/۰۵",
-                paidRial: 15000000,
-                remainingRial: null
-            }
-        },
-
-
-        {
-            number: "SN-10460",
-            date: "۱۴۰۵/۰۵/۰۲",
-            lastChangeDate: "۱۴۰۵/۰۵/۰۲",
-
-            customer: {
-                name: "مریم رضایی",
-                phone: "۰۹۱۳۴۵۶۷۸۹۰",
-                address: "تهران، سعادت‌آباد، پلاک ۲۲",
-                note: ""
-            },
-
-            products: [
-                {
-                    name: "عطر جیبی",
-                    qty: 3,
-                    unitPriceEur: 12
-                }
-            ],
-
-            currency: "EUR",
-
-            discountRial: 0,
-            shippingRial: 0,
-
-            paymentStatus: "failed",
-            orderStatus: "registered",
-            invoiceStatus: "error",
-
-            payment: {
-                method: "درگاه بانکی",
-                trackingCode: "—",
-                paidDate: "—",
-                paidRial: 0,
-                remainingRial: null
-            }
-        },
-
-
-        {
-            number: "SN-10412",
-            date: "۱۴۰۵/۰۴/۲۵",
-            lastChangeDate: "۱۴۰۵/۰۴/۲۷",
-
-            customer: {
-                name: "نگار محمدی",
-                phone: "۰۹۱۹۸۷۶۵۴۳۲",
-                address: "اصفهان، خیابان چهارباغ، پلاک ۴۵",
-                note: "مشتری ویژه"
-            },
-
-            products: [
-                {
-                    name: "عینک آفتابی",
-                    qty: 1,
-                    unitPriceTry: 900
-                }
-            ],
-
-            currency: "TRY",
-
-            discountRial: 0,
-            shippingRial: 0,
-
-            paymentStatus: "paid",
-            orderStatus: "delivered",
-            invoiceStatus: "issued",
-
-            payment: {
-                method: "کیف پول",
-                trackingCode: "TRX-87765",
-                paidDate: "۱۴۰۵/۰۴/۲۵",
-                paidRial: null,
-                remainingRial: 0
-            }
-        },
-
-
-        {
-            number: "SN-10390",
-            date: "۱۴۰۵/۰۳/۱۴",
-            lastChangeDate: "۱۴۰۵/۰۳/۱۸",
-
-            customer: {
-                name: "الهام کریمی",
-                phone: "۰۹۱۵۲۲۳۳۴۴۵",
-                address: "مشهد، بلوار وکیل‌آباد، پلاک ۶",
-                note: ""
-            },
-
-            products: [
-                {
-                    name: "شال پشمی",
-                    qty: 1,
-                    unitPriceUsd: 9
-                }
-            ],
-
-            currency: "USD",
-
-            discountRial: 0,
-            shippingRial: 0,
-
-            paymentStatus: "paid",
-            orderStatus: "returned",
-            invoiceStatus: "issued",
-
-            payment: {
-                method: "درگاه بانکی",
-                trackingCode: "TRX-86210",
-                paidDate: "۱۴۰۵/۰۳/۱۴",
-                paidRial: null,
-                remainingRial: 0
-            }
-        },
-
-
-        {
-            number: "SN-10355",
-            date: "۱۴۰۵/۰۴/۰۳",
-            lastChangeDate: "۱۴۰۵/۰۴/۰۵",
-
-            customer: {
-                name: "سارا احمدی",
-                phone: "۰۹۱۲۳۴۵۶۷۸۹",
-                address: "تهران، خیابان ولیعصر، پلاک ۱۲",
-                note: ""
-            },
-
-            products: [
-                {
-                    name: "کفش اسپرت زنانه",
-                    qty: 1,
-                    unitPriceUsd: 65
-                }
-            ],
-
-            currency: "USD",
-
-            discountRial: 0,
-            shippingRial: 0,
-
-            paymentStatus: "cancelled",
-            orderStatus: "cancelled",
-            invoiceStatus: "waiting",
-
-            payment: {
-                method: "—",
-                trackingCode: "—",
-                paidDate: "—",
-                paidRial: 0,
-                remainingRial: null
-            }
-        },
-
-
-        {
-            number: "SN-10521",
-            date: "۱۴۰۵/۰۵/۲۰",
-            lastChangeDate: "۱۴۰۵/۰۵/۲۰",
-
-            customer: {
-                name: "بهاره اسدی",
-                phone: "۰۹۱۴۴۵۵۶۶۷۷",
-                address: "تبریز، خیابان امام، پلاک ۳۰",
-                note: ""
-            },
-
-            products: [
-                {
-                    name: "پیراهن نخی",
-                    qty: 1,
-                    unitPriceUsd: 31
-                },
-
-                {
-                    name: "شلوار کتان",
-                    qty: 1,
-                    unitPriceUsd: 27
-                },
-
-                {
-                    name: "کمربند چرم",
-                    qty: 1,
-                    unitPriceUsd: 14
-                }
-            ],
-
-            currency: "USD",
-
-            discountRial: 0,
-            shippingRial: 0,
-
-            paymentStatus: "paid",
-            orderStatus: "confirmed",
-            invoiceStatus: "issued",
-
-            payment: {
-                method: "درگاه بانکی",
-                trackingCode: "TRX-88401",
-                paidDate: "۱۴۰۵/۰۵/۲۰",
-                paidRial: null,
-                remainingRial: 0
-            }
+        if (!template) {
+            return "";
         }
 
-    ];
+        return template.replace(
+            "/0/",
+            "/" + orderId + "/"
+        );
+    }
+
+
+    function getCsrfTokenF() {
+
+        var input =
+            document.querySelector(
+                'input[name="csrfmiddlewaretoken"]'
+            );
+
+        return input
+            ? input.value
+            : "";
+    }
+
+
+    function fetchJsonF(url, options) {
+
+        return fetch(
+            url,
+            options
+        )
+        .then(function (response) {
+
+            return response
+                .text()
+                .then(function (text) {
+
+                    var data = {};
+
+                    try {
+
+                        data =
+                            JSON.parse(
+                                text
+                            );
+
+                    } catch (error) {
+
+                        console.error(
+                            "Invalid JSON response:",
+                            text
+                        );
+                    }
+
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            data.message ||
+                            (
+                                "خطای سرور: " +
+                                response.status
+                            )
+                        );
+                    }
+
+
+                    return data;
+                });
+
+        });
+    }
+
+
+    var openEditOrderModalF =
+        null;
 
 
     /* ============================================================
@@ -531,6 +320,30 @@
     }
 
 
+    function currentJalaliDateF() {
+
+        try {
+
+            return new Intl.DateTimeFormat(
+                "fa-IR-u-ca-persian",
+                {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit"
+                }
+            ).format(
+                new Date()
+            );
+
+        } catch (error) {
+
+            return "";
+
+        }
+
+    }
+
+
     function unitPriceF(product) {
 
         if (typeof product.unitPriceUsd === "number") {
@@ -573,31 +386,60 @@
 
     function orderTotalsF(order) {
 
-        // Per-item currency, falling back to the order-level
-        // currency for older/simple single-currency orders.
-        var baseAmount = order.products.reduce(function (sum, product) {
+        var products =
+            Array.isArray(order.products)
+                ? order.products
+                : [];
 
-            return sum + unitPriceF(product) * product.qty;
+        var baseAmount =
+            products.reduce(
+                function (sum, product) {
 
-        }, 0);
+                    return (
+                        sum +
+                        unitPriceF(product) *
+                        (Number(product.qty) || 0)
+                    );
+
+                },
+                0
+            );
 
 
-        var productsRial = order.products.reduce(function (sum, product) {
+        var productsRial =
+            products.reduce(
+                function (sum, product) {
 
-            var currency = product.currency || order.currency;
-            var rate = EXCHANGE_RATES_F[currency]
-                ? EXCHANGE_RATES_F[currency].rate
-                : 0;
+                    var currency =
+                        product.currency ||
+                        order.currency;
 
-            return sum + unitPriceF(product) * product.qty * rate;
+                    var rate =
+                        typeof product.exchangeRate === "number"
+                            ? product.exchangeRate
+                            : (
+                                EXCHANGE_RATES_F[currency]
+                                    ? EXCHANGE_RATES_F[currency].rate
+                                    : 0
+                            );
 
-        }, 0);
+                    return (
+                        sum +
+                        unitPriceF(product) *
+                        (Number(product.qty) || 0) *
+                        rate
+                    );
+
+                },
+                0
+            );
 
 
         var totalRial =
             productsRial -
-            order.discountRial +
-            order.shippingRial;
+            (Number(order.discountRial) || 0) +
+            (Number(order.shippingRial) || 0) +
+            (Number(order.serviceRial) || 0);
 
 
         return {
@@ -605,14 +447,15 @@
             baseAmount: baseAmount,
             productsRial: productsRial,
             totalRial: totalRial,
-            rate: EXCHANGE_RATES_F[order.currency]
-                ? EXCHANGE_RATES_F[order.currency].rate
-                : 0
+
+            rate:
+                EXCHANGE_RATES_F[order.currency]
+                    ? EXCHANGE_RATES_F[order.currency].rate
+                    : 0
 
         };
 
     }
-
 
     function badgeHtmlF(statusMap, key) {
 
@@ -845,7 +688,7 @@
 
 
             '<button type="button" class="admin-menu-f__item admin-menu-f__item--danger-f" ' +
-            'data-cancel-order-f="' +
+            'data-delete-order-f="' +
             orderNumber +
             '">' +
 
@@ -854,7 +697,7 @@
             '<path d="m9 9 6 6m0-6-6 6" stroke-linecap="round"/>' +
             "</svg>" +
 
-            "لغو سفارش" +
+            "حذف سفارش" +
 
             "</button>" +
 
@@ -1202,90 +1045,90 @@
 
     function applyFiltersF() {
 
-        var filtered =
-            mockOrdersF.filter(
-                function (order) {
+        var filtered = ordersF.filter(
+            function (order) {
 
+                // وضعیت سفارش
+                if (
+                    filtersF.orderStatus !== "all" &&
+                    order.orderStatus !== filtersF.orderStatus
+                ) {
+                    return false;
+                }
 
-                    if (
-                        filtersF.orderStatus !== "all" &&
-                        order.orderStatus !==
-                        filtersF.orderStatus
-                    ) {
+                // وضعیت پرداخت
+                if (
+                    filtersF.paymentStatus !== "all" &&
+                    order.paymentStatus !== filtersF.paymentStatus
+                ) {
+                    return false;
+                }
 
-                        return false;
+                // وضعیت فاکتور
+                if (
+                    filtersF.invoiceStatus !== "all" &&
+                    order.invoiceStatus !== filtersF.invoiceStatus
+                ) {
+                    return false;
+                }
 
-                    }
+                // جستجو
+                if (filtersF.search) {
 
+                    var q =
+                        filtersF.search
+                            .toLowerCase()
+                            .trim();
 
-                    if (
-                        filtersF.paymentStatus !== "all" &&
-                        order.paymentStatus !==
-                        filtersF.paymentStatus
-                    ) {
+                    var orderNumber =
+                        order.number
+                            ? String(order.number).toLowerCase()
+                            : "";
 
-                        return false;
+                    var customerName =
+                        order.customer &&
+                        order.customer.name
+                            ? String(
+                                order.customer.name
+                            ).toLowerCase()
+                            : "";
 
-                    }
-
-
-                    if (
-                        filtersF.invoiceStatus !== "all" &&
-                        order.invoiceStatus !==
-                        filtersF.invoiceStatus
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    if (filtersF.search) {
-
-                        var q =
-                            filtersF.search
-                                .toLowerCase();
-
-
-                        var matches =
-
-                            order.number
-                                .toLowerCase()
-                                .indexOf(q) !== -1
-
-                            ||
-
-                            order.customer.name
-                                .indexOf(q) !== -1
-
-                            ||
-
-                            order.products.some(
+                    var matchesProduct =
+                        Array.isArray(order.products)
+                            ? order.products.some(
                                 function (product) {
 
-                                    return product.name
-                                        .indexOf(q) !== -1;
+                                    var productName =
+                                        product &&
+                                        product.name
+                                            ? String(
+                                                product.name
+                                            ).toLowerCase()
+                                            : "";
 
+                                    return (
+                                        productName.indexOf(q) !== -1
+                                    );
                                 }
-                            );
+                            )
+                            : false;
 
+                    var matches =
+                        orderNumber.indexOf(q) !== -1 ||
+                        customerName.indexOf(q) !== -1 ||
+                        matchesProduct;
 
-                        if (!matches) {
-                            return false;
-                        }
-
+                    if (!matches) {
+                        return false;
                     }
-
-
-                    return true;
-
                 }
-            );
 
+                return true;
+            }
+        );
 
-        var sorted =
-            filtered.slice();
-
+        // یک کپی برای sort
+        var sorted = filtered.slice();
 
         switch (filtersF.sort) {
 
@@ -1305,7 +1148,6 @@
                             orderTotalsF(b).totalRial -
                             orderTotalsF(a).totalRial
                         );
-
                     }
                 );
 
@@ -1321,7 +1163,6 @@
                             orderTotalsF(a).totalRial -
                             orderTotalsF(b).totalRial
                         );
-
                     }
                 );
 
@@ -1333,13 +1174,21 @@
                 sorted.sort(
                     function (a, b) {
 
-                        return (
-                            a.lastChangeDate <
-                            b.lastChangeDate
-                        )
-                            ? 1
-                            : -1;
+                        var aDate =
+                            a.lastChangeDate || "";
 
+                        var bDate =
+                            b.lastChangeDate || "";
+
+                        if (aDate < bDate) {
+                            return 1;
+                        }
+
+                        if (aDate > bDate) {
+                            return -1;
+                        }
+
+                        return 0;
                     }
                 );
 
@@ -1347,16 +1196,12 @@
 
 
             case "newest":
-
             default:
 
                 break;
-
         }
 
-
         renderListF(sorted);
-
     }
 
 
@@ -1635,34 +1480,41 @@
         ];
 
 
-        mockOrdersF.forEach(
+        
+
+
+        ordersF.forEach(
             function (order) {
 
                 var totals =
                     orderTotalsF(order);
 
-
-                rows.push([
-
-                    order.number,
-
-                    order.customer.name,
-
-                    order.date,
-
-                    Math.round(
-                        totals.totalRial
-                    ),
-
-                    PAYMENT_STATUS_F[
-                        order.paymentStatus
-                    ].label,
-
-                    ORDER_STATUS_F[
-                        order.orderStatus
-                    ].label
-
-                ]);
+                rows.push(
+                    [
+                        order.number || "",
+                        order.customer
+                            ? order.customer.name || ""
+                            : "",
+                        order.date || "",
+                        Math.round(
+                            totals.totalRial
+                        ),
+                        PAYMENT_STATUS_F[
+                            order.paymentStatus
+                        ]
+                            ? PAYMENT_STATUS_F[
+                                order.paymentStatus
+                            ].label
+                            : order.paymentStatus || "",
+                        ORDER_STATUS_F[
+                            order.orderStatus
+                        ]
+                            ? ORDER_STATUS_F[
+                                order.orderStatus
+                            ].label
+                            : order.orderStatus || ""
+                    ]
+                );
 
             }
         );
@@ -2097,7 +1949,7 @@
 
 
     /* ============================================================
-     * PDF PLACEHOLDER
+     * PDF BACKEND HOOK
      * ============================================================ */
 
     function invoiceApiEndpointF(
@@ -2127,7 +1979,7 @@
 
                         reject(
                             new Error(
-                                "backend_not_connected"
+                                "invoice_backend_not_connected"
                             )
                         );
 
@@ -2146,7 +1998,7 @@
     ) {
 
         var order =
-            mockOrdersF.filter(
+            ordersF.filter(
                 function (item) {
 
                     return (
@@ -2344,7 +2196,7 @@
             function (orderNumber) {
 
                 var order =
-                    mockOrdersF.filter(
+                    ordersF.filter(
                         function (item) {
 
                             return (
@@ -2458,14 +2310,42 @@
                 "click",
                 function () {
 
-                    if (!activeOrderNumber) {
+                    if (
+                        !activeOrderNumber
+                    ) {
                         return;
                     }
 
 
-                    showToastF(
-                        "ویرایش سفارش هنوز در این نسخه پیاده‌سازی نشده است.",
-                        "error"
+                    var order =
+                        findOrderByNumberF(
+                            activeOrderNumber
+                        );
+
+
+                    if (!order) {
+
+                        showToastF(
+                            "سفارش پیدا نشد.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        !openEditOrderModalF
+                    ) {
+                        return;
+                    }
+
+
+                    closeModal();
+
+
+                    openEditOrderModalF(
+                        order
                     );
 
                 }
@@ -2484,54 +2364,17 @@
                         return;
                     }
 
-
-                    var order =
-                        mockOrdersF.filter(
-                            function (item) {
-
-                                return (
-                                    item.number ===
-                                    activeOrderNumber
-                                );
-
-                            }
-                        )[0];
-
-
-                    if (!order) {
-                        return;
-                    }
-
-
-                    order.orderStatus =
-                        statusSelect.value;
-
-
-                    order.lastChangeDate =
-                        "۱۴۰۵/۰۵/۲۱";
-
-
                     showToastF(
-                        "وضعیت سفارش به «" +
-                        ORDER_STATUS_F[
-                            order.orderStatus
-                        ].label +
-                        "» تغییر کرد.",
-                        "success"
+                        "تغییر وضعیت سفارش هنوز به بک‌اند متصل نشده است.",
+                        "error"
                     );
-
-
-                    renderDetailsSheetF(
-                        order
-                    );
-
-
-                    applyFiltersF();
 
                 }
             );
 
         }
+
+
 
     }
 
@@ -2660,16 +2503,43 @@
 
                 if (editTrigger) {
 
-                    showToastF(
-                        "ویرایش سفارش هنوز در این نسخه پیاده‌سازی نشده است.",
-                        "error"
-                    );
+                    var orderNumber =
+                        editTrigger.getAttribute(
+                            "data-edit-order-f"
+                        );
+
+
+                    var order =
+                        findOrderByNumberF(
+                            orderNumber
+                        );
 
 
                     closeAllMenusF();
 
-                    return;
 
+                    if (!order) {
+
+                        showToastF(
+                            "سفارش پیدا نشد.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        openEditOrderModalF
+                    ) {
+
+                        openEditOrderModalF(
+                            order
+                        );
+                    }
+
+
+                    return;
                 }
 
 
@@ -2682,8 +2552,8 @@
                 if (resendTrigger) {
 
                     showToastF(
-                        "فاکتور دوباره برای مشتری ارسال شد.",
-                        "success"
+                        "ارسال مجدد فاکتور هنوز به بک‌اند متصل نشده است.",
+                        "error"
                     );
 
 
@@ -2694,78 +2564,144 @@
                 }
 
 
-                var cancelTrigger =
+                var deleteTrigger =
                     event.target.closest(
-                        "[data-cancel-order-f]"
+                        "[data-delete-order-f]"
                     );
 
 
-                if (cancelTrigger) {
+                if (deleteTrigger) {
 
-                    var number =
-                        cancelTrigger.getAttribute(
-                            "data-cancel-order-f"
+                    var orderNumber =
+                        deleteTrigger.getAttribute(
+                            "data-delete-order-f"
+                        );
+
+
+                    var order =
+                        findOrderByNumberF(
+                            orderNumber
                         );
 
 
                     closeAllMenusF();
 
 
-                    if (
-                        window.confirm(
-                            "آیا از لغو سفارش " +
-                            number +
-                            " مطمئن هستید؟"
-                        )
-                    ) {
+                    if (!order) {
 
-                        var order =
-                            mockOrdersF.filter(
-                                function (item) {
+                        showToastF(
+                            "سفارش پیدا نشد.",
+                            "error"
+                        );
 
-                                    return (
-                                        item.number ===
-                                        number
-                                    );
-
-                                }
-                            )[0];
-
-
-                        if (order) {
-
-                            order.orderStatus =
-                                "cancelled";
-
-
-                            if (
-                                order.paymentStatus !==
-                                "paid"
-                            ) {
-
-                                order.paymentStatus =
-                                    "cancelled";
-
-                            }
-
-
-                            applyFiltersF();
-
-
-                            showToastF(
-                                "سفارش " +
-                                number +
-                                " لغو شد.",
-                                "success"
-                            );
-
-                        }
-
+                        return;
                     }
 
 
-                    return;
+                    var confirmed =
+                        window.confirm(
+                            "آیا از حذف کامل سفارش " +
+                            order.number +
+                            " مطمئن هستید؟\n" +
+                            "این عملیات قابل بازگشت نیست."
+                        );
 
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+
+                    var form =
+                        document.getElementById(
+                            "adminNewOrderFormF"
+                        );
+
+
+                    if (!form) {
+
+                        showToastF(
+                            "فرم سفارش پیدا نشد.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+
+                    var deleteUrl =
+                        buildOrderUrlF(
+                            form.dataset
+                                .deleteUrlTemplate,
+                            order.id
+                        );
+
+
+                    var formData =
+                        new FormData();
+
+
+                    formData.append(
+                        "csrfmiddlewaretoken",
+                        getCsrfTokenF()
+                    );
+
+
+                    fetchJsonF(
+                        deleteUrl,
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    )
+
+                    .then(function () {
+
+                        // فقط بعد از حذف موفق در Django
+                        // از لیست مرورگر هم حذف می‌کنیم.
+                        ordersF =
+                            ordersF.filter(
+                                function (item) {
+
+                                    return (
+                                        Number(item.id) !==
+                                        Number(order.id)
+                                    );
+
+                                }
+                            );
+
+
+                        applyFiltersF();
+
+
+                        showToastF(
+                            "سفارش " +
+                            order.number +
+                            " با موفقیت حذف شد.",
+                            "success"
+                        );
+
+                    })
+
+                    .catch(function (error) {
+
+                        console.error(
+                            "Delete order error:",
+                            error
+                        );
+
+
+                        showToastF(
+                            error.message ||
+                            "حذف سفارش انجام نشد.",
+                            "error"
+                        );
+
+                    });
+
+
+                    return;
                 }
 
 
@@ -2846,165 +2782,241 @@
      * NEW ORDER
      * ============================================================ */
 
-    // Mock user list for the customer dropdown. The backend will
-    // eventually inject the real list (same pattern already used
-    // on the Customers page via window.adminCustomersData) — this
-    // is only a stand-in so the form is usable/demoable now.
-    var mockUsersForOrderF = [
-        { id: "u1", name: "سارا احمدی" },
-        { id: "u2", name: "نگار محمدی" },
-        { id: "u3", name: "کیانا ملکی" },
-        { id: "u4", name: "مریم رضایی" },
-        { id: "u5", name: "الهام کریمی" },
-        { id: "u6", name: "بهاره اسدی" }
-    ];
-
-
-    // Maps a currency code to the product field name used
-    // elsewhere in this file (unitPriceUsd, unitPriceEur, ...).
-    var CURRENCY_FIELD_MAP_F = {
-        USD: "unitPriceUsd",
-        EUR: "unitPriceEur",
-        TRY: "unitPriceTry",
-        GBP: "unitPriceGbp",
-        AED: "unitPriceAed"
-    };
-
-
-    function populateOrderCustomersF() {
-
-        var select =
-            document.getElementById(
-                "adminNewOrderCustomerF"
-            );
-
-        if (!select) {
-            return;
-        }
-
-        mockUsersForOrderF.forEach(function (user) {
-
-            var option =
-                document.createElement(
-                    "option"
-                );
-
-            option.value = user.name;
-            option.textContent = user.name;
-
-            select.appendChild(option);
-
-        });
-
-    }
-
-
     /* ----------------------------------------------------------
      * Item rows (image upload, price+currency, qty stepper,
      * remove) — cloned from <template id="adminOrderItemTemplateF">
      * ---------------------------------------------------------- */
 
-    function createOrderItemRowF() {
+    function createOrderItemRowF(
+        product
+    ) {
 
         var template =
             document.getElementById(
                 "adminOrderItemTemplateF"
             );
 
+
         if (!template) {
             return null;
         }
 
+
         var row =
-            template.content.firstElementChild.cloneNode(true);
+            template
+                .content
+                .firstElementChild
+                .cloneNode(true);
 
-
-        // Remove item
 
         var removeBtn =
             row.querySelector(
                 ".admin-order-item-f__remove"
             );
 
-        removeBtn.addEventListener(
-            "click",
-            function () {
-                row.remove();
-            }
-        );
-
-
-        // Image upload
 
         var fileInput =
             row.querySelector(
                 ".admin-order-item-f__file-input"
             );
 
+
         var preview =
             row.querySelector(
                 ".admin-order-item-f__preview"
             );
 
-        fileInput.addEventListener(
-            "change",
-            function () {
 
-                var file = fileInput.files[0];
-
-                if (!file) {
-                    return;
-                }
-
-                var reader = new FileReader();
-
-                reader.onload = function () {
-
-                    preview.src = reader.result;
-                    preview.hidden = false;
-
-                };
-
-                reader.readAsDataURL(file);
-
-            }
-        );
+        var nameInput =
+            row.querySelector(
+                ".admin-order-item-f__name"
+            );
 
 
-        // Quantity stepper
+        var priceInput =
+            row.querySelector(
+                ".admin-order-item-f__price"
+            );
+
+
+        var currencyInput =
+            row.querySelector(
+                ".admin-order-item-f__currency"
+            );
+
+
+        var costInput =
+            row.querySelector(
+                ".admin-order-item-f__cost"
+            );
+
 
         var qtyInput =
             row.querySelector(
                 ".admin-order-item-f__qty"
             );
 
-        row.querySelectorAll(
-            "[data-qty-action]"
-        ).forEach(function (btn) {
 
-            btn.addEventListener(
+        if (removeBtn) {
+
+            removeBtn.addEventListener(
                 "click",
                 function () {
 
-                    var current =
-                        Number(qtyInput.value) || 1;
-
-                    var next =
-                        btn.dataset.qtyAction === "increase"
-                            ? current + 1
-                            : current - 1;
-
-                    qtyInput.value =
-                        Math.max(1, next);
+                    row.remove();
 
                 }
             );
+        }
 
-        });
+
+        if (fileInput) {
+
+            fileInput.addEventListener(
+                "change",
+                function () {
+
+                    var file =
+                        fileInput.files[0];
+
+
+                    if (!file) {
+                        return;
+                    }
+
+
+                    var reader =
+                        new FileReader();
+
+
+                    reader.onload =
+                        function () {
+
+                            preview.src =
+                                reader.result;
+
+                            preview.hidden =
+                                false;
+
+                        };
+
+
+                    reader.readAsDataURL(
+                        file
+                    );
+
+                }
+            );
+        }
+
+
+        row.querySelectorAll(
+            "[data-qty-action]"
+        )
+        .forEach(
+            function (btn) {
+
+                btn.addEventListener(
+                    "click",
+                    function () {
+
+                        var current =
+                            Number(
+                                qtyInput.value
+                            ) || 1;
+
+
+                        var next =
+                            btn.dataset.qtyAction ===
+                            "increase"
+                                ?
+                                current + 1
+                                :
+                                current - 1;
+
+
+                        qtyInput.value =
+                            Math.max(
+                                1,
+                                next
+                            );
+
+                    }
+                );
+
+            }
+        );
+
+
+        // اگر در حالت ویرایش هستیم
+        if (product) {
+
+            if (product.id) {
+
+                row.dataset.itemId =
+                    String(
+                        product.id
+                    );
+            }
+
+
+            if (nameInput) {
+
+                nameInput.value =
+                    product.name || "";
+            }
+
+
+            if (priceInput) {
+
+                priceInput.value =
+                    unitPriceF(
+                        product
+                    );
+            }
+
+
+            if (currencyInput) {
+
+                currencyInput.value =
+                    product.currency ||
+                    "USD";
+            }
+
+
+            if (costInput) {
+
+                costInput.value =
+                    Number(
+                        product.costPrice
+                    ) || 0;
+            }
+
+
+            if (qtyInput) {
+
+                qtyInput.value =
+                    Number(
+                        product.qty
+                    ) || 1;
+            }
+
+
+            if (
+                preview &&
+                product.image
+            ) {
+
+                preview.src =
+                    product.image;
+
+                preview.hidden =
+                    false;
+            }
+        }
 
 
         return row;
-
     }
 
 
@@ -3065,6 +3077,10 @@
     // Reads + validates every item row. Returns { items, error }
     // — items is null when validation fails, with error set to a
     // user-facing message.
+
+
+
+
     function readOrderItemsF() {
 
         var container =
@@ -3073,7 +3089,10 @@
             );
 
         if (!container) {
-            return { items: null, error: "خطای داخلی فرم." };
+            return {
+                items: null,
+                error: "خطای داخلی فرم."
+            };
         }
 
         var rows =
@@ -3097,35 +3116,29 @@
                 return;
             }
 
-            var name =
+            var nameInput =
                 row.querySelector(
                     ".admin-order-item-f__name"
-                ).value.trim();
-
-            var price =
-                Number(
-                    row.querySelector(
-                        ".admin-order-item-f__price"
-                    ).value
                 );
 
-            var currency =
+            var priceInput =
+                row.querySelector(
+                    ".admin-order-item-f__price"
+                );
+
+            var currencyInput =
                 row.querySelector(
                     ".admin-order-item-f__currency"
-                ).value;
+                );
 
-            var cost =
-                Number(
-                    row.querySelector(
-                        ".admin-order-item-f__cost"
-                    ).value
-                ) || 0;
+            var costInput =
+                row.querySelector(
+                    ".admin-order-item-f__cost"
+                );
 
-            var qty =
-                Number(
-                    row.querySelector(
-                        ".admin-order-item-f__qty"
-                    ).value
+            var qtyInput =
+                row.querySelector(
+                    ".admin-order-item-f__qty"
                 );
 
             var preview =
@@ -3133,46 +3146,134 @@
                     ".admin-order-item-f__preview"
                 );
 
+            var fileInput =
+                row.querySelector(
+                    ".admin-order-item-f__file-input"
+                );
+
+            var name =
+                nameInput
+                    ? nameInput.value.trim()
+                    : "";
+
+            var price =
+                priceInput
+                    ? Number(priceInput.value)
+                    : 0;
+
+            var currency =
+                currencyInput
+                    ? currencyInput.value
+                    : "";
+
+            var cost =
+                costInput
+                    ? Number(costInput.value) || 0
+                    : 0;
+
+            var qty =
+                qtyInput
+                    ? Number(qtyInput.value)
+                    : 0;
+
             var image =
-                !preview.hidden ? preview.src : "";
+                preview &&
+                !preview.hidden
+                    ? preview.src
+                    : "";
 
+            var file =
+                fileInput &&
+                fileInput.files &&
+                fileInput.files.length
+                    ? fileInput.files[0]
+                    : null;
 
-            if (!name || !price || price <= 0 || !qty || qty < 1) {
+            if (
+                !name ||
+                !price ||
+                price <= 0 ||
+                !qty ||
+                qty < 1
+            ) {
 
                 error =
                     "برای هر آیتم، نام و قیمت معتبر و حداقل ۱ عدد تعداد وارد کنید.";
 
                 return;
-
             }
-
-
+            var itemId =
+                row.dataset.itemId
+                    ?
+                    Number(
+                        row.dataset.itemId
+                    )
+                    :
+                    null;
             items.push({
-                name: name,
-                price: price,
-                currency: currency,
-                cost: cost,
-                qty: qty,
-                image: image
+
+                id:
+                    itemId,
+
+                name:
+                    name,
+
+                price:
+                    price,
+
+                currency:
+                    currency,
+
+                cost:
+                    cost,
+
+                qty:
+                    qty,
+
+                image:
+                    image,
+
+                file:
+                    file
+
             });
 
         });
 
-        return { items: error ? null : items, error: error };
-
+        return {
+            items: error ? null : items,
+            error: error
+        };
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /* ----------------------------------------------------------
      * Exchange rate "fetch"
      *
-     * NOTE for backend integration: this is a MOCK stand-in. It
-     * simulates an API round-trip and resolves with the same
-     * static EXCHANGE_RATES_F table already used across this
-     * file. Replace the body of this function with a real fetch()
-     * to the live-rate endpoint — keep the same resolved shape
-     * ({ USD: { label, rate }, ... }) so nothing else has to
-     * change.
+     * Temporary local exchange-rate source.
+     * Replace the body of this function with a real backend/API
+     * request when the exchange-rate endpoint is implemented.
+     * Keep the same resolved shape
+     * ({ USD: { label, rate }, ... }).
      * ---------------------------------------------------------- */
 
     function fetchExchangeRatesF() {
@@ -3651,6 +3752,10 @@
 
     function initNewOrderF() {
 
+        var editingOrderId =
+            null;
+
+
         var openBtn =
             document.getElementById(
                 "adminNewOrderBtnF"
@@ -3698,7 +3803,6 @@
         }
 
 
-        populateOrderCustomersF();
         initOrderItemsF();
 
 
@@ -3715,19 +3819,208 @@
 
 
         function closeNewOrderModal() {
-            modal.hidden = true;
+
+            modal.hidden =
+                true;
+
+            editingOrderId =
+                null;
+
         }
 
 
         function openNewOrderModal() {
 
+            editingOrderId =
+                null;
+
+
             form.reset();
+
             resetOrderItemsF();
+
             showFormErrorF("");
 
-            modal.hidden = false;
 
+            var title =
+                document.getElementById(
+                    "adminNewOrderTitleF"
+                );
+
+
+            if (title) {
+
+                title.textContent =
+                    "ثبت سفارش جدید";
+            }
+
+
+            if (submitBtn) {
+
+                submitBtn.textContent =
+                    "ثبت فاکتور";
+            }
+
+
+            modal.hidden =
+                false;
         }
+
+
+        openEditOrderModalF =
+            function (order) {
+
+                if (!order) {
+                    return;
+                }
+
+
+                editingOrderId =
+                    order.id;
+
+
+                form.reset();
+
+                showFormErrorF("");
+
+
+                var title =
+                    document.getElementById(
+                        "adminNewOrderTitleF"
+                    );
+
+
+                if (title) {
+
+                    title.textContent =
+                        "ویرایش سفارش " +
+                        order.number;
+                }
+
+
+                if (submitBtn) {
+
+                    submitBtn.textContent =
+                        "ذخیره تغییرات";
+                }
+
+
+                var customerSelect =
+                    document.getElementById(
+                        "adminNewOrderCustomerF"
+                    );
+
+
+                if (customerSelect) {
+
+                    customerSelect.value =
+                        String(
+                            order.customer.id
+                        );
+                }
+
+
+                var shippingInput =
+                    document.getElementById(
+                        "adminNewOrderShippingF"
+                    );
+
+
+                if (shippingInput) {
+
+                    shippingInput.value =
+                        Number(
+                            order.shippingRial
+                        ) || 0;
+                }
+
+
+                var serviceInput =
+                    document.getElementById(
+                        "adminNewOrderServiceF"
+                    );
+
+
+                if (serviceInput) {
+
+                    serviceInput.value =
+                        Number(
+                            order.serviceRial
+                        ) || 0;
+                }
+
+
+                var paymentInput =
+                    document.getElementById(
+                        "adminNewOrderPaymentF"
+                    );
+
+
+                if (paymentInput) {
+
+                    paymentInput.value =
+                        order.paymentStatus ||
+                        "pending";
+                }
+
+
+                var container =
+                    document.getElementById(
+                        "adminOrderItemsF"
+                    );
+
+
+                if (container) {
+
+                    container.innerHTML =
+                        "";
+
+
+                    var products =
+                        Array.isArray(order.products)
+                            ? order.products
+                            : [];
+
+
+                    products.forEach(
+                        function (product) {
+
+                            var row =
+                                createOrderItemRowF(
+                                    product
+                                );
+
+
+                            if (row) {
+
+                                container.appendChild(
+                                    row
+                                );
+                            }
+
+                        }
+                    );
+
+
+                    if (!products.length) {
+
+                        var emptyRow =
+                            createOrderItemRowF();
+
+
+                        if (emptyRow) {
+
+                            container.appendChild(
+                                emptyRow
+                            );
+                        }
+                    }
+                }
+
+
+                modal.hidden =
+                    false;
+            };
 
 
         openBtn.addEventListener(
@@ -3772,175 +4065,471 @@
         }
 
 
-        form.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-
-                showFormErrorF("");
 
 
-                var customer =
-                    document.getElementById(
-                        "adminNewOrderCustomerF"
-                    ).value;
 
 
-                var shippingRial =
-                    Number(
-                        document.getElementById(
-                            "adminNewOrderShippingF"
-                        ).value
-                    ) || 0;
 
 
-                var serviceRial =
-                    Number(
-                        document.getElementById(
-                            "adminNewOrderServiceF"
-                        ).value
-                    ) || 0;
 
 
-                var paymentStatus =
-                    document.getElementById(
-                        "adminNewOrderPaymentF"
-                    ).value;
 
 
-                if (!customer) {
-
-                    showFormErrorF(
-                        "لطفاً مشتری سفارش را انتخاب کنید."
-                    );
-
-                    return;
-
-                }
 
 
-                var itemsResult = readOrderItemsF();
-
-                if (!itemsResult.items) {
-
-                    showFormErrorF(itemsResult.error);
-
-                    return;
-
-                }
 
 
-                var items = itemsResult.items;
 
 
-                // Loading state while "fetching" today's rates.
 
-                submitBtn.disabled = true;
 
-                var originalLabel = submitBtn.textContent;
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+    form.addEventListener(
+        "submit",
+        function (event) {
+
+            event.preventDefault();
+
+            showFormErrorF("");
+
+            var customerSelect =
+                document.getElementById(
+                    "adminNewOrderCustomerF"
+                );
+
+            var shippingInput =
+                document.getElementById(
+                    "adminNewOrderShippingF"
+                );
+
+            var serviceInput =
+                document.getElementById(
+                    "adminNewOrderServiceF"
+                );
+
+            var paymentInput =
+                document.getElementById(
+                    "adminNewOrderPaymentF"
+                );
+
+            var customer =
+                customerSelect
+                    ? customerSelect.value
+                    : "";
+
+            var shippingRial =
+                shippingInput
+                    ? Number(
+                        shippingInput.value
+                    ) || 0
+                    : 0;
+
+            var serviceRial =
+                serviceInput
+                    ? Number(
+                        serviceInput.value
+                    ) || 0
+                    : 0;
+
+            var paymentStatus =
+                paymentInput
+                    ? paymentInput.value
+                    : "pending";
+
+            // =========================
+            // Customer validation
+            // =========================
+
+            if (!customer) {
+
+                showFormErrorF(
+                    "لطفاً مشتری سفارش را انتخاب کنید."
+                );
+
+                return;
+            }
+
+            // =========================
+            // Items
+            // =========================
+
+            var itemsResult =
+                readOrderItemsF();
+
+            if (!itemsResult.items) {
+
+                showFormErrorF(
+                    itemsResult.error
+                );
+
+                return;
+            }
+
+            var items =
+                itemsResult.items;
+
+            // =========================
+            // Loading
+            // =========================
+            var isEditing =
+                Boolean(
+                    editingOrderId
+                );
+
+
+            var originalLabel =
+                submitBtn
+                    ? submitBtn.textContent
+                    : "";
+
+
+            if (submitBtn) {
+
+                submitBtn.disabled =
+                    true;
 
                 submitBtn.textContent =
-                    "در حال دریافت نرخ ارز...";
+                    isEditing
+                        ? "در حال ذخیره تغییرات..."
+                        : "در حال ثبت سفارش...";
+            }
+            // =========================
+            // Exchange rates
+            // =========================
+
+            fetchExchangeRatesF()
+
+                .then(function (rates) {
+
+                    var calc =
+                        buildInvoiceCalcF(
+                            items,
+                            rates,
+                            shippingRial,
+                            serviceRial
+                        );
+
+                    // =====================
+                    // FormData
+                    // =====================
+
+                    var formData =
+                        new FormData();
+
+                    var csrfInput =
+                        form.querySelector(
+                            'input[name="csrfmiddlewaretoken"]'
+                        );
+
+                    if (csrfInput) {
+
+                        formData.append(
+                            "csrfmiddlewaretoken",
+                            csrfInput.value
+                        );
+                    }
+
+                    formData.append(
+                        "customer_id",
+                        customer
+                    );
+
+                    formData.append(
+                        "shipping_cost",
+                        String(shippingRial)
+                    );
+
+                    formData.append(
+                        "service_cost",
+                        String(serviceRial)
+                    );
+
+                    formData.append(
+                        "payment_status",
+                        paymentStatus
+                    );
+
+                    var usdRate =
+                        rates &&
+                        rates.USD
+                            ? rates.USD.rate
+                            : 0;
+
+                    formData.append(
+                        "usd_rate",
+                        String(usdRate)
+                    );
+
+                    // =====================
+                    // Products
+                    // =====================
+
+                    var backendItems =
+                        items.map(
+                            function (
+                                item,
+                                index
+                            ) {
+
+                                var rateData =
+                                    rates[
+                                        item.currency
+                                    ];
+
+                                var exchangeRate =
+                                    rateData
+                                        ? rateData.rate
+                                        : 0;
+
+                                if (item.file) {
+
+                                    formData.append(
+                                        "item_photo_" +
+                                            index,
+                                        item.file
+                                    );
+                                }
+
+                                return {
+
+                                    id:
+                                        item.id || null,
+
+                                    product_name:
+                                        item.name,
+
+                                    quantity:
+                                        item.qty,
+
+                                    currency:
+                                        item.currency,
+
+                                    product_price:
+                                        item.price,
+
+                                    admin_cost:
+                                        item.cost,
+
+                                    exchange_rate:
+                                        exchangeRate
+
+                                };
+                            }
+                        );
+
+                    formData.append(
+                        "items",
+                        JSON.stringify(
+                            backendItems
+                        )
+                    );
+
+                    var requestUrl =
+                        isEditing
+                            ?
+                            buildOrderUrlF(
+                                form.dataset
+                                    .updateUrlTemplate,
+                                editingOrderId
+                            )
+                            :
+                            form.dataset
+                                .createUrl;
 
 
-                fetchExchangeRatesF().then(function (rates) {
-
-                    var calc = buildInvoiceCalcF(
-                        items,
-                        rates,
-                        shippingRial,
-                        serviceRial
+                    console.log(
+                        isEditing
+                            ? "Update order URL:"
+                            : "Create order URL:",
+                        requestUrl
                     );
 
 
-                    var nextNumber =
-                        10522 + mockOrdersF.length;
-
-                    var orderNumber = "SN-" + nextNumber;
-
-                    var todayLabel = "۱۴۰۵/۰۶/۱۲";
+                    console.log(
+                        "Customer ID:",
+                        customer
+                    );
 
 
-                    // Build the mockOrdersF entry using the same
-                    // product shape the rest of this file already
-                    // expects (unitPriceXxx per currency), so the
-                    // orders list/detail sheet keep working as-is.
+                    console.log(
+                        "Items:",
+                        backendItems
+                    );
+                    // =====================
+                    // Django request
+                    // =====================
 
-                    var products = items.map(function (item) {
-
-                        var product = {
-                            name: item.name,
-                            qty: item.qty,
-                            currency: item.currency,
-                            image: item.image
-                        };
-
-                        product[CURRENCY_FIELD_MAP_F[item.currency]] =
-                            item.price;
-
-                        return product;
-
-                    });
-
-
-                    var newOrder = {
-
-                        number: orderNumber,
-                        date: todayLabel,
-                        lastChangeDate: todayLabel,
-
-                        customer: {
-                            name: customer,
-                            phone: "—",
-                            address: "—",
-                            note: "ثبت سفارش توسط ادمین"
-                        },
-
-                        products: products,
-
-                        // Kept for backward compatibility with the
-                        // single-currency helpers elsewhere — set
-                        // to the first item's currency.
-                        currency: items[0].currency,
-
-                        discountRial: 0,
-                        shippingRial: shippingRial,
-                        serviceRial: serviceRial,
-
-                        paymentStatus: paymentStatus,
-                        orderStatus: "registered",
-                        invoiceStatus: "issued",
-
-                        payment: {
-                            method: "ثبت دستی توسط ادمین",
-                            trackingCode: "—",
-                            paidDate:
-                                paymentStatus === "paid"
-                                    ? todayLabel
-                                    : "—",
-                            paidRial: 0,
-                            remainingRial: null
+                    return fetch(
+                        requestUrl,
+                        {
+                            method: "POST",
+                            body: formData
                         }
+                    )
+                    .then(
+                        function (response) {
 
-                    };
+                            return response
+                                .text()
+                                .then(
+                                    function (text) {
+
+                                        var data = {};
+
+                                        try {
+
+                                            data =
+                                                JSON.parse(
+                                                    text
+                                                );
+
+                                        } catch (error) {
+
+                                            console.error(
+                                                "Invalid backend response:",
+                                                text
+                                            );
+                                        }
+
+                                        return {
+                                            ok:
+                                                response.ok,
+
+                                            status:
+                                                response.status,
+
+                                            data:
+                                                data,
+
+                                            raw:
+                                                text,
+
+                                            calc:
+                                                calc
+                                        };
+                                    }
+                                );
+                        }
+                    );
+
+                })
+
+                // =========================
+                // Backend response
+                // =========================
+
+                .then(function (result) {
+
+                    console.log(
+                        isEditing
+                            ? "Update order response:"
+                            : "Create order response:",
+                        result
+                    );
 
 
-                    mockOrdersF.unshift(newOrder);
+                    if (!result.ok) {
 
+                        var message =
+                            result.data &&
+                            result.data.message
+                                ?
+                                result.data.message
+                                :
+                                (
+                                    "خطای سرور با کد " +
+                                    result.status
+                                );
+
+
+                        throw new Error(
+                            message
+                        );
+                    }
+
+
+                    if (
+                        !result.data ||
+                        !result.data.order
+                    ) {
+
+                        throw new Error(
+                            "اطلاعات سفارش از سرور دریافت نشد."
+                        );
+                    }
+
+
+                    var savedOrder =
+                        result.data.order;
+
+
+                    var calc =
+                        result.calc;
+
+
+                    // اطلاعات واقعی برگشتی Django
+                    // جای Order قبلی را می‌گیرد.
+                    replaceOrderF(
+                        savedOrder
+                    );
+
+
+                    // =====================
+                    // Invoice
+                    // =====================
 
                     var paymentLabels = {
-                        pending: "در انتظار پرداخت",
-                        paid: "پرداخت‌شده",
-                        partial: "پرداخت ناقص"
+
+                        pending:
+                            "در انتظار پرداخت",
+
+                        paid:
+                            "پرداخت‌شده",
+
+                        partial:
+                            "پرداخت ناقص",
+
+                        failed:
+                            "پرداخت ناموفق",
+
+                        cancelled:
+                            "لغوشده"
+
                     };
 
+
                     var meta = {
-                        orderNumber: orderNumber,
-                        date: todayLabel,
-                        customerName: customer,
+
+                        orderNumber:
+                            savedOrder.number,
+
+                        date:
+                            savedOrder.date,
+
+                        customerName:
+                            savedOrder.customer.name,
+
                         paymentLabel:
-                            paymentLabels[paymentStatus] || paymentStatus
+                            paymentLabels[
+                                savedOrder.paymentStatus
+                            ]
+                            ||
+                            savedOrder.paymentStatus
+
                     };
 
 
@@ -3949,31 +4538,38 @@
                             "adminCustomerInvoiceF"
                         );
 
+
                     var adminInvoiceEl =
                         document.getElementById(
                             "adminInternalInvoiceF"
                         );
 
+
                     if (customerInvoiceEl) {
 
                         customerInvoiceEl.innerHTML =
-                            renderInvoiceHtmlF(calc, meta, false);
-
+                            renderInvoiceHtmlF(
+                                calc,
+                                meta,
+                                false
+                            );
                     }
+
 
                     if (adminInvoiceEl) {
 
                         adminInvoiceEl.innerHTML =
-                            renderInvoiceHtmlF(calc, meta, true);
-
+                            renderInvoiceHtmlF(
+                                calc,
+                                meta,
+                                true
+                            );
                     }
 
 
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalLabel;
-
-                    closeNewOrderModal();
-
+                    // =====================
+                    // Reset filters
+                    // =====================
 
                     filtersF = {
 
@@ -3991,12 +4587,19 @@
                             "adminOrderSearchF"
                         );
 
+
                     if (searchInput) {
-                        searchInput.value = "";
+
+                        searchInput.value =
+                            "";
                     }
 
 
+                    // لیست را دوباره از ordersF رندر کن
                     applyFiltersF();
+
+
+                    closeNewOrderModal();
 
 
                     openInvoiceModalF(
@@ -4005,17 +4608,76 @@
 
 
                     showToastF(
-                        "سفارش " + orderNumber +
-                        " ثبت و دو فاکتور صادر شد.",
+
+                        isEditing
+                            ?
+                            (
+                                "سفارش " +
+                                savedOrder.number +
+                                " با موفقیت ویرایش شد."
+                            )
+                            :
+                            (
+                                "سفارش " +
+                                savedOrder.number +
+                                " با موفقیت ثبت شد."
+                            ),
+
                         "success"
                     );
 
+                })
+
+                .catch(function (error) {
+
+                    console.error(
+                        "Create / update order error:",
+                        error
+                    );
+
+                    showFormErrorF(
+                        error.message ||
+                        "ذخیره سفارش انجام نشد."
+                    );
+
+                })
+
+                // =========================
+                // Finally
+                // =========================
+
+                .finally(function () {
+
+                    if (submitBtn) {
+
+                        submitBtn.disabled =
+                            false;
+
+                        submitBtn.textContent =
+                            originalLabel;
+                    }
+
                 });
 
-            }
-        );
+        }
+    );
 
-    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /* ============================================================
