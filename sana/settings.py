@@ -134,6 +134,4 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "customer.User"
-=======
 MELIPAYAMAK_OTP_URL = config("MELIPAYAMAK_OTP_URL")
-AUTH_USER_MODEL = "customer.User"

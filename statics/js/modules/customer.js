@@ -76,8 +76,12 @@ function getMockOrders() {
 
 const ORDER_STATUS_LABELS = {
     registered: "ثبت شده",
+    confirmed: "تأیید شده",
+    preparing: "در حال آماده‌سازی",
     shipped: "ارسال شده",
-    delivered: "تحویل داده شده"
+    delivered: "تحویل داده شده",
+    cancelled: "لغو شده",
+    returned: "مرجوع شده"
 };
 
 
@@ -367,8 +371,27 @@ function initChangePasswordForm() {
 // ========================================
 // Order List
 // ========================================
+async function getCustomerOrders() {
 
-function renderOrderList() {
+    try {
+        const response = await fetch("/profile/orders/");
+
+        if (!response.ok) {
+            throw new Error("خطا در دریافت سفارش‌ها");
+        }
+
+        return await response.json();
+
+    } catch (error) {
+
+        console.error("Customer orders error:", error);
+
+        return [];
+    }
+}
+
+
+async function renderOrderList() {
 
     const list = document.getElementById("orderList");
     const emptyState = document.getElementById("orderEmpty");
@@ -377,10 +400,11 @@ function renderOrderList() {
         return;
     }
 
-    const orders = getMockOrders();
+    const orders = await getCustomerOrders();
 
     if (!orders.length) {
 
+        list.innerHTML = "";
         list.hidden = true;
 
         if (emptyState) {
@@ -390,11 +414,15 @@ function renderOrderList() {
         return;
     }
 
+    list.hidden = false;
+
+    if (emptyState) {
+        emptyState.hidden = true;
+    }
+
     list.innerHTML = "";
 
     orders.forEach((order) => {
-
-        const total = calcOrderTotalRial(order);
 
         const thumbsHtml = order.items.map((item) => `
             <img
@@ -408,19 +436,33 @@ function renderOrderList() {
         const li = document.createElement("li");
 
         li.innerHTML = `
-            <button type="button" class="order-card" data-order-id="${order.id}">
+            <button
+                type="button"
+                class="order-card"
+                data-order-id="${order.id}"
+            >
                 <div class="order-card__top">
-                    <span class="order-card__number">سفارش ${order.id}</span>
+                    <span class="order-card__number">
+                        سفارش ${order.id}
+                    </span>
+
                     <span class="order-status order-status--${order.status}">
-                        ${ORDER_STATUS_LABELS[order.status]}
+                        ${ORDER_STATUS_LABELS[order.status] || order.status}
                     </span>
                 </div>
+
                 <div class="order-card__thumbs">
                     ${thumbsHtml}
                 </div>
+
                 <div class="order-card__bottom">
-                    <span class="order-card__date">${order.date}</span>
-                    <span class="order-card__total">${formatRial(total)}</span>
+                    <span class="order-card__date">
+                        ${order.date}
+                    </span>
+
+                    <span class="order-card__total">
+                        ${formatRial(order.totalIRR)}
+                    </span>
                 </div>
             </button>
         `;
@@ -457,75 +499,182 @@ function initOrderList() {
 // Order Modal
 // ========================================
 
-function openOrderModal(orderId) {
+async function openOrderModal(orderId) {
 
-    const order =
-        getMockOrders().find((item) => item.id === orderId);
+    try {
 
-    if (!order) {
-        return;
+        const response = await fetch(
+            `/profile/orders/${orderId}/`
+        );
+
+        if (!response.ok) {
+            throw new Error("خطا در دریافت جزئیات سفارش");
+        }
+
+        const order = await response.json();
+
+        const modal = document.getElementById("orderModal");
+        const title = document.getElementById("orderModalTitle");
+        const body = document.getElementById("orderModalBody");
+
+        if (!modal || !title || !body) {
+            return;
+        }
+
+        title.textContent = `فاکتور سفارش ${order.id}`;
+
+        const itemsSubtotalUSD = order.items.reduce(
+            (sum, item) => sum + (item.priceUSD * item.qty),
+            0
+        );
+
+        const itemsSubtotalRial =
+            itemsSubtotalUSD * USD_TO_RIAL;
+
+        const grandTotal = order.totalIRR;
+
+        const itemsHtml = order.items.map((item) => `
+            <div class="invoice-item">
+
+                ${
+                    item.image
+                    ? `
+                        <img
+                            class="invoice-item__image"
+                            src="${item.image}"
+                            alt=""
+                            loading="lazy"
+                        >
+                    `
+                    : ""
+                }
+
+                <div class="invoice-item__info">
+
+                    <div class="invoice-item__name">
+                        ${item.name}
+                    </div>
+
+                    <div class="invoice-item__qty">
+                        تعداد: ${item.qty.toLocaleString("fa-IR")}
+                    </div>
+
+                </div>
+
+                <span
+                    class="invoice-item__price"
+                    dir="ltr"
+                >
+                    ${formatUSD(item.priceUSD * item.qty)}
+                </span>
+
+            </div>
+        `).join("");
+
+        body.innerHTML = `
+
+            <div class="invoice-meta">
+
+                <span>
+                    تاریخ ثبت سفارش: ${order.date}
+                </span>
+
+                <span>
+                    وضعیت:
+                    ${ORDER_STATUS_LABELS[order.status] || order.status}
+                </span>
+
+            </div>
+
+
+            <div class="invoice-items">
+                ${itemsHtml}
+            </div>
+
+
+            <div class="invoice-summary">
+
+                <div class="invoice-summary__row">
+
+                    <span>
+                        جمع کل (دلار)
+                    </span>
+
+                    <span dir="ltr">
+                        ${formatUSD(itemsSubtotalUSD)}
+                    </span>
+
+                </div>
+
+
+                <div class="invoice-summary__row">
+
+                    <span>
+                        جمع کل (ریال)
+                    </span>
+
+                    <span>
+                        ${formatRial(itemsSubtotalRial)}
+                    </span>
+
+                </div>
+
+
+                <div class="invoice-summary__row">
+
+                    <span>
+                        باربری
+                    </span>
+
+                    <span>
+                        ${
+                            order.shipping
+                            ? formatRial(order.shipping)
+                            : "رایگان"
+                        }
+                    </span>
+
+                </div>
+
+
+                <div class="invoice-summary__row">
+
+                    <span>
+                        خدمات
+                    </span>
+
+                    <span>
+                        ${formatRial(order.services)}
+                    </span>
+
+                </div>
+
+
+                <div class="invoice-summary__row invoice-summary__row--total">
+
+                    <span>
+                        مجموع کل
+                    </span>
+
+                    <span>
+                        ${formatRial(grandTotal)}
+                    </span>
+
+                </div>
+
+            </div>
+        `;
+
+        modal.hidden = false;
+
+    } catch (error) {
+
+        console.error(
+            "Order detail error:",
+            error
+        );
+
     }
-
-    const modal = document.getElementById("orderModal");
-    const title = document.getElementById("orderModalTitle");
-    const body = document.getElementById("orderModalBody");
-
-    if (!modal || !title || !body) {
-        return;
-    }
-
-    title.textContent = `فاکتور سفارش ${order.id}`;
-
-    const itemsSubtotalUSD = calcItemsSubtotalUSD(order.items);
-    const itemsSubtotalRial = itemsSubtotalUSD * USD_TO_RIAL;
-    const grandTotal = calcOrderTotalRial(order);
-
-    const itemsHtml = order.items.map((item) => `
-        <div class="invoice-item">
-            <img class="invoice-item__image" src="${item.image}" alt="" loading="lazy">
-            <div class="invoice-item__info">
-                <div class="invoice-item__name">${item.name}</div>
-                <div class="invoice-item__qty">تعداد: ${item.qty.toLocaleString("fa-IR")}</div>
-            </div>
-            <span class="invoice-item__price" dir="ltr">${formatUSD(item.priceUSD * item.qty)}</span>
-        </div>
-    `).join("");
-
-    body.innerHTML = `
-        <div class="invoice-meta">
-            <span>تاریخ ثبت سفارش: ${order.date}</span>
-            <span>وضعیت: ${ORDER_STATUS_LABELS[order.status]}</span>
-        </div>
-
-        <div class="invoice-items">
-            ${itemsHtml}
-        </div>
-
-        <div class="invoice-summary">
-            <div class="invoice-summary__row">
-                <span>جمع کل (دلار)</span>
-                <span dir="ltr">${formatUSD(itemsSubtotalUSD)}</span>
-            </div>
-            <div class="invoice-summary__row">
-                <span>جمع کل (ریال)</span>
-                <span>${formatRial(itemsSubtotalRial)}</span>
-            </div>
-            <div class="invoice-summary__row">
-                <span>باربری</span>
-                <span>${order.shipping ? formatRial(order.shipping) : "رایگان"}</span>
-            </div>
-            <div class="invoice-summary__row">
-                <span>خدمات</span>
-                <span>${formatRial(order.services)}</span>
-            </div>
-            <div class="invoice-summary__row invoice-summary__row--total">
-                <span>مجموع کل</span>
-                <span>${formatRial(grandTotal)}</span>
-            </div>
-        </div>
-    `;
-
-    modal.hidden = false;
 }
 
 

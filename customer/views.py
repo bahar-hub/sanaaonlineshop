@@ -1,8 +1,10 @@
 
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import update_session_auth_hash
+from django.http import JsonResponse
+from orders.models import Order
 
 
 def is_customer(user):
@@ -94,3 +96,71 @@ def profile_view(request):
         "customer/customer.html",
         context
     )
+
+
+@user_passes_test(is_customer, login_url="base:index")
+def customer_orders_api(request):
+
+    orders = (
+        Order.objects
+        .filter(user=request.user)
+        .prefetch_related("items")
+        .order_by("-registered_at")
+    )
+
+    data = []
+
+    for order in orders:
+        items = []
+
+        for item in order.items.all():
+            items.append({
+                "name": item.product_name,
+                "qty": item.quantity,
+                "priceUSD": float(item.product_price),
+                "image": item.photo.url if item.photo else "",
+            })
+
+        data.append({
+            "id": order.id,
+            "date": order.registered_at.strftime("%Y/%m/%d"),
+            "status": order.status,
+            "items": items,
+            "shipping": float(order.shipping_cost),
+            "services": float(order.service_cost),
+            "totalUSD": float(order.total_usd),
+            "totalIRR": float(order.total_irr),
+        })
+
+    return JsonResponse(data, safe=False)
+
+
+@user_passes_test(is_customer, login_url="base:index")
+def customer_order_detail_api(request, order_id):
+
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items"),
+        id=order_id,
+        user=request.user,
+    )
+
+    data = {
+        "id": order.id,
+        "date": order.registered_at.strftime("%Y/%m/%d"),
+        "status": order.status,
+        "shipping": float(order.shipping_cost),
+        "services": float(order.service_cost),
+        "totalUSD": float(order.total_usd),
+        "totalIRR": float(order.total_irr),
+        "items": [
+            {
+                "name": item.product_name,
+                "qty": item.quantity,
+                "priceUSD": float(item.product_price),
+                "image": item.photo.url if item.photo else "",
+            }
+            for item in order.items.all()
+        ],
+    }
+
+    return JsonResponse(data)
