@@ -56,34 +56,63 @@ def customer_view(request):
 
         return redirect("panel:customers")
 
-    customers = list(
-        User.objects.filter(
-            is_superuser=False
-        ).order_by("-date_joined").values(
-            "id",
-            "first_name",
-            "last_name",
-            "phone",
-            "date_joined",
-        )
+    customers_queryset = (
+        User.objects
+        .filter(is_superuser=False)
+        .prefetch_related("orders")
+        .order_by("-date_joined")
     )
 
-    for customer in customers:
-        customer["ordersCount"] = 0
-        customer["totalSpent"] = 0
-        customer["status"] = "active"
-        customer["orders"] = []
+    customers = []
 
-        customer["name"] = (
-            customer["first_name"] + " " + customer["last_name"]
+    for customer in customers_queryset:
+        orders = list(
+            customer.orders.all().order_by("-registered_at")
         )
-        customer["id"] = "C-" + str(customer["id"]).zfill(4)
-        customer["joinDate"] = jdatetime.datetime.fromgregorian(
-            datetime=customer["date_joined"]
-        ).strftime("%Y/%m/%d")  
+
+        total_spent = sum(
+            (order.total_irr for order in orders),
+            Decimal("0")
+        )
+
+        customer_name = (
+            f"{customer.first_name} {customer.last_name}"
+        ).strip()
+
+        if not customer_name:
+            customer_name = customer.username
+
+        customer_data = {
+            "userId": customer.id,
+            "id": "C-" + str(customer.id).zfill(4),
+            "name": customer_name,
+            "phone": customer.phone,
+            "joinDate": jdatetime.datetime.fromgregorian(
+                datetime=customer.date_joined
+            ).strftime("%Y/%m/%d"),
+
+            "status": "active" if customer.is_active else "inactive",
+
+            "ordersCount": len(orders),
+            "totalSpent": float(total_spent),
+
+            "orders": [
+                {
+                    "number": f"SN-{order.id:05d}",
+                    "date": jdatetime.datetime.fromgregorian(
+                        datetime=timezone.localtime(order.registered_at)
+                    ).strftime("%Y/%m/%d"),
+                    "status": order.status,
+                    "amount": float(order.total_irr),
+                }
+                for order in orders
+            ],
+        }
+
+        customers.append(customer_data)
 
     context = {
-        "customers": customers,
+        "customers": customers
     }
 
     return render(

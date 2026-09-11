@@ -479,7 +479,7 @@
             (modifierClass ? " " + modifierClass : "");
 
         return "" +
-            "<li class=\"order-card\">" +
+            "<li class=\"order-card\" data-order-number-f=\"" + order.number + "\">" +
             "<div class=\"order-card__top\">" +
             "<span class=\"" + statusClass + "\">" +
             STATUS_LABEL_F[order.status] +
@@ -501,104 +501,74 @@
     }
 
     function initOrdersModalF() {
-        var modal =
-            document.getElementById("adminCustomerOrdersModalF");
+    var modal = document.getElementById("adminCustomerOrdersModalF");
+    var titleEl = document.getElementById("adminCustomerOrdersTitleF");
+    var summaryEl = document.getElementById("adminCustomerOrdersSummaryF");
+    var listEl = document.getElementById("adminCustomerOrdersListF");
+    var emptyEl = document.getElementById("adminCustomerOrdersEmptyF");
 
-        var closeBtn =
-            document.getElementById("adminCustomerOrdersCloseF");
+    if (!modal || !titleEl || !summaryEl || !listEl || !emptyEl) return;
 
-        var titleEl =
-            document.getElementById("adminCustomerOrdersTitleF");
+    document.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-view-orders-f]");
 
-        var summaryEl =
-            document.getElementById("adminCustomerOrdersSummaryF");
+        if (!button) return;
 
-        var listEl =
-            document.getElementById("adminCustomerOrdersListF");
+        var customerId = button.getAttribute("data-view-orders-f");
 
-        var emptyEl =
-            document.getElementById("adminCustomerOrdersEmptyF");
+        var customer = mockCustomersF.find(function (item) {
+            return item.id === customerId;
+        });
 
-        if (!modal) return;
+        if (!customer) return;
 
-        function closeModal() {
+        titleEl.textContent = "سفارش‌های " + customer.name;
+
+        summaryEl.textContent =
+            "تعداد سفارش: " +
+            formatNumberF(customer.ordersCount);
+
+        listEl.innerHTML = "";
+
+        if (!customer.orders.length) {
+            emptyEl.hidden = false;
+        } else {
+            emptyEl.hidden = true;
+
+            customer.orders.forEach(function (order) {
+                var li = document.createElement("li");
+
+                li.className = "order-card";
+
+                li.innerHTML = orderCardHtmlF(order);
+
+                listEl.appendChild(li);
+            });
+        }
+
+        modal.hidden = false;
+    });
+
+    /*
+     * کلیک روی سفارش → رفتن به صفحه سفارش‌ها
+     * و باز شدن فاکتور همان سفارش
+     */
+    
+
+    /*
+     * بستن مودال
+     */
+    modal.addEventListener("click", function (event) {
+        if (
+            event.target === modal ||
+            event.target.closest(
+                "[data-orders-modal-close-f], [data-modal-close], .modal__close"
+            )
+        ) {
             modal.hidden = true;
         }
-
-        function openModalFor(customerId) {
-            var customer = mockCustomersF.filter(function (c) {
-                return c.id === customerId;
-            })[0];
-
-            if (!customer) return;
-
-            titleEl.textContent =
-                "سفارش‌های " + customer.name;
-
-            summaryEl.innerHTML =
-                "شناسه: <strong>#" +
-                customer.id +
-                "</strong> · " +
-                "تعداد سفارش: <strong>" +
-                formatNumberF(customer.ordersCount) +
-                "</strong> · " +
-                "مجموع خرید: <strong>" +
-                formatNumberF(customer.totalSpent) +
-                " ریال</strong>";
-
-            listEl.innerHTML = "";
-
-            if (!customer.orders.length) {
-                if (emptyEl) emptyEl.hidden = false;
-            } else {
-                if (emptyEl) emptyEl.hidden = true;
-
-                customer.orders.forEach(function (order) {
-                    listEl.insertAdjacentHTML(
-                        "beforeend",
-                        orderCardHtmlF(order)
-                    );
-                });
-            }
-
-            modal.hidden = false;
-        }
-
-        /*
-         * Event delegation — card list is re-rendered
-         * on search/sort.
-         */
-        document.addEventListener("click", function (event) {
-            var trigger =
-                event.target.closest("[data-view-orders-f]");
-
-            if (trigger) {
-                openModalFor(
-                    trigger.getAttribute("data-view-orders-f")
-                );
-            }
-        });
-
-        if (closeBtn) {
-            closeBtn.addEventListener("click", closeModal);
-        }
-
-        var ordersBackdrop =
-            modal.querySelector(".modal__backdrop");
-
-        if (ordersBackdrop) {
-            ordersBackdrop.addEventListener("click", closeModal);
-        }
-
-        document.addEventListener("keydown", function (event) {
-            if (
-                event.key === "Escape" &&
-                !modal.hidden
-            ) {
-                closeModal();
-            }
-        });
-    }
+    });
+}
 
     function initAdminCustomersF() {
         renderCustomerListF(mockCustomersF);

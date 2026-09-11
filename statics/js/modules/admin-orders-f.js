@@ -4679,26 +4679,26 @@
 
 
 
-
+    
     /* ============================================================
      * INIT
      * ============================================================ */
 
     function initAdminOrdersF() {
 
-        initToolbarF();
+    initToolbarF();
 
-        initDetailsSheetF();
+    initDetailsSheetF();
 
-        initGlobalActionsF();
+    initGlobalActionsF();
 
-        initNewOrderF();
+    initNewOrderF();
 
-        initInvoiceModalsF();
+    initInvoiceModalsF();
 
-        applyFiltersF();
+    applyFiltersF();
 
-    }
+}
 
 
     if (
