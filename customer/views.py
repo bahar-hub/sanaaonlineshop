@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import update_session_auth_hash
 from django.http import JsonResponse
 from orders.models import Order
+import jdatetime
 
 
 def is_customer(user):
@@ -123,7 +124,9 @@ def customer_orders_api(request):
 
         data.append({
             "id": order.id,
-            "date": order.registered_at.strftime("%Y/%m/%d"),
+            "date": jdatetime.datetime.fromgregorian(
+                datetime=order.registered_at
+            ).strftime("%Y/%m/%d"),
             "status": order.status,
             "items": items,
             "shipping": float(order.shipping_cost),
@@ -146,7 +149,9 @@ def customer_order_detail_api(request, order_id):
 
     data = {
         "id": order.id,
-        "date": order.registered_at.strftime("%Y/%m/%d"),
+        "date": jdatetime.datetime.fromgregorian(
+            datetime=order.registered_at
+        ).strftime("%Y/%m/%d"),
         "status": order.status,
         "shipping": float(order.shipping_cost),
         "services": float(order.service_cost),
