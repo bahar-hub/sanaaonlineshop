@@ -1,3 +1,7 @@
+// ----------------------------------------
+// Form
+// ----------------------------------------
+
 .form-group {
     margin-bottom: $spacing-xl;
 }
@@ -9,26 +13,25 @@
 
     color: $color-text-muted;
 
-    font-size: 0.68rem;
+    font-size: 0.78rem;
     font-weight: 500;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.04em;
 }
 
 .form-input,
 .form-textarea {
     width: 100%;
 
-    border: 0px;
-    border-bottom: 2px solid $color-hairline;
-    border-radius: $radius-sm;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
 
-    padding: 0 $spacing-md;
+    padding: 0 $spacing-lg;
 
-    // background-color: $color-input-bg;
+    background-color: rgba(255, 255, 255, 0.5);
     color: $color-text;
 
     font-family: $font-family-persian;
-    font-size: 0.92rem;
+    font-size: 0.65rem;
 
     transition:
         border-color $transition-fast,
@@ -37,10 +40,12 @@
 }
 
 .form-input {
-    height: 46px;
+    height: 54px;
 }
 
 .form-textarea {
+    border-radius: $radius-md;
+
     min-height: 90px;
 
     padding-top: $spacing-sm;
@@ -52,37 +57,74 @@
 .form-input::placeholder,
 .form-textarea::placeholder {
     color: $color-text-muted;
+    font-weight: 300;
     opacity: 0.7;
 }
 
 .form-input:focus,
 .form-textarea:focus {
-    border-color: $color-border;
-    border-bottom-color: $color-primary;
+    border-color: rgba(166, 21, 121, 0.3);
 
-    background-color: $color-input-bg-focus;
-    box-shadow: 0 4px 12px -6px rgba(166, 21, 121, 0.25);
+    background-color: #fff;
+    box-shadow: 0 4px 16px -6px rgba(166, 21, 121, 0.18);
 }
 
 
-// Password
+// ----------------------------------------
+// Icon field (username / password wrapper)
+// ----------------------------------------
+
+.icon-field {
+    position: relative;
+}
+
+.icon-field .form-input {
+    padding-right: 42px; // RTL: متن از راست شروع می‌شه، آیکون سمت راست
+}
+
+.icon-field__icon {
+    position: absolute;
+
+    right: $spacing-md;
+    top: 50%;
+
+    width: 20px;
+    height: 20px;
+
+    transform: translateY(-50%);
+
+    color: $color-text-muted;
+
+    pointer-events: none;
+}
+
+.icon-field__icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+
+// ----------------------------------------
+// Password toggle
+// ----------------------------------------
 
 .password-field {
     position: relative;
 }
 
 .password-field .form-input {
-    padding-left: 42px;
+    padding-right: 42px;
+    padding-left: $spacing-lg;
 }
 
 .password-toggle {
     position: absolute;
 
-    left: $spacing-sm;
+    right: $spacing-md;
     top: 50%;
 
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
 
     transform: translateY(-50%);
 
@@ -104,28 +146,10 @@
     height: 100%;
 }
 
-.password-toggle.is-visible {
-    color: $color-primary;
-}
 
-.password-toggle.is-visible::after {
-    content: "";
-
-    position: absolute;
-    inset: 0;
-
-    margin: auto;
-
-    width: 1px;
-    height: 60%;
-
-    background-color: currentColor;
-
-    transform: rotate(45deg);
-}
-
-
+// ----------------------------------------
 // Validation
+// ----------------------------------------
 
 .form-input.is-invalid,
 .form-textarea.is-invalid {
@@ -140,4 +164,33 @@
     color: $color-error;
 
     font-size: 0.7rem;
+}
+
+
+// ----------------------------------------
+// Submit button
+// ----------------------------------------
+
+.auth-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-sm;
+
+    width: 100%;
+    height: 54px;
+
+    border: 0;
+    border-radius: 999px;
+
+    background-color: $color-primary;
+    color: #fff;
+
+    font-family: $font-family-persian;
+    font-size: 0.92rem;
+    font-weight: 500;
+
+    cursor: pointer;
+
+    box-shadow: 0 10px 24px -8px rgba(166, 21, 121, 0.4);
 }
