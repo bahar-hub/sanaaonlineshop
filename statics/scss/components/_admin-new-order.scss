@@ -538,6 +538,82 @@
 }
 
 
+textarea.admin-order-item-f__description {
+    resize: vertical;
+    min-height: 56px;
+
+    font-family: $font-family-persian;
+}
+
+
+// ============================================================
+// Searchable customer select
+// ============================================================
+
+.admin-searchable-select-f {
+    position: relative;
+}
+
+.admin-searchable-select-f__native {
+    display: none;
+}
+
+.admin-searchable-select-f__list {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 20;
+
+    max-height: 220px;
+    overflow-y: auto;
+
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    background-color: $color-surface;
+    box-shadow: $shadow-card;
+}
+
+.admin-searchable-select-f__list[hidden] {
+    display: none;
+}
+
+.admin-searchable-select-f__item {
+    padding: $spacing-sm;
+    border-radius: $radius-sm;
+
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.85rem;
+
+    cursor: pointer;
+
+    transition: background-color $transition-fast;
+}
+
+.admin-searchable-select-f__item:hover,
+.admin-searchable-select-f__item.is-active-f {
+    background-color: $color-input-bg;
+}
+
+.admin-searchable-select-f__empty {
+    padding: $spacing-sm;
+
+    color: $color-text-muted;
+
+    font-family: $font-family-persian;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+
+
 // ----------------------------------------
 // Print — only the invoice content itself, nothing else on
 // the page. Everything with .admin-invoice-f__no-print (close

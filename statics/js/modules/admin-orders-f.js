@@ -371,19 +371,6 @@
     }
 
 
-    // Admin's own cost for the item (what Sanaa actually paid) —
-    // used only for the internal profit calculation, never shown
-    // on the customer invoice. Defaults to 0 (full price counted
-    // as margin) when not entered.
-    function unitCostF(product) {
-
-        return typeof product.costPrice === "number"
-            ? product.costPrice
-            : 0;
-
-    }
-
-
     function orderTotalsF(order) {
 
         var products =
@@ -2845,9 +2832,21 @@
             );
 
 
-        var costInput =
+        var brandInput =
             row.querySelector(
-                ".admin-order-item-f__cost"
+                ".admin-order-item-f__brand"
+            );
+
+
+        var sizeInput =
+            row.querySelector(
+                ".admin-order-item-f__size"
+            );
+
+
+        var descriptionInput =
+            row.querySelector(
+                ".admin-order-item-f__description"
             );
 
 
@@ -2984,12 +2983,24 @@
             }
 
 
-            if (costInput) {
+            if (brandInput) {
 
-                costInput.value =
-                    Number(
-                        product.costPrice
-                    ) || 0;
+                brandInput.value =
+                    product.brand || "";
+            }
+
+
+            if (sizeInput) {
+
+                sizeInput.value =
+                    product.size || "";
+            }
+
+
+            if (descriptionInput) {
+
+                descriptionInput.value =
+                    product.description || "";
             }
 
 
@@ -3131,9 +3142,19 @@
                     ".admin-order-item-f__currency"
                 );
 
-            var costInput =
+            var brandInput =
                 row.querySelector(
-                    ".admin-order-item-f__cost"
+                    ".admin-order-item-f__brand"
+                );
+
+            var sizeInput =
+                row.querySelector(
+                    ".admin-order-item-f__size"
+                );
+
+            var descriptionInput =
+                row.querySelector(
+                    ".admin-order-item-f__description"
                 );
 
             var qtyInput =
@@ -3166,10 +3187,20 @@
                     ? currencyInput.value
                     : "";
 
-            var cost =
-                costInput
-                    ? Number(costInput.value) || 0
-                    : 0;
+            var brand =
+                brandInput
+                    ? brandInput.value.trim()
+                    : "";
+
+            var size =
+                sizeInput
+                    ? sizeInput.value.trim()
+                    : "";
+
+            var description =
+                descriptionInput
+                    ? descriptionInput.value.trim()
+                    : "";
 
             var qty =
                 qtyInput
@@ -3224,8 +3255,14 @@
                 currency:
                     currency,
 
-                cost:
-                    cost,
+                brand:
+                    brand,
+
+                size:
+                    size,
+
+                description:
+                    description,
 
                 qty:
                     qty,
@@ -3300,7 +3337,6 @@
         var byCurrency = {};
 
         var itemsRial = 0;
-        var profitRial = 0;
 
         var lines = items.map(function (item) {
 
@@ -3311,17 +3347,17 @@
 
             var lineForeign = item.price * item.qty;
             var lineRial = lineForeign * rate;
-            var lineProfitRial =
-                (item.price - item.cost) * item.qty * rate;
 
             itemsRial += lineRial;
-            profitRial += lineProfitRial;
 
             byCurrency[item.currency] =
                 (byCurrency[item.currency] || 0) + lineForeign;
 
             return {
                 name: item.name,
+                brand: item.brand,
+                size: item.size,
+                description: item.description,
                 image: item.image,
                 qty: item.qty,
                 currency: item.currency,
@@ -3343,7 +3379,12 @@
             shippingRial: shippingRial,
             serviceRial: serviceRial,
             grandTotalRial: grandTotalRial,
-            profitRial: profitRial
+
+            // Admin cost is no longer collected on the frontend —
+            // profit is now the backend's responsibility. Replace
+            // this with the real figure from the create/update
+            // order response once that field exists there.
+            profitRial: 0
         };
 
     }
@@ -3750,6 +3791,197 @@
      * New order form — wiring
      * ---------------------------------------------------------- */
 
+    /* ----------------------------------------------------------
+     * Searchable customer select
+     *
+     * The real <select id="adminNewOrderCustomerF"> (server-
+     * rendered from {% for customer in customers %}) stays the
+     * form's source of truth and is kept in the DOM, just hidden.
+     * This layer only adds a filterable text input + list on top
+     * of it; selecting an item sets the real select's value.
+     * ---------------------------------------------------------- */
+
+    function syncCustomerComboDisplayF() {
+
+        var select =
+            document.getElementById(
+                "adminNewOrderCustomerF"
+            );
+
+        var searchInput =
+            document.getElementById(
+                "adminNewOrderCustomerSearchF"
+            );
+
+        if (!select || !searchInput) {
+            return;
+        }
+
+        var selectedOption =
+            select.options[select.selectedIndex];
+
+        searchInput.value =
+            selectedOption && selectedOption.value
+                ? selectedOption.textContent.trim()
+                : "";
+
+    }
+
+
+    function initSearchableCustomerSelectF() {
+
+        var wrapper =
+            document.getElementById(
+                "adminCustomerComboF"
+            );
+
+        var select =
+            document.getElementById(
+                "adminNewOrderCustomerF"
+            );
+
+        var searchInput =
+            document.getElementById(
+                "adminNewOrderCustomerSearchF"
+            );
+
+        var list =
+            document.getElementById(
+                "adminNewOrderCustomerListF"
+            );
+
+        if (!wrapper || !select || !searchInput || !list) {
+            return;
+        }
+
+
+        // Build a plain lookup of the server-rendered options
+        // once, up front.
+        var options =
+            Array.prototype.slice
+                .call(select.options)
+                .filter(function (option) {
+                    return option.value;
+                })
+                .map(function (option) {
+                    return {
+                        value: option.value,
+                        label: option.textContent.trim()
+                    };
+                });
+
+
+        function renderListF(query) {
+
+            var normalized =
+                (query || "").trim().toLowerCase();
+
+            var matches =
+                normalized
+                    ? options.filter(function (option) {
+                        return option.label
+                            .toLowerCase()
+                            .indexOf(normalized) !== -1;
+                    })
+                    : options;
+
+            list.innerHTML = "";
+
+            if (!matches.length) {
+
+                var empty =
+                    document.createElement("li");
+
+                empty.className =
+                    "admin-searchable-select-f__empty";
+
+                empty.textContent =
+                    "مشتری‌ای پیدا نشد.";
+
+                list.appendChild(empty);
+
+                return;
+            }
+
+            matches.forEach(function (option) {
+
+                var item =
+                    document.createElement("li");
+
+                item.className =
+                    "admin-searchable-select-f__item";
+
+                item.textContent = option.label;
+
+                item.addEventListener(
+                    "mousedown",
+                    function (event) {
+
+                        // mousedown (not click) so it fires before
+                        // the search input's blur hides the list.
+                        event.preventDefault();
+
+                        select.value = option.value;
+                        searchInput.value = option.label;
+
+                        list.hidden = true;
+
+                    }
+                );
+
+                list.appendChild(item);
+
+            });
+
+        }
+
+
+        searchInput.addEventListener(
+            "focus",
+            function () {
+
+                renderListF(searchInput.value);
+
+                list.hidden = false;
+
+            }
+        );
+
+
+        searchInput.addEventListener(
+            "input",
+            function () {
+
+                // Typing invalidates whatever was picked before
+                // until a new option is chosen from the list.
+                select.value = "";
+
+                renderListF(searchInput.value);
+
+                list.hidden = false;
+
+            }
+        );
+
+
+        searchInput.addEventListener(
+            "blur",
+            function () {
+
+                list.hidden = true;
+
+                // If nothing valid was picked, don't leave stray
+                // typed text behind.
+                if (!select.value) {
+                    searchInput.value = "";
+                }
+
+            }
+        );
+
+    }
+
+
     function initNewOrderF() {
 
         var editingOrderId =
@@ -3917,6 +4149,8 @@
                         String(
                             order.customer.id
                         );
+
+                    syncCustomerComboDisplayF();
                 }
 
 
@@ -4312,6 +4546,15 @@
                                     product_name:
                                         item.name,
 
+                                    brand:
+                                        item.brand,
+
+                                    size:
+                                        item.size,
+
+                                    description:
+                                        item.description,
+
                                     quantity:
                                         item.qty,
 
@@ -4320,9 +4563,6 @@
 
                                     product_price:
                                         item.price,
-
-                                    admin_cost:
-                                        item.cost,
 
                                     exchange_rate:
                                         exchangeRate
@@ -4693,6 +4933,8 @@
     initGlobalActionsF();
 
     initNewOrderF();
+
+    initSearchableCustomerSelectF();
 
     initInvoiceModalsF();
 

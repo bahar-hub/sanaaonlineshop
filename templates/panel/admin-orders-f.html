@@ -889,49 +889,76 @@
                 novalidate
             >
             {% csrf_token %}
-
                 <!-- Customer -->
 
                 <div class="admin-orders-f__new-order-field">
 
                     <label
-                        for="adminNewOrderCustomerF"
+                        for="adminNewOrderCustomerSearchF"
                         class="admin-orders-f__new-order-label"
                     >
                         مشتری
                     </label>
 
-                    <select
-                        id="adminNewOrderCustomerF"
-                        class="admin-select-f admin-select-f--block-f"
+                    <div
+                        class="admin-searchable-select-f"
+                        id="adminCustomerComboF"
                     >
-                        <option value="">
-                            انتخاب مشتری
-                        </option>
 
-                        {% for customer in customers %}
+                        <input
+                            type="text"
+                            id="adminNewOrderCustomerSearchF"
+                            class="admin-select-f admin-select-f--block-f admin-searchable-select-f__input"
+                            placeholder="جست‌وجوی مشتری..."
+                            autocomplete="off"
+                        >
 
-                            <option value="{{ customer.id }}">
+                        <ul
+                            class="admin-searchable-select-f__list"
+                            id="adminNewOrderCustomerListF"
+                            hidden
+                        ></ul>
 
-                                {% if customer.first_name or customer.last_name %}
-
-                                    {{ customer.first_name }}
-                                    {{ customer.last_name }}
-
-                                {% else %}
-
-                                    {{ customer.username }}
-
-                                {% endif %}
-
-                                {% if customer.phone %}
-                                    - {{ customer.phone }}
-                                {% endif %}
-
+                        <!-- Real value the form submits — stays in sync
+                             with the search box above via JS. Kept as a
+                             <select> (not a hidden input) so existing
+                             edit-mode code (customerSelect.value = ...)
+                             keeps working unchanged. -->
+                        <select
+                            id="adminNewOrderCustomerF"
+                            class="admin-searchable-select-f__native"
+                            hidden
+                        >
+                            <option value="">
+                                انتخاب مشتری
                             </option>
 
-                        {% endfor %}
-                    </select>
+                            {% for customer in customers %}
+
+                                <option value="{{ customer.id }}">
+
+                                    {% if customer.first_name or customer.last_name %}
+
+                                        {{ customer.first_name }}
+                                        {{ customer.last_name }}
+
+                                    {% else %}
+
+                                        {{ customer.username }}
+
+                                    {% endif %}
+
+                                    {% if customer.phone %}
+                                        - {{ customer.phone }}
+                                    {% endif %}
+
+
+                                </option>
+
+                            {% endfor %}
+                        </select>
+
+                    </div>
 
                 </div>
 
@@ -1064,7 +1091,7 @@
                     <button
                         type="button"
                         class="admin-btn-f admin-btn-f--secondary-f"
-                        id="adminNewOrderCancelF"
+                            id="adminNewOrderCancelF"
                     >
                         انصراف
                     </button>
@@ -1161,7 +1188,6 @@
                             stroke-linejoin="round"
                         />
                     </svg>
-
                     <span class="admin-order-item-f__upload-label">
                         عکس محصول
                     </span>
@@ -1176,6 +1202,22 @@
                         class="admin-orders-f__new-order-input admin-order-item-f__name"
                         placeholder="اسم محصول"
                     >
+
+                    <div class="admin-order-item-f__meta-row">
+
+                        <input
+                            type="text"
+                            class="admin-orders-f__new-order-input admin-order-item-f__brand"
+                            placeholder="برند"
+                        >
+
+                        <input
+                            type="text"
+                            class="admin-orders-f__new-order-input admin-order-item-f__size"
+                            placeholder="سایز"
+                        >
+
+                    </div>
 
                     <div class="admin-order-item-f__price-row">
 
@@ -1201,14 +1243,11 @@
                     </div>
 
 
-                    <input
-                        type="number"
-                        class="admin-orders-f__new-order-input admin-order-item-f__cost"
-                        min="0"
-                        step="0.01"
-                        placeholder="قیمت خرید ادمین (برای محاسبه سود — روی فاکتور مشتری نمایش داده نمی‌شود)"
-                        inputmode="decimal"
-                    >
+                    <textarea
+                        class="admin-orders-f__new-order-input admin-order-item-f__description"
+                        placeholder="توضیحات محصول (اختیاری)"
+                        rows="2"
+                    ></textarea>
 
 
                     <div class="admin-order-item-f__qty-row">

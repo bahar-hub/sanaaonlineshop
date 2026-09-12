@@ -12,8 +12,7 @@
     justify-content: center;
 
     padding: $spacing-lg;
-
-    background-color: $color-background;
+    background-image: url("../img/pattern.PNG");
 }
 
 .auth-page__container {
@@ -22,9 +21,8 @@
 }
 
 .auth-page__brand {
-    margin-bottom: $spacing-2xl;
-
-    text-align: center;
+  margin-bottom: 80px;
+  text-align: center;
 }
 
 .auth-page__brand-name {

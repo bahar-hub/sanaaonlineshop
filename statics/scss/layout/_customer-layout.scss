@@ -1,9 +1,12 @@
 .customer-page {
     min-height: 100vh;
 
-    padding: $spacing-lg $spacing-md $spacing-3xl;
+    padding: 0;
 
-    background-color: $color-background;
+    background-image:url("../../img/pattern.PNG");
+
+    display: flex;
+    flex-direction: column;
 }
 
 .customer-page[hidden] {
@@ -13,52 +16,92 @@
 .customer-page__container {
     width: 100%;
     max-width: 480px;
+
     margin: 0 auto;
+
+    padding: $spacing-lg $spacing-md $spacing-3xl;
+
+    flex: 1;
 }
 
-.customer-page__header {
+
+// ----------------------------------------
+// Customer Header
+// ----------------------------------------
+
+.customer-header {
+    width: 100%;
+    height: 52px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+
+    background-color: rgba(255, 255, 255, 0.5);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+    z-index: 5;
+}
+
+.customer-header__inner {
+    width: 100%;
+
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    margin-bottom: $spacing-lg;
+    padding: 0 $spacing-md;
 }
 
-.customer-page__brand {
+.customer-header__brand {
+    margin: 0;
+
     color: $color-primary;
 
     font-family: $font-family-primary;
-    font-size: 1.6rem;
+    font-size: 1.35rem;
     font-weight: 400;
+
     letter-spacing: 0.12em;
 }
 
-.customer-page__logout {
+.customer-header__logout {
     display: flex;
     align-items: center;
     justify-content: center;
 
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
 
-    border: 1px solid $color-hairline;
+    padding: 0;
+
+    border: 1px solid rgba($color-primary, 0.7);
     border-radius: 999px;
 
-    background-color: $color-surface;
-    color: $color-text-muted;
+    background-color: transparent;
+    color: $color-primary;
+
+    cursor: pointer;
 
     transition:
         color $transition-fast,
+        background-color $transition-fast,
         border-color $transition-fast;
 }
 
-.customer-page__logout svg {
-    width: 18px;
-    height: 18px;
+.customer-header__logout svg {
+    width: 16px;
+    height: 16px;
 }
 
-.customer-page__logout:hover {
-    color: $color-primary;
+.customer-header__logout:hover {
+    color: #191715;
+    background-color: $color-primary;
     border-color: $color-primary;
 }
 
@@ -104,15 +147,108 @@
 
 
 // ----------------------------------------
+// Customer Footer
+// ----------------------------------------
+
+.customer-footer {
+    width: 100%;
+    min-height: 72px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 9px $spacing-md;
+
+    background-color: rgba(255, 255, 255, 0.5);
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+    z-index: 5;
+}
+
+.customer-footer__socials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 17px;
+}
+
+.customer-footer__social {
+    width: 20px;
+    height: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: $color-primary;
+
+    text-decoration: none;
+
+    transition:
+        opacity $transition-fast,
+        transform $transition-fast;
+}
+
+.customer-footer__social svg {
+    width: 18px;
+    height: 18px;
+}
+
+.customer-footer__social:hover {
+    opacity: 0.7;
+    transform: translateY(-2px);
+}
+
+.customer-footer__signature {
+    color: $color-primary;
+
+    font-family: $font-family-primary;
+    font-size: 0.5rem;
+    font-weight: 400;
+
+    line-height: 1;
+    letter-spacing: 0.12em;
+
+    opacity: 0.9;
+}
+
+
+// ----------------------------------------
 // Desktop
 // ----------------------------------------
 
 @include respond-to(md) {
-    .customer-page {
-        padding: $spacing-3xl $spacing-lg;
-    }
 
     .customer-page__container {
         max-width: 560px;
+
+        padding: $spacing-3xl $spacing-lg;
+    }
+
+    .customer-header {
+        height: 56px;
+    }
+
+    .customer-header__inner {
+        padding: 0 $spacing-lg;
+    }
+
+    .customer-header__brand {
+        font-size: 1.5rem;
+    }
+
+    .customer-footer {
+        min-height: 76px;
     }
 }
