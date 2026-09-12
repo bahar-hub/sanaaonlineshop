@@ -13,7 +13,7 @@
 (function () {
     "use strict";
 
-
+    console.log("ADMIN REPORTS JS LOADED");
     /* --------------------------------------------------------
      * Jalali <-> Gregorian conversion
      * (public-domain astronomical algorithm; round-trip tested)
@@ -397,33 +397,177 @@
     
 
     function renderMonthlyViewF(jy, jm) {
-        var report = generateMonthlyReportF(jy, jm);
+    var orders = window.adminReportOrders || [];
 
-        document.getElementById("monthlySalesValueF").textContent = formatNumberF(report.total);
-        document.getElementById("monthlyOrdersValueF").textContent = formatNumberF(report.orders);
-        document.getElementById("monthlyInvoicesValueF").textContent = formatNumberF(report.invoices);
-        document.getElementById("monthlyNewCustomersValueF").textContent =
-            formatNumberF(countNewCustomersF(jy, jm));        
-        setChangeF("monthlySalesChangeF", report.changePercent, report.changeDirection);
+    var paidOrders = orders.filter(function (order) {
+        if (!order.is_paid) {
+            return false;
+        }
 
-        document.getElementById("adminMonthlyChartTotalF").textContent = formatNumberF(report.total);
+        var date = new Date(order.registered_at);
 
-        renderMonthlyChartF(report);
-    }
+        if (isNaN(date.getTime())) {
+            return false;
+        }
+
+        var jalali = toJalaliF(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
+        );
+
+        return jalali[0] === jy && jalali[1] === jm;
+    });
+
+    var totalSales = paidOrders.reduce(function (sum, order) {
+        return sum + Number(order.total_irr || 0);
+    }, 0);
+
+    var orderCount = paidOrders.length;
+
+    var newCustomers = countNewCustomersF(jy, jm);
+
+    document.getElementById("monthlySalesValueF").textContent =
+        formatNumberF(totalSales);
+
+    document.getElementById("monthlyOrdersValueF").textContent =
+        formatNumberF(orderCount);
+
+    document.getElementById("monthlyInvoicesValueF").textContent =
+        formatNumberF(orderCount);
+
+    document.getElementById("monthlyNewCustomersValueF").textContent =
+        formatNumberF(newCustomers);
+
+    document.getElementById("adminMonthlyChartTotalF").textContent =
+        formatNumberF(totalSales);
+
+
+    var dailyTotals = [];
+
+var dayCount =
+    jm <= 6
+        ? 31
+        : jm <= 11
+            ? 30
+            : 29;
+
+for (var day = 1; day <= dayCount; day += 1) {
+    var dayTotal = paidOrders
+        .filter(function (order) {
+            var date = new Date(order.registered_at);
+
+            if (isNaN(date.getTime())) {
+                return false;
+            }
+
+            var jalali = toJalaliF(
+                date.getFullYear(),
+                date.getMonth() + 1,
+                date.getDate()
+            );
+
+            return (
+                jalali[0] === jy &&
+                jalali[1] === jm &&
+                jalali[2] === day
+            );
+        })
+        .reduce(function (sum, order) {
+            return sum + Number(order.total_irr || 0);
+        }, 0);
+
+    dailyTotals.push(dayTotal);
+}
+
+    renderMonthlyChartF({
+    chartValues: dailyTotals,
+    dayCount: dayCount
+});
+    /*
+     * فعلاً نمودار را نگه می‌داریم تا در قدم بعد
+     * داده واقعی روزانه را به آن وصل کنیم.
+     */
+    
+}
 
     function renderYearlyViewF(jy) {
-        var report = generateYearlyReportF(jy);
+    var orders = window.adminReportOrders || [];
 
-        document.getElementById("yearlySalesValueF").textContent = formatNumberF(report.total);
-        document.getElementById("yearlyOrdersValueF").textContent = formatNumberF(report.orders);
-        document.getElementById("yearlyInvoicesValueF").textContent = formatNumberF(report.invoices);
-        
-        setChangeF("yearlySalesChangeF", report.changePercent, report.changeDirection);
+    var yearlyOrders = orders.filter(function (order) {
+        if (!order.is_paid) {
+            return false;
+        }
 
-        document.getElementById("adminYearlyChartTotalF").textContent = formatNumberF(report.total);
+        var date = new Date(order.registered_at);
 
-        renderYearlyChartF(report);
-    }
+        if (isNaN(date.getTime())) {
+            return false;
+        }
+
+        var jalali = toJalaliF(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
+        );
+
+        return jalali[0] === jy;
+    });
+
+    var totalSales = yearlyOrders.reduce(function (sum, order) {
+        return sum + Number(order.total_irr || 0);
+    }, 0);
+
+    var orderCount = yearlyOrders.length;
+
+    document.getElementById("yearlySalesValueF").textContent =
+        formatNumberF(totalSales);
+
+    document.getElementById("yearlyOrdersValueF").textContent =
+        formatNumberF(orderCount);
+
+    document.getElementById("yearlyInvoicesValueF").textContent =
+        formatNumberF(orderCount);
+
+    document.getElementById("adminYearlyChartTotalF").textContent =
+        formatNumberF(totalSales);
+
+    /*
+     * فعلاً نمودار را از داده واقعی سال تغذیه می‌کنیم.
+     */
+    var monthlyTotals = [];
+
+for (var month = 1; month <= 12; month += 1) {
+    var monthTotal = yearlyOrders
+        .filter(function (order) {
+            var date = new Date(order.registered_at);
+
+            if (isNaN(date.getTime())) {
+                return false;
+            }
+
+            var jalali = toJalaliF(
+                date.getFullYear(),
+                date.getMonth() + 1,
+                date.getDate()
+            );
+
+            return (
+                jalali[0] === jy &&
+                jalali[1] === month
+            );
+        })
+        .reduce(function (sum, order) {
+            return sum + Number(order.total_irr || 0);
+        }, 0);
+
+    monthlyTotals.push(monthTotal);
+}
+
+    renderYearlyChartF({
+        monthlyTotals: monthlyTotals
+    });
+}
 
 
     /* --------------------------------------------------------

@@ -131,15 +131,82 @@ def admin_manage_view(request):
 def report_view(request):
     User = get_user_model()
 
+    # =========================
+    # مشتریان جدید
+    # =========================
+
     customer_join_dates = [
         dt.isoformat()
         for dt in User.objects.filter(
             is_superuser=False
-        ).values_list("date_joined", flat=True)
+        ).values_list(
+            "date_joined",
+            flat=True
+        )
     ]
 
+    # =========================
+    # سفارش‌های واقعی
+    # =========================
+
+    orders = (
+        Order.objects
+        .filter(
+            user__is_superuser=False
+        )
+        .select_related("user")
+        .prefetch_related("items")
+        .order_by("registered_at")
+    )
+
+    report_orders = []
+
+    for order in orders:
+        report_orders.append({
+            "id": order.id,
+
+            "customer_id": order.user_id,
+
+            "registered_at":
+                order.registered_at.isoformat(),
+
+            "status":
+                order.status,
+
+            "payment_status":
+                order.payment_status,
+
+            "total_usd":
+                float(order.total_usd or 0),
+
+            "total_irr":
+                float(order.total_irr or 0),
+
+            "shipping_cost":
+                float(order.shipping_cost or 0),
+
+            "service_cost":
+                float(order.service_cost or 0),
+
+            "items_count":
+                order.items.count(),
+
+            # برای تشخیص فروش واقعی
+            "is_paid":
+                order.payment_status
+                == Order.PaymentStatus.PAID,
+        })
+
+    # =========================
+    # Context
+    # =========================
+
     context = {
-        "customer_join_dates": customer_join_dates,
+        "customer_join_dates":
+            customer_join_dates,
+
+        "report_orders":
+            report_orders,
     }
 
     return render(
