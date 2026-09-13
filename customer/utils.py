@@ -20,6 +20,7 @@ def send_password_reset_otp(user):
     response.raise_for_status()
 
     data = response.json()
+    print("MELIPAYAMAK RESPONSE:", data)
 
     code = str(data.get("code", "")).strip()
 
