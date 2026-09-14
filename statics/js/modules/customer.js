@@ -102,6 +102,25 @@ function formatRial(value) {
     return value.toLocaleString("fa-IR") + " ریال";
 }
 
+function toPersianDigits(value) {
+
+    const persianDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
+
+    return String(value).replace(/[0-9]/g, (digit) => persianDigits[digit]);
+}
+
+function escapeHtml(text) {
+
+    if (text === null || text === undefined) {
+        return "";
+    }
+
+    const div = document.createElement("div");
+    div.textContent = text;
+
+    return div.innerHTML;
+}
+
 function calcItemsSubtotalUSD(items) {
 
     return items.reduce((sum, item) => {
@@ -424,15 +443,6 @@ async function renderOrderList() {
 
     orders.forEach((order) => {
 
-        const thumbsHtml = order.items.map((item) => `
-            <img
-                class="order-card__thumb"
-                src="${item.image}"
-                alt=""
-                loading="lazy"
-            >
-        `).join("");
-
         const li = document.createElement("li");
 
         li.innerHTML = `
@@ -443,7 +453,7 @@ async function renderOrderList() {
             >
                 <div class="order-card__top">
                     <span class="order-card__number">
-                        سفارش ${order.id}
+                        سفارش ${toPersianDigits(order.id)}
                     </span>
 
                     <span class="order-status order-status--${order.status}">
@@ -451,13 +461,9 @@ async function renderOrderList() {
                     </span>
                 </div>
 
-                <div class="order-card__thumbs">
-                    ${thumbsHtml}
-                </div>
-
                 <div class="order-card__bottom">
                     <span class="order-card__date">
-                        ${order.date}
+                        ${toPersianDigits(order.date)}
                     </span>
 
                     <span class="order-card__total">
@@ -521,7 +527,7 @@ async function openOrderModal(orderId) {
             return;
         }
 
-        title.textContent = `فاکتور سفارش ${order.id}`;
+        title.textContent = `فاکتور سفارش ${toPersianDigits(order.id)}`;
 
         const itemsSubtotalUSD = order.items.reduce(
             (sum, item) => sum + (item.priceUSD * item.qty),
@@ -533,134 +539,152 @@ async function openOrderModal(orderId) {
 
         const grandTotal = order.totalIRR;
 
-        const itemsHtml = order.items.map((item) => `
-            <div class="invoice-item">
+        const itemRowsHtml = order.items.map((item) => {
 
-                ${
-                    item.image
-                    ? `
-                        <img
-                            class="invoice-item__image"
-                            src="${item.image}"
-                            alt=""
-                            loading="lazy"
-                        >
-                    `
-                    : ""
-                }
+            const metaBits = [];
 
-                <div class="invoice-item__info">
+            if (item.brand) {
+                metaBits.push(`برند: ${escapeHtml(item.brand)}`);
+            }
 
-                    <div class="invoice-item__name">
-                        ${item.name}
-                    </div>
+            if (item.size) {
+                metaBits.push(`سایز: ${escapeHtml(item.size)}`);
+            }
 
-                    <div class="invoice-item__qty">
-                        تعداد: ${item.qty.toLocaleString("fa-IR")}
-                    </div>
+            return `
+                <tr>
+                    <td>
+                        <div class="customer-invoice__product">
 
-                </div>
+                            ${
+                                item.image
+                                ? `
+                                    <img
+                                        class="customer-invoice__product-img"
+                                        src="${item.image}"
+                                        alt=""
+                                        loading="lazy"
+                                    >
+                                `
+                                : `<div class="customer-invoice__product-img customer-invoice__product-img--placeholder"></div>`
+                            }
 
-                <span
-                    class="invoice-item__price"
-                    dir="ltr"
-                >
-                    ${formatUSD(item.priceUSD * item.qty)}
-                </span>
+                            <div class="customer-invoice__product-info">
 
-            </div>
-        `).join("");
+                                <span class="customer-invoice__product-name">
+                                    ${escapeHtml(item.name)}
+                                </span>
+
+                                ${
+                                    metaBits.length
+                                    ? `<span class="customer-invoice__product-meta">${metaBits.join(" · ")}</span>`
+                                    : ""
+                                }
+
+                                ${
+                                    item.description
+                                    ? `<span class="customer-invoice__product-desc">${escapeHtml(item.description)}</span>`
+                                    : ""
+                                }
+
+                            </div>
+
+                        </div>
+                    </td>
+
+                    <td data-num>
+                        ${item.qty.toLocaleString("fa-IR")}
+                    </td>
+
+                    <td data-num>
+                        ${formatRial(item.priceUSD * item.qty * USD_TO_RIAL)}
+                    </td>
+                </tr>
+            `;
+
+        }).join("");
 
         body.innerHTML = `
 
-            <div class="invoice-meta">
+            <div class="customer-invoice">
 
-                <span>
-                    تاریخ ثبت سفارش: ${order.date}
-                </span>
+                <div class="customer-invoice__brand">
+                    <span class="customer-invoice__logo" dir="ltr">SANAA</span>
+                    <span class="customer-invoice__badge">فاکتور مشتری</span>
+                </div>
 
-                <span>
-                    وضعیت:
-                    ${ORDER_STATUS_LABELS[order.status] || order.status}
-                </span>
+                <dl class="customer-invoice__meta">
 
-            </div>
+                    <div class="customer-invoice__meta-row">
+                        <dt>شماره سفارش</dt>
+                        <dd>${toPersianDigits(order.id)}</dd>
+                    </div>
 
+                    <div class="customer-invoice__meta-row">
+                        <dt>تاریخ ثبت سفارش</dt>
+                        <dd>${toPersianDigits(order.date)}</dd>
+                    </div>
 
-            <div class="invoice-items">
-                ${itemsHtml}
-            </div>
+                    <div class="customer-invoice__meta-row">
+                        <dt>وضعیت سفارش</dt>
+                        <dd>${ORDER_STATUS_LABELS[order.status] || order.status}</dd>
+                    </div>
 
+                </dl>
 
-            <div class="invoice-summary">
+                <div class="customer-invoice__table-wrap">
 
-                <div class="invoice-summary__row">
+                    <table class="customer-invoice__table">
 
-                    <span>
-                        جمع کل (دلار)
-                    </span>
+                        <thead>
+                            <tr>
+                                <th>محصول</th>
+                                <th>تعداد</th>
+                                <th>جمع (ریال)</th>
+                            </tr>
+                        </thead>
 
-                    <span dir="ltr">
-                        ${formatUSD(itemsSubtotalUSD)}
-                    </span>
+                        <tbody>
+                            ${itemRowsHtml}
+                        </tbody>
+
+                    </table>
 
                 </div>
 
+                <div class="customer-invoice__summary">
 
-                <div class="invoice-summary__row">
+                    <div class="customer-invoice__summary-row">
+                        <span>جمع کل محصولات</span>
+                        <span>${formatRial(itemsSubtotalRial)}</span>
+                    </div>
 
-                    <span>
-                        جمع کل (ریال)
-                    </span>
+                    <div class="customer-invoice__summary-row">
+                        <span>باربری</span>
+                        <span>
+                            ${
+                                order.shipping
+                                ? formatRial(order.shipping)
+                                : "رایگان"
+                            }
+                        </span>
+                    </div>
 
-                    <span>
-                        ${formatRial(itemsSubtotalRial)}
-                    </span>
+                    <div class="customer-invoice__summary-row">
+                        <span>خدمات</span>
+                        <span>${formatRial(order.services)}</span>
+                    </div>
 
-                </div>
-
-
-                <div class="invoice-summary__row">
-
-                    <span>
-                        باربری
-                    </span>
-
-                    <span>
-                        ${
-                            order.shipping
-                            ? formatRial(order.shipping)
-                            : "رایگان"
-                        }
-                    </span>
-
-                </div>
-
-
-                <div class="invoice-summary__row">
-
-                    <span>
-                        خدمات
-                    </span>
-
-                    <span>
-                        ${formatRial(order.services)}
-                    </span>
+                    <div class="customer-invoice__summary-row customer-invoice__summary-row--total">
+                        <span>مجموع کل</span>
+                        <span>${formatRial(grandTotal)}</span>
+                    </div>
 
                 </div>
 
-
-                <div class="invoice-summary__row invoice-summary__row--total">
-
-                    <span>
-                        مجموع کل
-                    </span>
-
-                    <span>
-                        ${formatRial(grandTotal)}
-                    </span>
-
-                </div>
+                <p class="customer-invoice__footer-note">
+                    این فاکتور بر اساس نرخ ارز لحظه‌ی ثبت سفارش صادر شده است — فروشگاه سنا
+                </p>
 
             </div>
         `;

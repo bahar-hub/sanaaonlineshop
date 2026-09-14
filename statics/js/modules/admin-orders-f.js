@@ -3426,13 +3426,41 @@
 
         var itemRows = calc.lines.map(function (line) {
 
+            var subLines = [];
+
+            if (line.brand) {
+                subLines.push("برند: " + line.brand);
+            }
+
+            if (line.size) {
+                subLines.push("سایز: " + line.size);
+            }
+
+            var subLineHtml =
+                subLines.length
+                    ? '<div class="admin-invoice-f__item-sub">' +
+                      subLines.join(" · ") +
+                      "</div>"
+                    : "";
+
+            var descriptionHtml =
+                line.description
+                    ? '<div class="admin-invoice-f__item-desc">' +
+                      line.description +
+                      "</div>"
+                    : "";
+
             return (
                 "<tr>" +
                 '<td><div class="admin-invoice-f__item-cell">' +
                 (line.image
                     ? '<img class="admin-invoice-f__item-img" src="' + line.image + '" alt="">'
                     : '<div class="admin-invoice-f__item-img"></div>') +
-                "<span>" + line.name + "</span>" +
+                '<div class="admin-invoice-f__item-info">' +
+                '<div class="admin-invoice-f__item-name">' + line.name + "</div>" +
+                subLineHtml +
+                descriptionHtml +
+                "</div>" +
                 "</div></td>" +
                 "<td data-num>" + line.price.toLocaleString("en-US") + " " + line.currency + "</td>" +
                 "<td data-num>" + line.qty.toLocaleString("fa-IR") + "</td>" +
@@ -3450,7 +3478,13 @@
 
             profitBlock =
                 '<div class="admin-invoice-f__profit-f">' +
-                '<p class="admin-invoice-f__profit-f-title">سود ادمین</p>' +
+                '<div class="admin-invoice-f__profit-f-title">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                '<rect x="4" y="10" width="16" height="10" rx="2"/>' +
+                '<path d="M8 10V7a4 4 0 0 1 8 0v3" stroke-linecap="round"/>' +
+                "</svg>" +
+                "<span>فقط داخلی — سود ادمین</span>" +
+                "</div>" +
                 '<div class="admin-invoice-f__summary-row">' +
                 "<span>سود این سفارش (قیمت فروش − قیمت خرید)</span>" +
                 "<span>" + formatNumberF(calc.profitRial) + " ریال</span>" +
@@ -3461,24 +3495,29 @@
 
 
         return (
-            '<div class="admin-invoice-f__brand">' +
-            '<span class="admin-invoice-f__logo" dir="ltr">SANAA</span>' +
-            '<span class="admin-invoice-f__kind' +
-            (isAdminF ? " admin-invoice-f__kind--admin-f" : "") + '">' +
-            (isAdminF ? "فاکتور داخلی (ادمین)" : "فاکتور مشتری") +
+            '<div class="admin-invoice-f__band">' +
+            '<span class="admin-invoice-f__band-logo" dir="ltr">SANAA</span>' +
+            '<span class="admin-invoice-f__band-sub">' +
+            (isAdminF ? "فاکتور داخلی (ادمین)" : "فاکتور فروش") +
             "</span>" +
             "</div>" +
 
-            '<dl class="admin-invoice-f__meta">' +
-            '<div class="admin-invoice-f__meta-row"><dt>شماره سفارش</dt><dd>' + meta.orderNumber + "</dd></div>" +
-            '<div class="admin-invoice-f__meta-row"><dt>تاریخ صدور</dt><dd>' + meta.date + "</dd></div>" +
-            '<div class="admin-invoice-f__meta-row"><dt>مشتری</dt><dd>' + meta.customerName + "</dd></div>" +
-            '<div class="admin-invoice-f__meta-row"><dt>وضعیت پرداخت</dt><dd>' + meta.paymentLabel + "</dd></div>" +
-            "</dl>" +
+            '<div class="admin-invoice-f__body">' +
+
+            '<div class="admin-invoice-f__meta">' +
+            '<div class="admin-invoice-f__meta-col">' +
+            "<p><span>مشتری:</span> " + meta.customerName + "</p>" +
+            "<p><span>وضعیت پرداخت:</span> " + meta.paymentLabel + "</p>" +
+            "</div>" +
+            '<div class="admin-invoice-f__meta-col admin-invoice-f__meta-col--left">' +
+            "<p><span>شماره سفارش:</span> " + meta.orderNumber + "</p>" +
+            "<p><span>تاریخ صدور:</span> " + meta.date + "</p>" +
+            "</div>" +
+            "</div>" +
 
             '<table class="admin-invoice-f__table">' +
             "<thead><tr>" +
-            "<th>محصول</th><th>قیمت واحد</th><th>تعداد</th><th>جمع (ارز اصلی)</th><th>جمع (ریال)</th>" +
+            "<th>کالا</th><th>قیمت واحد</th><th>تعداد</th><th>جمع (ارز اصلی)</th><th>جمع (ریال)</th>" +
             "</tr></thead>" +
             "<tbody>" + itemRows + "</tbody>" +
             "</table>" +
@@ -3498,9 +3537,13 @@
 
             profitBlock +
 
+            '<p class="admin-invoice-f__thanks">با تشکر از خرید شما</p>' +
+
             '<p class="admin-invoice-f__footer-note">' +
             "این فاکتور بر اساس نرخ ارز لحظه‌ی ثبت سفارش صادر شده است — Sanaa Online Shop" +
-            "</p>"
+            "</p>" +
+
+            "</div>"
         );
 
     }
@@ -3550,44 +3593,92 @@
         }
 
 
+        var fonts =
+            window.SANAA_FONTS_F || {};
+
+        function absoluteUrlF(path) {
+
+            if (!path) {
+                return "";
+            }
+
+            return window.location.origin + path;
+
+        }
+
+
         // Inlined directly so the print window never depends on a
         // second network request for the site's stylesheet (which
         // was the actual cause of blank/empty PDFs — that request
         // doesn't always finish before print() fires, especially
-        // right after a fresh page load).
+        // right after a fresh page load). Fonts are embedded the
+        // same way, via absolute URLs, since the popup has no
+        // access to the main page's already-loaded @font-face.
+        var fontFaces =
+            "@font-face{font-family:'Belleza';src:url('" +
+            absoluteUrlF(fonts.belleza) + "') format('woff2');" +
+            "font-weight:400;font-display:swap;}" +
+            "@font-face{font-family:'Sanaa Persian';src:url('" +
+            absoluteUrlF(fonts.vazirRegular) + "') format('truetype');" +
+            "font-weight:400;font-display:swap;}" +
+            "@font-face{font-family:'Sanaa Persian';src:url('" +
+            absoluteUrlF(fonts.vazirMedium) + "') format('truetype');" +
+            "font-weight:500;font-display:swap;}" +
+            "@font-face{font-family:'Sanaa Persian';src:url('" +
+            absoluteUrlF(fonts.vazirBold) + "') format('truetype');" +
+            "font-weight:700;font-display:swap;}";
+
+
         var printCss =
-            "body{margin:0;padding:32px;background:#fff;" +
-            "font-family:Tahoma,Arial,sans-serif;color:#191715;}" +
+            fontFaces +
+            "body{margin:0;padding:0;background:#F3EFE8;" +
+            "font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;" +
+            "color:#191715;}" +
             ".admin-invoice-f{max-width:640px;margin:0 auto;}" +
-            ".admin-invoice-f__brand{display:flex;align-items:center;" +
-            "justify-content:space-between;margin-bottom:24px;" +
-            "padding-bottom:16px;border-bottom:2px solid #191715;}" +
-            ".admin-invoice-f__logo{color:#A61579;font-size:1.6rem;" +
-            "letter-spacing:0.12em;font-weight:700;}" +
-            ".admin-invoice-f__kind{padding:4px 12px;border-radius:999px;" +
-            "background:#F6F2EC;color:#8A8178;font-size:0.7rem;" +
-            "font-weight:600;}" +
-            ".admin-invoice-f__kind--admin-f{background:rgba(166,21,121,.12);" +
-            "color:#A61579;}" +
-            ".admin-invoice-f__meta{display:grid;" +
-            "grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:24px;" +
-            "padding:16px;border-radius:8px;background:#F6F2EC;" +
+
+            ".admin-invoice-f__band{display:flex;flex-direction:column;" +
+            "align-items:center;gap:4px;padding:40px 24px 24px;" +
+            "background:#B9C3B9;text-align:center;}" +
+            ".admin-invoice-f__band-logo{color:#A61579;" +
+            "font-family:'Belleza',serif;font-size:2.2rem;" +
+            "letter-spacing:0.22em;}" +
+            ".admin-invoice-f__band-sub{color:#191715;font-size:0.72rem;" +
+            "font-weight:600;letter-spacing:0.08em;}" +
+
+            ".admin-invoice-f__body{padding:24px;background:#F3EFE8;}" +
+
+            ".admin-invoice-f__meta{display:flex;align-items:flex-start;" +
+            "justify-content:space-between;gap:16px;margin-bottom:24px;" +
+            "padding-bottom:24px;border-bottom:1px solid #DCD4C8;" +
             "font-size:0.78rem;}" +
-            ".admin-invoice-f__meta-row dt{color:#8A8178;margin-bottom:2px;}" +
-            ".admin-invoice-f__meta-row dd{margin:0;font-weight:600;}" +
+            ".admin-invoice-f__meta-col{display:flex;" +
+            "flex-direction:column;gap:4px;}" +
+            ".admin-invoice-f__meta-col--left{text-align:left;}" +
+            ".admin-invoice-f__meta-col p{margin:0;color:#191715;}" +
+            ".admin-invoice-f__meta-col span{color:#8A8178;}" +
+
             ".admin-invoice-f__table{width:100%;margin-bottom:24px;" +
-            "border-collapse:collapse;}" +
-            ".admin-invoice-f__table th{padding:8px;" +
-            "border-bottom:1.5px solid #191715;color:#8A8178;" +
-            "font-size:0.7rem;font-weight:600;text-align:right;}" +
-            ".admin-invoice-f__table td{padding:8px;" +
+            "border-collapse:collapse;background:#fff;border-radius:8px;" +
+            "overflow:hidden;}" +
+            ".admin-invoice-f__table th{padding:8px 16px;" +
+            "background:#A61579;color:#fff;" +
+            "font-size:0.7rem;font-weight:700;text-align:right;}" +
+            ".admin-invoice-f__table td{padding:8px 16px;" +
             "border-bottom:1px solid #DCD4C8;font-size:0.8rem;" +
             "vertical-align:middle;}" +
+            ".admin-invoice-f__table tr:last-child td{border-bottom:0;}" +
             ".admin-invoice-f__item-cell{display:flex;align-items:center;" +
             "gap:8px;}" +
             ".admin-invoice-f__item-img{width:40px;height:40px;" +
             "flex-shrink:0;border-radius:4px;object-fit:cover;" +
             "background:#F6F2EC;}" +
+            ".admin-invoice-f__item-name{font-weight:600;}" +
+            ".admin-invoice-f__item-sub,.admin-invoice-f__item-desc{" +
+            "margin-top:2px;color:#8A8178;font-size:0.7rem;" +
+            "line-height:1.5;}" +
+            ".admin-invoice-f__table td[data-num]{" +
+            "font-family:'Belleza',sans-serif;white-space:nowrap;}" +
+
             ".admin-invoice-f__summary{margin-right:auto;width:100%;" +
             "max-width:320px;display:flex;flex-direction:column;gap:4px;}" +
             ".admin-invoice-f__summary-row{display:flex;" +
@@ -3599,12 +3690,20 @@
             "font-size:1rem;font-weight:700;color:#191715;}" +
             ".admin-invoice-f__summary-row--total-f span:last-child{" +
             "color:#A61579;}" +
+
             ".admin-invoice-f__profit-f{margin-top:24px;padding:16px;" +
-            "border-radius:8px;border:1.5px dashed #A61579;" +
-            "background:rgba(166,21,121,.05);}" +
-            ".admin-invoice-f__profit-f-title{margin:0 0 8px;color:#A61579;" +
-            "font-size:0.78rem;font-weight:700;}" +
-            ".admin-invoice-f__footer-note{margin-top:32px;" +
+            "border-radius:8px;border:2px dashed #A61579;" +
+            "background:rgba(166,21,121,.06);}" +
+            ".admin-invoice-f__profit-f-title{display:flex;" +
+            "align-items:center;gap:6px;margin:0 0 8px;color:#A61579;" +
+            "font-size:0.75rem;font-weight:700;letter-spacing:0.03em;}" +
+            ".admin-invoice-f__profit-f-title svg{width:14px;height:14px;" +
+            "flex-shrink:0;}" +
+
+            ".admin-invoice-f__thanks{margin:32px 0 0;color:#A61579;" +
+            "font-family:'Belleza',serif;font-size:1.3rem;" +
+            "letter-spacing:0.06em;text-align:center;}" +
+            ".admin-invoice-f__footer-note{margin-top:16px;" +
             "padding-top:16px;border-top:1px solid #DCD4C8;" +
             "color:#8A8178;font-size:0.7rem;text-align:center;}" +
             "@media print{body{padding:0;}}";
@@ -3634,6 +3733,7 @@
             '<html lang="fa" dir="rtl">' +
             "<head>" +
             '<meta charset="UTF-8">' +
+            '<base href="' + window.location.origin + '/">' +
             "<title>فاکتور — Sanaa</title>" +
             "<style>" + printCss + "</style>" +
             "</head>" +
@@ -3660,6 +3760,7 @@
                     printWindow.print();
 
                 }, 250);
+
 
             }
         );

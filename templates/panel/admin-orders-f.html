@@ -1438,6 +1438,14 @@
          PAGE SCRIPT
     ========================================================== -->
 {{ orders_data|json_script:"orders-data-f" }}
+<script>
+    window.SANAA_FONTS_F = {
+        belleza: "{% static 'fonts/Belleza-Regular.woff2' %}",
+        vazirRegular: "{% static 'fonts/Vazirmatn-Regular.ttf' %}",
+        vazirMedium: "{% static 'fonts/Vazirmatn-Medium.ttf' %}",
+        vazirBold: "{% static 'fonts/Vazirmatn-Bold.ttf' %}"
+    };
+</script>
     <script
         src="{% static 'js/modules/admin-orders-f.js' %}?v=4"
         defer

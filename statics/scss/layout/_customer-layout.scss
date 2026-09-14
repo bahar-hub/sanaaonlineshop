@@ -3,7 +3,7 @@
 
     padding: 0;
 
-    background-image:url("../../img/pattern.PNG");
+    background-image:url("../img/pattern.PNG");
 
     display: flex;
     flex-direction: column;
@@ -143,6 +143,45 @@
     font-size: 0.82rem;
     font-weight: 500;
     letter-spacing: 0.02em;
+}
+
+// ----------------------------------------
+// Panel Section Header (icon + title + subtitle)
+// ----------------------------------------
+
+.panel-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    margin-bottom: $spacing-lg;
+}
+
+.panel-section-header__title {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.panel-section-header__title svg {
+    width: 20px;
+    height: 20px;
+
+    color: $color-primary;
+}
+
+.panel-section-header__subtitle {
+    margin-top: 6px;
+
+    color: $color-text-muted;
+
+    font-size: 0.78rem;
 }
 
 
