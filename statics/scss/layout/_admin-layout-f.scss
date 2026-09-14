@@ -9,7 +9,7 @@ scss
     display: flex;
     flex-direction: column;
 
-    background-color: $color-background;
+    background-image: $color-background;
 
     // Keep the admin panel hidden when the router sets [hidden].
     &[hidden] {

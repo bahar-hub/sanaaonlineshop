@@ -342,8 +342,7 @@
 // ============================================================
 
 .admin-invoice-modal-f .modal__panel {
-    padding: 0;
-    overflow: hidden;
+    padding-top: $spacing-2xl;
 }
 
 .admin-invoice-f {
@@ -351,120 +350,109 @@
     color: $color-text;
 }
 
-
-// ----------------------------------------
-// Top band — brand color, logo centered
-// ----------------------------------------
-
-.admin-invoice-f__band {
+.admin-invoice-f__brand {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: $spacing-xs;
+    gap: 6px;
 
-    padding: $spacing-2xl $spacing-lg $spacing-lg;
+    margin-bottom: $spacing-lg;
+    padding-bottom: $spacing-md;
 
-    background-color: $color-secondary;
-    text-align: center;
+    border-bottom: 2px solid $color-dark;
 }
 
-.admin-invoice-f__band-logo {
+.admin-invoice-f__logo {
     color: $color-primary;
 
     font-family: $font-family-primary;
-    font-size: 2.2rem;
-    letter-spacing: 0.22em;
+    font-size: 1.8rem;
+    letter-spacing: 0.16em;
 }
 
-.admin-invoice-f__band-sub {
-    color: $color-dark;
+.admin-invoice-f__logo-sub {
+    color: $color-text-muted;
 
-    font-family: $font-family-persian;
-    font-size: 0.72rem;
+    font-family: $font-family-primary;
+    font-size: 0.68rem;
+    font-weight: 400;
+
+    letter-spacing: 0.3em;
+}
+
+.admin-invoice-f__kind {
+    margin-top: 4px;
+    padding: 4px 12px;
+    border-radius: 999px;
+
+    background-color: $color-input-bg;
+    color: $color-text-muted;
+
+    font-size: 0.7rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
 }
 
-
-// ----------------------------------------
-// Body — cream background
-// ----------------------------------------
-
-.admin-invoice-f__body {
-    padding: $spacing-lg;
-
-    background-color: $color-background;
+.admin-invoice-f__kind--admin-f {
+    background-color: rgba(166, 21, 121, 0.12);
+    color: $color-primary;
 }
 
 .admin-invoice-f__meta {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: $spacing-md;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-sm $spacing-md;
 
     margin-bottom: $spacing-lg;
-    padding-bottom: $spacing-lg;
+    padding: $spacing-md;
+    border-radius: $radius-md;
 
-    border-bottom: 1px solid $color-hairline;
+    background-color: $color-input-bg;
 
     font-size: 0.78rem;
 }
 
-.admin-invoice-f__meta-col {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.admin-invoice-f__meta-col--left {
-    text-align: left;
-}
-
-.admin-invoice-f__meta-col p {
-    margin: 0;
-    color: $color-text;
-}
-
-.admin-invoice-f__meta-col span {
+.admin-invoice-f__meta-row dt {
     color: $color-text-muted;
+    margin-bottom: 2px;
+}
+
+.admin-invoice-f__meta-row dd {
+    font-weight: 600;
 }
 
 
-// ----------------------------------------
-// Items table — header filled with brand color
-// ----------------------------------------
+// Items table
+
+.admin-invoice-f__table-wrap {
+    width: 100%;
+    margin-bottom: $spacing-lg;
+
+    overflow-x: auto;
+}
 
 .admin-invoice-f__table {
     width: 100%;
-    margin-bottom: $spacing-lg;
+    min-width: 460px;
     border-collapse: collapse;
-
-    background-color: $color-surface;
-    border-radius: $radius-md;
-    overflow: hidden;
 }
 
 .admin-invoice-f__table th {
-    padding: $spacing-sm $spacing-md;
+    padding: $spacing-sm;
+    border-bottom: 1.5px solid $color-dark;
 
-    background-color: $color-primary;
-    color: $color-surface;
+    color: $color-text-muted;
 
     font-size: 0.7rem;
-    font-weight: 700;
+    font-weight: 600;
     text-align: right;
 }
 
 .admin-invoice-f__table td {
-    padding: $spacing-sm $spacing-md;
+    padding: $spacing-sm;
     border-bottom: 1px solid $color-hairline;
 
     font-size: 0.8rem;
     vertical-align: middle;
-}
-
-.admin-invoice-f__table tr:last-child td {
-    border-bottom: 0;
 }
 
 .admin-invoice-f__item-cell {
@@ -483,25 +471,23 @@
 }
 
 .admin-invoice-f__item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
     min-width: 0;
 }
 
-.admin-invoice-f__item-name {
-    font-weight: 600;
-}
-
-.admin-invoice-f__item-sub,
 .admin-invoice-f__item-desc {
-    margin-top: 2px;
-
     color: $color-text-muted;
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     line-height: 1.5;
 }
 
 .admin-invoice-f__table td[data-num] {
     font-family: $font-family-primary;
     white-space: nowrap;
+    text-align: center;
 }
 
 
@@ -545,62 +531,53 @@
     color: $color-primary;
 }
 
-
-// ----------------------------------------
-// "Internal only" box — dashed border + lock icon, deliberately
-// louder than the rest of the invoice so it can't be mistaken
-// for a regular section.
-// ----------------------------------------
-
 .admin-invoice-f__profit-f {
     margin-top: $spacing-lg;
     padding: $spacing-md;
     border-radius: $radius-md;
-    border: 2px dashed $color-primary;
+    border: 1.5px dashed $color-primary;
 
-    background-color: rgba(166, 21, 121, 0.06);
+    background-color: rgba(166, 21, 121, 0.05);
 }
 
 .admin-invoice-f__profit-f-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
     margin-bottom: $spacing-sm;
 
     color: $color-primary;
 
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     font-weight: 700;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
 }
 
-.admin-invoice-f__profit-f-title svg {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
+.admin-invoice-f__footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: $spacing-sm;
+
+    margin-top: $spacing-xl;
+    padding-top: $spacing-md;
+    border-top: 1px solid $color-hairline;
 }
 
-.admin-invoice-f__thanks {
-    margin: $spacing-xl 0 0;
+.admin-invoice-f__footer-contact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+
+    color: $color-text-muted;
+    font-size: 0.68rem;
+}
+
+.admin-invoice-f__footer-thanks {
+    margin: 0;
 
     color: $color-primary;
 
-    font-family: $font-family-primary;
-    font-size: 1.3rem;
-    letter-spacing: 0.06em;
-    text-align: center;
-}
-
-.admin-invoice-f__footer-note {
-    margin-top: $spacing-md;
-    padding-top: $spacing-md;
-    border-top: 1px solid $color-hairline;
-
-    color: $color-text-muted;
-    font-size: 0.7rem;
-    text-align: center;
+    font-family: $font-family-persian;
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .admin-invoice-f__actions {
@@ -608,8 +585,6 @@
     gap: $spacing-sm;
     margin-top: $spacing-lg;
     flex-wrap: wrap;
-
-    padding: 0 $spacing-lg $spacing-lg;
 }
 
 .admin-invoice-f__actions .admin-btn-f {

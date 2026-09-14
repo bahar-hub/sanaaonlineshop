@@ -7,21 +7,21 @@
 }
 @font-face {
   font-family: "Sanaa Persian";
-  src: url("../fonts/Vazirmatn-Regular.ttf") format("ttf");
+  src: url("../fonts/Vazirmatn-Regular.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: "Sanaa Persian";
-  src: url("../fonts/Vazirmatn-Medium.ttf") format("ttf");
+  src: url("../fonts/Vazirmatn-Medium.woff2") format("woff2");
   font-style: normal;
   font-weight: 500;
   font-display: swap;
 }
 @font-face {
   font-family: "Sanaa Persian";
-  src: url("../fonts/Vazirmatn-Bold.ttf") format("ttf");
+  src: url("../fonts/Vazirmatn-Bold.woff2") format("woff2");
   font-style: normal;
   font-weight: 700;
   font-display: swap;
@@ -456,6 +456,7 @@ body {
   padding: 16px;
   background-color: #FFFFFF;
   color: inherit;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
   text-align: right;
   cursor: pointer;
   transition: border-color 180ms ease, box-shadow 180ms ease;
@@ -483,6 +484,7 @@ body {
 
 .order-card__date {
   color: #8A8178;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
   font-size: 0.72rem;
 }
 
@@ -505,6 +507,7 @@ body {
   gap: 6px;
   padding: 4px 8px;
   border-radius: 999px;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
 }
@@ -535,6 +538,7 @@ body {
 .order-empty {
   padding: 48px 16px;
   color: #8A8178;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
   font-size: 0.85rem;
   text-align: center;
 }
@@ -546,8 +550,9 @@ body {
 
 .customer-invoice__brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
   margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 2px solid #191715;
@@ -556,12 +561,21 @@ body {
 .customer-invoice__logo {
   color: #A61579;
   font-family: "Belleza", Arial, sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
+}
+
+.customer-invoice__logo-sub {
+  color: #8A8178;
+  font-family: "Belleza", Arial, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
 }
 
 .customer-invoice__badge {
+  margin-top: 4px;
   padding: 4px 8px;
   border-radius: 999px;
   background-color: rgba(166, 21, 121, 0.1);
@@ -602,7 +616,7 @@ body {
 
 .customer-invoice__table {
   width: 100%;
-  min-width: 380px;
+  min-width: 420px;
   border-collapse: collapse;
 }
 
@@ -635,8 +649,8 @@ body {
 
 .customer-invoice__product-img {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 4px;
   object-fit: cover;
   background-color: #FFFFFF;
@@ -657,11 +671,6 @@ body {
   color: #191715;
   font-size: 0.8rem;
   font-weight: 500;
-}
-
-.customer-invoice__product-meta {
-  color: #8A8178;
-  font-size: 0.68rem;
 }
 
 .customer-invoice__product-desc {
@@ -704,13 +713,31 @@ body {
   color: #A61579;
 }
 
-.customer-invoice__footer-note {
+.customer-invoice__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   margin-top: 32px;
   padding-top: 16px;
   border-top: 1px solid #DCD4C8;
+}
+
+.customer-invoice__footer-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   color: #8A8178;
-  font-size: 0.68rem;
-  text-align: center;
+  font-size: 0.66rem;
+}
+
+.customer-invoice__footer-thanks {
+  margin: 0;
+  color: #A61579;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .modal {
@@ -1367,7 +1394,7 @@ scss .admin-layout-f {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #F3EFE8;
+  background-image: #F3EFE8;
 }
 scss .admin-layout-f[hidden] {
   display: none;
@@ -2332,8 +2359,7 @@ scss .admin-layout-f[hidden] {
   }
 }
 .admin-invoice-modal-f .modal__panel {
-  padding: 0;
-  overflow: hidden;
+  padding-top: 48px;
 }
 
 .admin-invoice-f {
@@ -2341,93 +2367,92 @@ scss .admin-layout-f[hidden] {
   color: #191715;
 }
 
-.admin-invoice-f__band {
+.admin-invoice-f__brand {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 48px 24px 24px;
-  background-color: #B9C3B9;
-  text-align: center;
+  gap: 6px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #191715;
 }
 
-.admin-invoice-f__band-logo {
+.admin-invoice-f__logo {
   color: #A61579;
   font-family: "Belleza", Arial, sans-serif;
-  font-size: 2.2rem;
-  letter-spacing: 0.22em;
+  font-size: 1.8rem;
+  letter-spacing: 0.16em;
 }
 
-.admin-invoice-f__band-sub {
-  color: #191715;
-  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
-  font-size: 0.72rem;
+.admin-invoice-f__logo-sub {
+  color: #8A8178;
+  font-family: "Belleza", Arial, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+}
+
+.admin-invoice-f__kind {
+  margin-top: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background-color: #FFFFFF;
+  color: #8A8178;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
 }
 
-.admin-invoice-f__body {
-  padding: 24px;
-  background-color: #F3EFE8;
+.admin-invoice-f__kind--admin-f {
+  background-color: rgba(166, 21, 121, 0.12);
+  color: #A61579;
 }
 
 .admin-invoice-f__meta {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
   margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #DCD4C8;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: #FFFFFF;
   font-size: 0.78rem;
 }
 
-.admin-invoice-f__meta-col {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.admin-invoice-f__meta-col--left {
-  text-align: left;
-}
-
-.admin-invoice-f__meta-col p {
-  margin: 0;
-  color: #191715;
-}
-
-.admin-invoice-f__meta-col span {
+.admin-invoice-f__meta-row dt {
   color: #8A8178;
+  margin-bottom: 2px;
+}
+
+.admin-invoice-f__meta-row dd {
+  font-weight: 600;
+}
+
+.admin-invoice-f__table-wrap {
+  width: 100%;
+  margin-bottom: 24px;
+  overflow-x: auto;
 }
 
 .admin-invoice-f__table {
   width: 100%;
-  margin-bottom: 24px;
+  min-width: 460px;
   border-collapse: collapse;
-  background-color: #FFFFFF;
-  border-radius: 8px;
-  overflow: hidden;
 }
 
 .admin-invoice-f__table th {
-  padding: 8px 16px;
-  background-color: #A61579;
-  color: #FFFFFF;
+  padding: 8px;
+  border-bottom: 1.5px solid #191715;
+  color: #8A8178;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
   text-align: right;
 }
 
 .admin-invoice-f__table td {
-  padding: 8px 16px;
+  padding: 8px;
   border-bottom: 1px solid #DCD4C8;
   font-size: 0.8rem;
   vertical-align: middle;
-}
-
-.admin-invoice-f__table tr:last-child td {
-  border-bottom: 0;
 }
 
 .admin-invoice-f__item-cell {
@@ -2446,24 +2471,22 @@ scss .admin-layout-f[hidden] {
 }
 
 .admin-invoice-f__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
-.admin-invoice-f__item-name {
-  font-weight: 600;
-}
-
-.admin-invoice-f__item-sub,
 .admin-invoice-f__item-desc {
-  margin-top: 2px;
   color: #8A8178;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   line-height: 1.5;
 }
 
 .admin-invoice-f__table td[data-num] {
   font-family: "Belleza", Arial, sans-serif;
   white-space: nowrap;
+  text-align: center;
 }
 
 .admin-invoice-f__summary {
@@ -2505,44 +2528,42 @@ scss .admin-layout-f[hidden] {
   margin-top: 24px;
   padding: 16px;
   border-radius: 8px;
-  border: 2px dashed #A61579;
-  background-color: rgba(166, 21, 121, 0.06);
+  border: 1.5px dashed #A61579;
+  background-color: rgba(166, 21, 121, 0.05);
 }
 
 .admin-invoice-f__profit-f-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   margin-bottom: 8px;
   color: #A61579;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
 }
 
-.admin-invoice-f__profit-f-title svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-
-.admin-invoice-f__thanks {
-  margin: 32px 0 0;
-  color: #A61579;
-  font-family: "Belleza", Arial, sans-serif;
-  font-size: 1.3rem;
-  letter-spacing: 0.06em;
-  text-align: center;
-}
-
-.admin-invoice-f__footer-note {
-  margin-top: 16px;
+.admin-invoice-f__footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 32px;
   padding-top: 16px;
   border-top: 1px solid #DCD4C8;
+}
+
+.admin-invoice-f__footer-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   color: #8A8178;
-  font-size: 0.7rem;
-  text-align: center;
+  font-size: 0.68rem;
+}
+
+.admin-invoice-f__footer-thanks {
+  margin: 0;
+  color: #A61579;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 .admin-invoice-f__actions {
@@ -2550,7 +2571,6 @@ scss .admin-layout-f[hidden] {
   gap: 8px;
   margin-top: 24px;
   flex-wrap: wrap;
-  padding: 0 24px 24px;
 }
 
 .admin-invoice-f__actions .admin-btn-f {

@@ -539,17 +539,17 @@ async function openOrderModal(orderId) {
 
         const grandTotal = order.totalIRR;
 
+        // این دو فیلد فعلاً از API مشتری برنمی‌گردن — تا وقتی
+        // بک‌اند اضافه‌شون نکنه به‌صورت امن fallback نشون داده می‌شن.
+        const customerName =
+            order.customerName
+            || document.getElementById("profilePhone")?.value
+            || "—";
+
+        const paymentStatusLabel =
+            order.paymentStatusLabel || "—";
+
         const itemRowsHtml = order.items.map((item) => {
-
-            const metaBits = [];
-
-            if (item.brand) {
-                metaBits.push(`برند: ${escapeHtml(item.brand)}`);
-            }
-
-            if (item.size) {
-                metaBits.push(`سایز: ${escapeHtml(item.size)}`);
-            }
 
             return `
                 <tr>
@@ -576,12 +576,6 @@ async function openOrderModal(orderId) {
                                 </span>
 
                                 ${
-                                    metaBits.length
-                                    ? `<span class="customer-invoice__product-meta">${metaBits.join(" · ")}</span>`
-                                    : ""
-                                }
-
-                                ${
                                     item.description
                                     ? `<span class="customer-invoice__product-desc">${escapeHtml(item.description)}</span>`
                                     : ""
@@ -590,6 +584,14 @@ async function openOrderModal(orderId) {
                             </div>
 
                         </div>
+                    </td>
+
+                    <td>
+                        ${item.brand ? escapeHtml(item.brand) : "—"}
+                    </td>
+
+                    <td data-num>
+                        ${item.size ? escapeHtml(item.size) : "—"}
                     </td>
 
                     <td data-num>
@@ -610,10 +612,16 @@ async function openOrderModal(orderId) {
 
                 <div class="customer-invoice__brand">
                     <span class="customer-invoice__logo" dir="ltr">SANAA</span>
+                    <span class="customer-invoice__logo-sub" dir="ltr">ONLINE SHOP</span>
                     <span class="customer-invoice__badge">فاکتور مشتری</span>
                 </div>
 
                 <dl class="customer-invoice__meta">
+
+                    <div class="customer-invoice__meta-row">
+                        <dt>مشتری</dt>
+                        <dd>${escapeHtml(customerName)}</dd>
+                    </div>
 
                     <div class="customer-invoice__meta-row">
                         <dt>شماره سفارش</dt>
@@ -621,13 +629,13 @@ async function openOrderModal(orderId) {
                     </div>
 
                     <div class="customer-invoice__meta-row">
-                        <dt>تاریخ ثبت سفارش</dt>
-                        <dd>${toPersianDigits(order.date)}</dd>
+                        <dt>وضعیت پرداخت</dt>
+                        <dd>${escapeHtml(paymentStatusLabel)}</dd>
                     </div>
 
                     <div class="customer-invoice__meta-row">
-                        <dt>وضعیت سفارش</dt>
-                        <dd>${ORDER_STATUS_LABELS[order.status] || order.status}</dd>
+                        <dt>تاریخ صدور</dt>
+                        <dd>${toPersianDigits(order.date)}</dd>
                     </div>
 
                 </dl>
@@ -638,9 +646,11 @@ async function openOrderModal(orderId) {
 
                         <thead>
                             <tr>
-                                <th>محصول</th>
+                                <th>کالا</th>
+                                <th>برند</th>
+                                <th>سایز</th>
                                 <th>تعداد</th>
-                                <th>جمع (ریال)</th>
+                                <th>قیمت واحد</th>
                             </tr>
                         </thead>
 
@@ -655,12 +665,17 @@ async function openOrderModal(orderId) {
                 <div class="customer-invoice__summary">
 
                     <div class="customer-invoice__summary-row">
-                        <span>جمع کل محصولات</span>
+                        <span>جمع کل</span>
                         <span>${formatRial(itemsSubtotalRial)}</span>
                     </div>
 
                     <div class="customer-invoice__summary-row">
-                        <span>باربری</span>
+                        <span>هزینه خدمات</span>
+                        <span>${formatRial(order.services)}</span>
+                    </div>
+
+                    <div class="customer-invoice__summary-row">
+                        <span>هزینه باربری</span>
                         <span>
                             ${
                                 order.shipping
@@ -670,11 +685,6 @@ async function openOrderModal(orderId) {
                         </span>
                     </div>
 
-                    <div class="customer-invoice__summary-row">
-                        <span>خدمات</span>
-                        <span>${formatRial(order.services)}</span>
-                    </div>
-
                     <div class="customer-invoice__summary-row customer-invoice__summary-row--total">
                         <span>مجموع کل</span>
                         <span>${formatRial(grandTotal)}</span>
@@ -682,9 +692,19 @@ async function openOrderModal(orderId) {
 
                 </div>
 
-                <p class="customer-invoice__footer-note">
-                    این فاکتور بر اساس نرخ ارز لحظه‌ی ثبت سفارش صادر شده است — فروشگاه سنا
-                </p>
+                <div class="customer-invoice__footer">
+
+                    <div class="customer-invoice__footer-contact">
+                        <span>instagram : sanaa.onlineshop</span>
+                        <span dir="ltr">phone: +98 915 579 3189</span>
+                        <span>website : sanaaonlineshop.com</span>
+                    </div>
+
+                    <p class="customer-invoice__footer-thanks">
+                        با تشکر از خرید شما
+                    </p>
+
+                </div>
 
             </div>
         `;

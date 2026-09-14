@@ -3397,80 +3397,48 @@
 
     function renderInvoiceHtmlF(calc, meta, isAdminF) {
 
-        var currencyRows = Object.keys(calc.byCurrency).map(
-            function (code) {
-
-                var label =
-                    EXCHANGE_RATES_F[code]
-                        ? EXCHANGE_RATES_F[code].label
-                        : code;
-
-                var rate =
-                    EXCHANGE_RATES_F[code]
-                        ? EXCHANGE_RATES_F[code].rate
-                        : 0;
-
-                return (
-                    '<div class="admin-invoice-f__summary-row">' +
-                    "<span>جمع کل (" + label + ") — نرخ روز: " +
-                    formatNumberF(rate) + " ریال</span>" +
-                    "<span>" +
-                    calc.byCurrency[code].toLocaleString("en-US") +
-                    " " + code + "</span>" +
-                    "</div>"
-                );
-
-            }
-        ).join("");
-
+        // ----------------------------------------
+        // Item rows — کالا / برند / سایز / تعداد /
+        // (فقط ادمین: قیمت ارزی + نرخ ارز) / قیمت (ریال)
+        // ----------------------------------------
 
         var itemRows = calc.lines.map(function (line) {
 
-            var subLines = [];
-
-            if (line.brand) {
-                subLines.push("برند: " + line.brand);
-            }
-
-            if (line.size) {
-                subLines.push("سایز: " + line.size);
-            }
-
-            var subLineHtml =
-                subLines.length
-                    ? '<div class="admin-invoice-f__item-sub">' +
-                      subLines.join(" · ") +
-                      "</div>"
-                    : "";
-
-            var descriptionHtml =
-                line.description
-                    ? '<div class="admin-invoice-f__item-desc">' +
-                      line.description +
-                      "</div>"
+            var adminColsHtml =
+                isAdminF
+                    ? (
+                        "<td data-num>" +
+                        line.price.toLocaleString("en-US") +
+                        " " + line.currency + "</td>" +
+                        "<td data-num>" +
+                        formatNumberF(line.rate) +
+                        " ریال</td>"
+                      )
                     : "";
 
             return (
                 "<tr>" +
-                '<td><div class="admin-invoice-f__item-cell">' +
-                (line.image
-                    ? '<img class="admin-invoice-f__item-img" src="' + line.image + '" alt="">'
-                    : '<div class="admin-invoice-f__item-img"></div>') +
-                '<div class="admin-invoice-f__item-info">' +
-                '<div class="admin-invoice-f__item-name">' + line.name + "</div>" +
-                subLineHtml +
-                descriptionHtml +
-                "</div>" +
-                "</div></td>" +
-                "<td data-num>" + line.price.toLocaleString("en-US") + " " + line.currency + "</td>" +
+                "<td>" + line.name + "</td>" +
+                "<td data-num>" + (line.brand || "—") + "</td>" +
+                "<td data-num>" + (line.size || "—") + "</td>" +
                 "<td data-num>" + line.qty.toLocaleString("fa-IR") + "</td>" +
-                "<td data-num>" + line.lineForeign.toLocaleString("en-US") + " " + line.currency + "</td>" +
+                adminColsHtml +
                 "<td data-num>" + formatNumberF(line.lineRial) + " ریال</td>" +
                 "</tr>"
             );
 
         }).join("");
 
+
+        var adminHeaderColsHtml =
+            isAdminF
+                ? "<th>قیمت ارزی</th><th>نرخ ارز</th>"
+                : "";
+
+
+        // ----------------------------------------
+        // Admin-only profit box
+        // ----------------------------------------
 
         var profitBlock = "";
 
@@ -3486,7 +3454,7 @@
                 "<span>فقط داخلی — سود ادمین</span>" +
                 "</div>" +
                 '<div class="admin-invoice-f__summary-row">' +
-                "<span>سود این سفارش (قیمت فروش − قیمت خرید)</span>" +
+                "<span>سود ادمین این سفارش</span>" +
                 "<span>" + formatNumberF(calc.profitRial) + " ریال</span>" +
                 "</div>" +
                 "</div>";
@@ -3495,14 +3463,18 @@
 
 
         return (
+
+            // ---------- top band — logo + soft pattern ----------
             '<div class="admin-invoice-f__band">' +
+            (isAdminF
+                ? '<span class="admin-invoice-f__band-type-f">فاکتور داخلی — فقط ادمین</span>'
+                : "") +
             '<span class="admin-invoice-f__band-logo" dir="ltr">SANAA</span>' +
-            '<span class="admin-invoice-f__band-sub">' +
-            (isAdminF ? "فاکتور داخلی (ادمین)" : "فاکتور فروش") +
-            "</span>" +
+            '<span class="admin-invoice-f__band-sub" dir="ltr">ONLINE SHOP</span>' +
             "</div>" +
 
-            '<div class="admin-invoice-f__body">' +
+            // ---------- white card — meta + table + summary ----------
+            '<div class="admin-invoice-f__card">' +
 
             '<div class="admin-invoice-f__meta">' +
             '<div class="admin-invoice-f__meta-col">' +
@@ -3517,13 +3489,17 @@
 
             '<table class="admin-invoice-f__table">' +
             "<thead><tr>" +
-            "<th>کالا</th><th>قیمت واحد</th><th>تعداد</th><th>جمع (ارز اصلی)</th><th>جمع (ریال)</th>" +
+            "<th>کالا</th><th>برند</th><th>سایز</th><th>تعداد</th>" +
+            adminHeaderColsHtml +
+            "<th>قیمت</th>" +
             "</tr></thead>" +
             "<tbody>" + itemRows + "</tbody>" +
             "</table>" +
 
             '<div class="admin-invoice-f__summary">' +
-            currencyRows +
+            '<div class="admin-invoice-f__summary-row">' +
+            "<span>جمع کل</span><span>" + formatNumberF(calc.itemsRial) + " ریال</span>" +
+            "</div>" +
             '<div class="admin-invoice-f__summary-row">' +
             "<span>هزینه خدمات</span><span>" + formatNumberF(calc.serviceRial) + " ریال</span>" +
             "</div>" +
@@ -3537,13 +3513,22 @@
 
             profitBlock +
 
-            '<p class="admin-invoice-f__thanks">با تشکر از خرید شما</p>' +
+            "</div>" +
+
+            // ---------- footer — contact info + thanks ----------
+            '<div class="admin-invoice-f__footer">' +
+            '<div class="admin-invoice-f__contact-f" dir="ltr">' +
+            "<p>instagram : sanaa.onlineshop</p>" +
+            "<p>phone: +98 915 579 3189</p>" +
+            "<p>website : sanaaonlineshop.com</p>" +
+            "</div>" +
+            '<p class="admin-invoice-f__thanks-f">با تشکر از خرید شما</p>' +
+            "</div>" +
 
             '<p class="admin-invoice-f__footer-note">' +
-            "این فاکتور بر اساس نرخ ارز لحظه‌ی ثبت سفارش صادر شده است — Sanaa Online Shop" +
-            "</p>" +
+            "این فاکتور بر اساس نرخ ارز لحظه‌ی ثبت سفارش صادر شده است" +
+            "</p>"
 
-            "</div>"
         );
 
     }
