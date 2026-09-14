@@ -597,7 +597,7 @@
         <!-- Order Invoice Modal -->
 
         <div
-            class="modal"
+            class="modal admin-invoice-modal-f"
             id="orderModal"
             hidden
         >
@@ -608,7 +608,7 @@
             ></div>
 
             <div
-                class="modal__panel"
+                class="modal__panel modal__panel--wide-f"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="orderModalTitle"
@@ -616,7 +616,7 @@
 
                 <button
                     type="button"
-                    class="modal__close"
+                    class="modal__close admin-invoice-f__no-print"
                     data-modal-close
                     aria-label="بستن"
                 >
@@ -628,12 +628,28 @@
                 <h2
                     class="modal__title"
                     id="orderModalTitle"
+                    hidden
                 ></h2>
 
                 <div
                     class="modal__body"
                     id="orderModalBody"
                 ></div>
+
+                <div class="admin-invoice-f__actions admin-invoice-f__no-print">
+
+                    <button
+                        type="button"
+                        class="admin-btn-f admin-btn-f--secondary-f"
+                        id="orderInvoicePrintF"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path d="M6 9V4h12v5M6 18h12v-5H6v5ZM6 13H4.5A1.5 1.5 0 0 1 3 11.5v-3A1.5 1.5 0 0 1 4.5 7h15A1.5 1.5 0 0 1 21 8.5v3a1.5 1.5 0 0 1-1.5 1.5H18" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        دانلود / چاپ PDF
+                    </button>
+
+                </div>
 
             </div>
             
@@ -644,6 +660,14 @@
 
 
     <!-- JavaScript -->
+    <script>
+        window.SANAA_FONTS_F = {
+            belleza: "{% static 'fonts/Belleza-Regular.woff2' %}",
+            vazirRegular: "{% static 'fonts/Vazirmatn-Regular.ttf' %}",
+            vazirMedium: "{% static 'fonts/Vazirmatn-Medium.ttf' %}",
+            vazirBold: "{% static 'fonts/Vazirmatn-Bold.ttf' %}"
+        };
+    </script>
     <script src="{% static 'js/modules/storage.js' %}" defer></script>
     <script src="{% static 'js/modules/auth.js' %}" defer></script>
     <script src="{% static 'js/modules/customer.js' %}" defer></script>

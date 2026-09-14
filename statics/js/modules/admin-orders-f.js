@@ -1957,171 +1957,73 @@
     function fetchInvoicePdfBlobF(
         orderNumber
     ) {
-
-        return new Promise(
-            function (resolve, reject) {
-
-                window.setTimeout(
-                    function () {
-
-                        reject(
-                            new Error(
-                                "invoice_backend_not_connected"
-                            )
-                        );
-
-                    },
-                    700
-                );
-
+        return fetch(invoiceApiEndpointF(orderNumber), {
+            method: "GET",
+            credentials: "same-origin",
+            headers: { "Accept": "application/pdf" }
+        }).then(function (response) {
+            if (!response.ok) {
+                throw new Error("invoice_backend_not_connected");
             }
-        );
-
+            var contentType = response.headers.get("content-type") || "";
+            if (contentType.indexOf("application/pdf") === -1) {
+                throw new Error("invoice_backend_invalid_pdf");
+            }
+            return response.blob();
+        });
     }
 
 
     function downloadOrderF(
         orderNumber
     ) {
-
-        var order =
-            ordersF.filter(
-                function (item) {
-
-                    return (
-                        item.number ===
-                        orderNumber
-                    );
-
-                }
-            )[0];
-
+        var order = findOrderByNumberF(orderNumber);
 
         if (!order) {
-
-            showToastF(
-                "سفارش پیدا نشد.",
-                "error"
-            );
-
+            showToastF("سفارش پیدا نشد.", "error");
             return;
-
         }
 
-
-        var triggers =
-            document.querySelectorAll(
-                '[data-download-order-f="' +
-                orderNumber +
-                '"]'
-            );
-
-
-        triggers.forEach(
-            function (button) {
-
-                button.setAttribute(
-                    "aria-busy",
-                    "true"
-                );
-
-                button.disabled = true;
-
-            }
+        var triggers = document.querySelectorAll(
+            '[data-download-order-f="' + orderNumber + '"]'
         );
 
+        triggers.forEach(function (button) {
+            button.setAttribute("aria-busy", "true");
+            button.disabled = true;
+        });
 
-        showToastF(
-            "در حال آماده‌سازی فایل PDF سفارش " +
-            orderNumber +
-            "…",
-            null
-        );
+        showToastF("در حال آماده‌سازی PDF سفارش " + orderNumber + "…", null);
 
-
-        fetchInvoicePdfBlobF(
-            orderNumber
-        )
-
-            .then(
-                function (blob) {
-
-                    var url =
-                        URL.createObjectURL(
-                            blob
-                        );
-
-
-                    var link =
-                        document.createElement(
-                            "a"
-                        );
-
-
-                    link.href = url;
-
-                    link.download =
-                        "invoice-" +
-                        orderNumber +
-                        ".pdf";
-
-
-                    document.body.appendChild(
-                        link
-                    );
-
-                    link.click();
-
-                    document.body.removeChild(
-                        link
-                    );
-
-
-                    URL.revokeObjectURL(
-                        url
-                    );
-
-
-                    showToastF(
-                        "فایل سفارش " +
-                        orderNumber +
-                        " با موفقیت دانلود شد.",
-                        "success"
-                    );
-
+        fetchInvoicePdfBlobF(orderNumber)
+            .then(function (blob) {
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement("a");
+                link.href = url;
+                link.download = "invoice-" + orderNumber + ".pdf";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                showToastF("فایل PDF سفارش " + orderNumber + " دانلود شد.", "success");
+            })
+            .catch(function () {
+                // The browser print engine is the fallback when the Django
+                // PDF endpoint is not ready. It prints the exact same DOM
+                // and styling that is visible in the invoice modal.
+                var invoice = document.getElementById("adminCustomerInvoiceF");
+                if (!invoice) {
+                    showToastF("نمایش فاکتور پیدا نشد.", "error");
+                    return;
                 }
-            )
-
-            .catch(
-                function () {
-
-                    showToastF(
-                        "سرویس تولید فاکتور هنوز به بک‌اند متصل نشده. لطفاً بعداً دوباره تلاش کنید.",
-                        "error"
-                    );
-
-                }
-            )
-
-            .then(
-                function () {
-
-                    triggers.forEach(
-                        function (button) {
-
-                            button.removeAttribute(
-                                "aria-busy"
-                            );
-
-                            button.disabled =
-                                false;
-
-                        }
-                    );
-
-                }
-            );
-
+                printInvoiceF("adminCustomerInvoiceF", true);
+            })
+            .finally(function () {
+                triggers.forEach(function (button) {
+                    button.removeAttribute("aria-busy");
+                    button.disabled = false;
+                });
+            });
     }
 
 
@@ -3345,7 +3247,11 @@
                     ? rates[item.currency].rate
                     : 0;
 
-            var lineForeign = item.price * item.qty;
+            // In the SANAA reference invoice, the stored `price` is the
+            // amount printed in the "قیمت واحد" column and is already the
+            // invoice line amount. Quantity is displayed separately and is
+            // not multiplied into the invoice subtotal.
+            var lineForeign = item.price;
             var lineRial = lineForeign * rate;
 
             itemsRial += lineRial;
@@ -3397,140 +3303,73 @@
 
     function renderInvoiceHtmlF(calc, meta, isAdminF) {
 
-        // ----------------------------------------
-        // Item rows — کالا / برند / سایز / تعداد /
-        // (فقط ادمین: قیمت ارزی + نرخ ارز) / قیمت (ریال)
-        // ----------------------------------------
-
         var itemRows = calc.lines.map(function (line) {
-
-            var adminColsHtml =
-                isAdminF
-                    ? (
-                        "<td data-num>" +
-                        line.price.toLocaleString("en-US") +
-                        " " + line.currency + "</td>" +
-                        "<td data-num>" +
-                        formatNumberF(line.rate) +
-                        " ریال</td>"
-                      )
-                    : "";
-
             return (
                 "<tr>" +
-                "<td>" + line.name + "</td>" +
-                "<td data-num>" + (line.brand || "—") + "</td>" +
-                "<td data-num>" + (line.size || "—") + "</td>" +
-                "<td data-num>" + line.qty.toLocaleString("fa-IR") + "</td>" +
-                adminColsHtml +
-                "<td data-num>" + formatNumberF(line.lineRial) + " ریال</td>" +
+                "<td class=\"invoice-item-name\">" + (line.name || "—") + "</td>" +
+                "<td>" + (line.brand || "—") + "</td>" +
+                "<td>" + (line.size || "—") + "</td>" +
+                "<td>" + Number(line.qty || 0).toLocaleString("fa-IR") + "</td>" +
+                "<td class=\"invoice-price\">" + formatNumberF(line.price) + "</td>" +
                 "</tr>"
             );
-
         }).join("");
 
-
-        var adminHeaderColsHtml =
-            isAdminF
-                ? "<th>قیمت ارزی</th><th>نرخ ارز</th>"
-                : "";
-
-
-        // ----------------------------------------
-        // Admin-only profit box
-        // ----------------------------------------
-
         var profitBlock = "";
-
         if (isAdminF) {
-
             profitBlock =
-                '<div class="admin-invoice-f__profit-f">' +
-                '<div class="admin-invoice-f__profit-f-title">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-                '<rect x="4" y="10" width="16" height="10" rx="2"/>' +
-                '<path d="M8 10V7a4 4 0 0 1 8 0v3" stroke-linecap="round"/>' +
-                "</svg>" +
-                "<span>فقط داخلی — سود ادمین</span>" +
-                "</div>" +
-                '<div class="admin-invoice-f__summary-row">' +
-                "<span>سود ادمین این سفارش</span>" +
-                "<span>" + formatNumberF(calc.profitRial) + " ریال</span>" +
-                "</div>" +
-                "</div>";
-
+                '<div class="invoice-profit-f">' +
+                    '<div class="invoice-profit-title-f">فاکتور داخلی — فقط ادمین</div>' +
+                    '<div class="invoice-summary-row-f">' +
+                        '<span>سود ادمین این سفارش</span>' +
+                        '<strong>' + formatNumberF(calc.profitRial) + ' ریال</strong>' +
+                    '</div>' +
+                '</div>';
         }
 
-
         return (
-
-            // ---------- top band — logo + soft pattern ----------
-            '<div class="admin-invoice-f__band">' +
-            (isAdminF
-                ? '<span class="admin-invoice-f__band-type-f">فاکتور داخلی — فقط ادمین</span>'
-                : "") +
-            '<span class="admin-invoice-f__band-logo" dir="ltr">SANAA</span>' +
-            '<span class="admin-invoice-f__band-sub" dir="ltr">ONLINE SHOP</span>' +
-            "</div>" +
-
-            // ---------- white card — meta + table + summary ----------
-            '<div class="admin-invoice-f__card">' +
-
-            '<div class="admin-invoice-f__meta">' +
-            '<div class="admin-invoice-f__meta-col">' +
-            "<p><span>مشتری:</span> " + meta.customerName + "</p>" +
-            "<p><span>وضعیت پرداخت:</span> " + meta.paymentLabel + "</p>" +
-            "</div>" +
-            '<div class="admin-invoice-f__meta-col admin-invoice-f__meta-col--left">' +
-            "<p><span>شماره سفارش:</span> " + meta.orderNumber + "</p>" +
-            "<p><span>تاریخ صدور:</span> " + meta.date + "</p>" +
-            "</div>" +
-            "</div>" +
-
-            '<table class="admin-invoice-f__table">' +
-            "<thead><tr>" +
-            "<th>کالا</th><th>برند</th><th>سایز</th><th>تعداد</th>" +
-            adminHeaderColsHtml +
-            "<th>قیمت</th>" +
-            "</tr></thead>" +
-            "<tbody>" + itemRows + "</tbody>" +
-            "</table>" +
-
-            '<div class="admin-invoice-f__summary">' +
-            '<div class="admin-invoice-f__summary-row">' +
-            "<span>جمع کل</span><span>" + formatNumberF(calc.itemsRial) + " ریال</span>" +
-            "</div>" +
-            '<div class="admin-invoice-f__summary-row">' +
-            "<span>هزینه خدمات</span><span>" + formatNumberF(calc.serviceRial) + " ریال</span>" +
-            "</div>" +
-            '<div class="admin-invoice-f__summary-row">' +
-            "<span>هزینه باربری</span><span>" + formatNumberF(calc.shippingRial) + " ریال</span>" +
-            "</div>" +
-            '<div class="admin-invoice-f__summary-row admin-invoice-f__summary-row--total-f">' +
-            "<span>مجموع کل</span><span>" + formatNumberF(calc.grandTotalRial) + " ریال</span>" +
-            "</div>" +
-            "</div>" +
-
-            profitBlock +
-
-            "</div>" +
-
-            // ---------- footer — contact info + thanks ----------
-            '<div class="admin-invoice-f__footer">' +
-            '<div class="admin-invoice-f__contact-f" dir="ltr">' +
-            "<p>instagram : sanaa.onlineshop</p>" +
-            "<p>phone: +98 915 579 3189</p>" +
-            "<p>website : sanaaonlineshop.com</p>" +
-            "</div>" +
-            '<p class="admin-invoice-f__thanks-f">با تشکر از خرید شما</p>' +
-            "</div>" +
-
-            '<p class="admin-invoice-f__footer-note">' +
-            "این فاکتور بر اساس نرخ ارز لحظه‌ی ثبت سفارش صادر شده است" +
-            "</p>"
-
+            "<style id=\"admin-invoice-reference-style-f\">\n.admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;color:#201B1D;direction:rtl;overflow:hidden;font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;}.admin-invoice-f__band{min-height:148px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#B8C2B8;text-align:center;}.admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#AE0F7C;letter-spacing:.13em;font-weight:400;}.admin-invoice-f__band-sub{margin-top:7px;font-family:'Belleza',Georgia,serif;font-size:16px;line-height:1;color:#AE0F7C;letter-spacing:.25em;font-weight:400;}.admin-invoice-f__band-type-f{margin-top:10px;font-size:11px;color:#5C5356;font-weight:700;}.admin-invoice-f__card{width:calc(100% - 16px);min-height:0;margin:-1px auto 0;background:#fff;padding:0 12px 28px;box-shadow:0 0 0 1px rgba(0,0,0,.02);page-break-inside:avoid;}.admin-invoice-f__meta{min-height:0;padding:14px 0 13px;display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:12px;border-bottom:1px solid #4B4748;font-size:12px;line-height:1.9;}.admin-invoice-f__meta-col{display:flex;flex-direction:column;gap:0;min-width:0;}.admin-invoice-f__meta-col--left{text-align:left;}.admin-invoice-f__meta-col p{margin:0;white-space:normal;overflow-wrap:anywhere;}.admin-invoice-f__table{width:100%;margin:22px 0 0;border-collapse:collapse;table-layout:fixed;font-size:11px;}.admin-invoice-f__table th{height:48px;padding:6px 3px;background:#AE0F7C;color:#fff;border-left:1px solid #fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}.admin-invoice-f__table th:last-child{border-left:0;}.admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}.admin-invoice-f__table td{min-height:52px;height:52px;padding:7px 3px;border:0;text-align:center;vertical-align:middle;font-size:11px;overflow-wrap:anywhere;word-break:break-word;}.admin-invoice-f__table td.invoice-item-name{text-align:right;}.admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}.admin-invoice-f__summary-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:stretch;}.admin-invoice-f__summary{width:100%;max-width:360px;margin-right:auto;display:flex;flex-direction:column;gap:6px;}.invoice-summary-row-f{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.65;direction:rtl;}.invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;}.invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:15px;font-weight:700;}.invoice-summary-total-f strong:first-child{font-weight:800;}.invoice-profit-f{width:100%;max-width:360px;margin:18px 0 0 auto;padding:10px 12px;border:1px dashed #AE0F7C;background:#FBF2F8;}.invoice-profit-title-f{margin-bottom:7px;color:#AE0F7C;font-size:11px;font-weight:700;}.admin-invoice-f__footer{min-height:0;padding:22px 16px 24px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;background:#F3EFE8;color:#AE0F7C;}.admin-invoice-f__contact-f{font-family:Arial,Tahoma,sans-serif;font-size:11px;line-height:1.7;text-align:left;}.admin-invoice-f__contact-f p{margin:0;}.admin-invoice-f__thanks-f{margin:0;font-size:17px;font-weight:700;text-align:right;white-space:normal;}.admin-invoice-f__footer-note{display:none;}@media(min-width:701px){.admin-invoice-f{width:640px;min-height:980px;}.admin-invoice-f__band{height:203px;min-height:203px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{margin-top:9px;font-size:22px;letter-spacing:.34em;}.admin-invoice-f__band-type-f{margin-top:12px;font-size:12px;}.admin-invoice-f__card{width:630px;min-height:720px;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-start;}.admin-invoice-f__summary,.invoice-profit-f{width:315px;max-width:none;}.admin-invoice-f__summary{margin-right:0;}.invoice-profit-f{margin-top:22px;}.invoice-summary-row-f{font-size:15px;}.invoice-summary-total-f{font-size:18px;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;white-space:nowrap;}}@media(max-width:360px){.admin-invoice-f__card{width:calc(100% - 10px);padding-left:8px;padding-right:8px;}.admin-invoice-f__meta{grid-template-columns:1fr;gap:5px;}.admin-invoice-f__meta-col--left{text-align:right;}.admin-invoice-f__table{font-size:10px;}.admin-invoice-f__table th{font-size:10px;padding-left:2px;padding-right:2px;}.admin-invoice-f__table td{font-size:10px;padding-left:2px;padding-right:2px;}.invoice-summary-row-f{font-size:11px;}.invoice-summary-total-f{font-size:14px;}}@media print{@page{size:A4 portrait;margin:0;}html,body{margin:0!important;padding:0!important;background:#F3EFE8!important;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:203px!important;min-height:203px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:630px!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-start!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;flex-direction:row!important;justify-content:space-between!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;white-space:nowrap!important;}}</style>" +
+            '<div class="admin-invoice-f" dir="rtl">' +
+                '<div class="admin-invoice-f__band">' +
+                    '<span class="admin-invoice-f__band-logo" dir="ltr">SANAA</span>' +
+                    '<span class="admin-invoice-f__band-sub" dir="ltr">ONLINE SHOP</span>' +
+                    (isAdminF ? '<span class="admin-invoice-f__band-type-f">فاکتور داخلی — فقط ادمین</span>' : '') +
+                '</div>' +
+                '<div class="admin-invoice-f__card">' +
+                    '<div class="admin-invoice-f__meta">' +
+                        '<div class="admin-invoice-f__meta-col">' +
+                            '<p><span>مشتری :</span> ' + (meta.customerName || "—") + '</p>' +
+                            '<p><span>وضعیت پرداخت :</span> ' + (meta.paymentLabel || "—") + '</p>' +
+                        '</div>' +
+                        '<div class="admin-invoice-f__meta-col admin-invoice-f__meta-col--left">' +
+                            '<p><span>شماره سفارش :</span> ' + (meta.orderNumber || "—") + '</p>' +
+                            '<p><span>تاریخ صدور :</span> ' + (meta.date || "—") + '</p>' +
+                        '</div>' +
+                    '</div>' +
+                    '<table class="admin-invoice-f__table">' +
+                        '<thead><tr><th>کالا</th><th>برند</th><th>سایز</th><th>تعداد</th><th>قیمت واحد</th></tr></thead>' +
+                        '<tbody>' + itemRows + '</tbody>' +
+                    '</table>' +
+                    '<div class="admin-invoice-f__summary-wrap">' +
+                        '<div class="admin-invoice-f__summary">' +
+                            '<div class="invoice-summary-row-f"><span>جمع کل :</span><span>' + formatNumberF(calc.itemsRial) + ' ریال</span></div>' +
+                            '<div class="invoice-summary-row-f"><span>هزینه خدمات :</span><span>' + formatNumberF(calc.serviceRial) + ' ریال</span></div>' +
+                            '<div class="invoice-summary-row-f"><span>هزینه باربری :</span><span>' + formatNumberF(calc.shippingRial) + ' ریال</span></div>' +
+                            '<div class="invoice-summary-row-f invoice-summary-total-f"><strong>مجموع کل</strong><strong>' + formatNumberF(calc.grandTotalRial) + ' ریال</strong></div>' +
+                        '</div>' +
+                        profitBlock +
+                    '</div>' +
+                '</div>' +
+                '<div class="admin-invoice-f__footer">' +
+                    '<div class="admin-invoice-f__contact-f" dir="ltr">' +
+                        '<p>instagram : sanaa.onlineshop</p>' +
+                        '<p>phone: +98 915 579 3189</p>' +
+                        '<p>website : sanaaonlineshop.com</p>' +
+                    '</div>' +
+                    '<p class="admin-invoice-f__thanks-f">با تشکر از خرید شما</p>' +
+                '</div>' +
+            '</div>'
         );
-
     }
 
 
@@ -3568,188 +3407,110 @@
      * stylesheet, then print that. Much more reliable.
      * ---------------------------------------------------------- */
 
-    function printInvoiceF(containerId) {
-
-        var content =
-            document.getElementById(containerId);
-
+    function printInvoiceF(containerId, fromDownloadF) {
+        var content = document.getElementById(containerId);
         if (!content) {
             return;
         }
 
-
-        var fonts =
-            window.SANAA_FONTS_F || {};
-
+        var fonts = window.SANAA_FONTS_F || {};
         function absoluteUrlF(path) {
-
-            if (!path) {
-                return "";
-            }
-
-            return window.location.origin + path;
-
+            return path ? window.location.origin + path : "";
         }
 
-
-        // Inlined directly so the print window never depends on a
-        // second network request for the site's stylesheet (which
-        // was the actual cause of blank/empty PDFs — that request
-        // doesn't always finish before print() fires, especially
-        // right after a fresh page load). Fonts are embedded the
-        // same way, via absolute URLs, since the popup has no
-        // access to the main page's already-loaded @font-face.
         var fontFaces =
-            "@font-face{font-family:'Belleza';src:url('" +
-            absoluteUrlF(fonts.belleza) + "') format('woff2');" +
-            "font-weight:400;font-display:swap;}" +
-            "@font-face{font-family:'Sanaa Persian';src:url('" +
-            absoluteUrlF(fonts.vazirRegular) + "') format('truetype');" +
-            "font-weight:400;font-display:swap;}" +
-            "@font-face{font-family:'Sanaa Persian';src:url('" +
-            absoluteUrlF(fonts.vazirMedium) + "') format('truetype');" +
-            "font-weight:500;font-display:swap;}" +
-            "@font-face{font-family:'Sanaa Persian';src:url('" +
-            absoluteUrlF(fonts.vazirBold) + "') format('truetype');" +
-            "font-weight:700;font-display:swap;}";
+            "@font-face{font-family:'Belleza';src:url('" + absoluteUrlF(fonts.belleza) + "') format('woff2');font-weight:400;font-display:block;}" +
+            "@font-face{font-family:'Sanaa Persian';src:url('" + absoluteUrlF(fonts.vazirRegular) + "') format('truetype');font-weight:400;font-display:block;}" +
+            "@font-face{font-family:'Sanaa Persian';src:url('" + absoluteUrlF(fonts.vazirMedium) + "') format('truetype');font-weight:500;font-display:block;}" +
+            "@font-face{font-family:'Sanaa Persian';src:url('" + absoluteUrlF(fonts.vazirBold) + "') format('truetype');font-weight:700;font-display:block;}";
 
-
-        var printCss =
-            fontFaces +
-            "body{margin:0;padding:0;background:#F3EFE8;" +
-            "font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;" +
-            "color:#191715;}" +
-            ".admin-invoice-f{max-width:640px;margin:0 auto;}" +
-
-            ".admin-invoice-f__band{display:flex;flex-direction:column;" +
-            "align-items:center;gap:4px;padding:40px 24px 24px;" +
-            "background:#B9C3B9;text-align:center;}" +
-            ".admin-invoice-f__band-logo{color:#A61579;" +
-            "font-family:'Belleza',serif;font-size:2.2rem;" +
-            "letter-spacing:0.22em;}" +
-            ".admin-invoice-f__band-sub{color:#191715;font-size:0.72rem;" +
-            "font-weight:600;letter-spacing:0.08em;}" +
-
-            ".admin-invoice-f__body{padding:24px;background:#F3EFE8;}" +
-
-            ".admin-invoice-f__meta{display:flex;align-items:flex-start;" +
-            "justify-content:space-between;gap:16px;margin-bottom:24px;" +
-            "padding-bottom:24px;border-bottom:1px solid #DCD4C8;" +
-            "font-size:0.78rem;}" +
-            ".admin-invoice-f__meta-col{display:flex;" +
-            "flex-direction:column;gap:4px;}" +
+        var printCss = fontFaces +
+            "html,body{margin:0;padding:0;background:#F3EFE8;}" +
+            "body{font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;color:#201B1D;-webkit-print-color-adjust:exact;print-color-adjust:exact;}" +
+            ".admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;overflow:hidden;direction:rtl;}" +
+            ".admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;}" +
+            ".admin-invoice-f__band{min-height:148px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;background:#B8C2B8;text-align:center;}" +
+            ".admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#AE0F7C;letter-spacing:.13em;}" +
+            ".admin-invoice-f__band-sub{margin-top:7px;font-family:'Belleza',Georgia,serif;font-size:16px;line-height:1;color:#AE0F7C;letter-spacing:.25em;}" +
+            ".admin-invoice-f__band-type-f{margin-top:10px;font-size:11px;color:#5C5356;font-weight:700;}" +
+            ".admin-invoice-f__card{width:calc(100% - 16px);min-height:0;margin:-1px auto 0;background:#fff;padding:0 12px 28px;page-break-inside:avoid;}" +
+            ".admin-invoice-f__meta{min-height:0;padding:14px 0 13px;display:grid;grid-template-columns:1fr 1fr;gap:12px;border-bottom:1px solid #4B4748;font-size:12px;line-height:1.9;}" +
+            ".admin-invoice-f__meta-col{display:flex;flex-direction:column;min-width:0;}" +
             ".admin-invoice-f__meta-col--left{text-align:left;}" +
-            ".admin-invoice-f__meta-col p{margin:0;color:#191715;}" +
-            ".admin-invoice-f__meta-col span{color:#8A8178;}" +
+            ".admin-invoice-f__meta-col p{margin:0;white-space:normal;overflow-wrap:anywhere;}" +
+            ".admin-invoice-f__table{width:100%;margin:22px 0 0;border-collapse:collapse;table-layout:fixed;font-size:11px;}" +
+            ".admin-invoice-f__table th{height:48px;padding:6px 3px;background:#AE0F7C;color:#fff;border-left:1px solid #fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}" +
+            ".admin-invoice-f__table th:last-child{border-left:0;}" +
+            ".admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}" +
+            ".admin-invoice-f__table td{min-height:52px;height:52px;padding:7px 3px;border:0;text-align:center;vertical-align:middle;font-size:11px;overflow-wrap:anywhere;word-break:break-word;}" +
+            ".admin-invoice-f__table td.invoice-item-name{text-align:right;}" +
+            ".admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}" +
+            ".admin-invoice-f__summary-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:stretch;}" +
+            ".admin-invoice-f__summary{width:100%;max-width:360px;margin-right:auto;display:flex;flex-direction:column;gap:6px;}" +
+            ".invoice-summary-row-f{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.65;direction:rtl;}" +
+            ".invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;}" +
+            ".invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:15px;font-weight:700;}" +
+            ".invoice-profit-f{width:100%;max-width:360px;margin:18px 0 0 auto;padding:10px 12px;border:1px dashed #AE0F7C;background:#FBF2F8;}" +
+            ".invoice-profit-title-f{margin-bottom:7px;color:#AE0F7C;font-size:11px;font-weight:700;}" +
+            ".admin-invoice-f__footer{padding:22px 16px 24px;display:flex;flex-direction:column;gap:12px;background:#F3EFE8;color:#AE0F7C;}" +
+            ".admin-invoice-f__contact-f{font-family:Arial,Tahoma,sans-serif;font-size:11px;line-height:1.7;text-align:left;}" +
+            ".admin-invoice-f__contact-f p{margin:0;}" +
+            ".admin-invoice-f__thanks-f{margin:0;font-size:17px;font-weight:700;text-align:right;white-space:normal;}" +
+            "@media(min-width:701px){.admin-invoice-f{width:640px;}.admin-invoice-f__band{height:203px;min-height:203px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{font-size:22px;letter-spacing:.34em;}.admin-invoice-f__card{width:630px;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-start;}.admin-invoice-f__summary,.invoice-profit-f{width:315px;max-width:none;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;flex-direction:row;justify-content:space-between;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;white-space:nowrap;}}" +
+            "@media(max-width:360px){.admin-invoice-f__meta{grid-template-columns:1fr;gap:5px;}.admin-invoice-f__meta-col--left{text-align:right;}.admin-invoice-f__table,.admin-invoice-f__table td{font-size:10px;}.admin-invoice-f__table th{font-size:10px;padding-left:2px;padding-right:2px;}.invoice-summary-row-f{font-size:11px;}}" +
+            "@page{size:A4 portrait;margin:0;}@media print{html,body{width:100%;background:#F3EFE8!important;}body{margin:0!important;padding:0!important;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:203px!important;min-height:203px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:630px!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-start!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;flex-direction:row!important;justify-content:space-between!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;white-space:nowrap!important;}}";
 
-            ".admin-invoice-f__table{width:100%;margin-bottom:24px;" +
-            "border-collapse:collapse;background:#fff;border-radius:8px;" +
-            "overflow:hidden;}" +
-            ".admin-invoice-f__table th{padding:8px 16px;" +
-            "background:#A61579;color:#fff;" +
-            "font-size:0.7rem;font-weight:700;text-align:right;}" +
-            ".admin-invoice-f__table td{padding:8px 16px;" +
-            "border-bottom:1px solid #DCD4C8;font-size:0.8rem;" +
-            "vertical-align:middle;}" +
-            ".admin-invoice-f__table tr:last-child td{border-bottom:0;}" +
-            ".admin-invoice-f__item-cell{display:flex;align-items:center;" +
-            "gap:8px;}" +
-            ".admin-invoice-f__item-img{width:40px;height:40px;" +
-            "flex-shrink:0;border-radius:4px;object-fit:cover;" +
-            "background:#F6F2EC;}" +
-            ".admin-invoice-f__item-name{font-weight:600;}" +
-            ".admin-invoice-f__item-sub,.admin-invoice-f__item-desc{" +
-            "margin-top:2px;color:#8A8178;font-size:0.7rem;" +
-            "line-height:1.5;}" +
-            ".admin-invoice-f__table td[data-num]{" +
-            "font-family:'Belleza',sans-serif;white-space:nowrap;}" +
-
-            ".admin-invoice-f__summary{margin-right:auto;width:100%;" +
-            "max-width:320px;display:flex;flex-direction:column;gap:4px;}" +
-            ".admin-invoice-f__summary-row{display:flex;" +
-            "align-items:center;justify-content:space-between;" +
-            "font-size:0.8rem;color:#8A8178;}" +
-            ".admin-invoice-f__summary-row span:last-child{color:#191715;}" +
-            ".admin-invoice-f__summary-row--total-f{margin-top:4px;" +
-            "padding-top:8px;border-top:1.5px solid #191715;" +
-            "font-size:1rem;font-weight:700;color:#191715;}" +
-            ".admin-invoice-f__summary-row--total-f span:last-child{" +
-            "color:#A61579;}" +
-
-            ".admin-invoice-f__profit-f{margin-top:24px;padding:16px;" +
-            "border-radius:8px;border:2px dashed #A61579;" +
-            "background:rgba(166,21,121,.06);}" +
-            ".admin-invoice-f__profit-f-title{display:flex;" +
-            "align-items:center;gap:6px;margin:0 0 8px;color:#A61579;" +
-            "font-size:0.75rem;font-weight:700;letter-spacing:0.03em;}" +
-            ".admin-invoice-f__profit-f-title svg{width:14px;height:14px;" +
-            "flex-shrink:0;}" +
-
-            ".admin-invoice-f__thanks{margin:32px 0 0;color:#A61579;" +
-            "font-family:'Belleza',serif;font-size:1.3rem;" +
-            "letter-spacing:0.06em;text-align:center;}" +
-            ".admin-invoice-f__footer-note{margin-top:16px;" +
-            "padding-top:16px;border-top:1px solid #DCD4C8;" +
-            "color:#8A8178;font-size:0.7rem;text-align:center;}" +
-            "@media print{body{padding:0;}}";
-
-
-        var printWindow =
-            window.open(
-                "",
-                "_blank",
-                "width=850,height=1000"
-            );
-
+        var printWindow = window.open("", "_blank", "width=850,height=1050");
         if (!printWindow) {
-
-            showToastF(
-                "مرورگر اجازه‌ی باز کردن پنجره‌ی چاپ را نداد — لطفاً پاپ‌آپ‌بلاکر را غیرفعال کنید.",
-                "error"
-            );
-
+            showToastF("مرورگر اجازه‌ی باز کردن پنجره‌ی چاپ را نداد — لطفاً پاپ‌آپ‌بلاکر را غیرفعال کنید.", "error");
             return;
-
         }
-
 
         printWindow.document.write(
-            "<!DOCTYPE html>" +
-            '<html lang="fa" dir="rtl">' +
-            "<head>" +
-            '<meta charset="UTF-8">' +
-            '<base href="' + window.location.origin + '/">' +
-            "<title>فاکتور — Sanaa</title>" +
-            "<style>" + printCss + "</style>" +
-            "</head>" +
-            "<body>" +
+            "<!DOCTYPE html><html lang=\"fa\" dir=\"rtl\"><head>" +
+            "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+            "<base href=\"" + window.location.origin + "/\"><title>فاکتور — SANAA</title>" +
+            "<style>" + printCss + "</style></head><body>" +
             content.outerHTML +
-            "</body>" +
-            "</html>"
+            "</body></html>"
         );
-
         printWindow.document.close();
 
-
-        // Give the new document a moment to finish painting
-        // (images especially) before the print dialog opens —
-        // waiting only on "load" isn't always enough for content
-        // written via document.write().
-        printWindow.addEventListener(
-            "load",
-            function () {
-
-                setTimeout(function () {
-
-                    printWindow.focus();
-                    printWindow.print();
-
-                }, 250);
-
-
+        var printed = false;
+        function doPrint() {
+            if (printed) return;
+            printed = true;
+            printWindow.focus();
+            printWindow.print();
+            if (fromDownloadF) {
+                showToastF("پنجره چاپ باز شد؛ برای PDF گزینه «Save as PDF» را انتخاب کنید.", null);
             }
-        );
+        }
 
+        function waitForAssets() {
+            var doc = printWindow.document;
+            var images = Array.prototype.slice.call(doc.images || []);
+            var imagePromises = images.map(function (img) {
+                if (img.complete) return Promise.resolve();
+                return new Promise(function (resolve) {
+                    img.addEventListener("load", resolve, { once: true });
+                    img.addEventListener("error", resolve, { once: true });
+                });
+            });
+            var fontsPromise = doc.fonts && doc.fonts.ready
+                ? doc.fonts.ready.catch(function () {})
+                : Promise.resolve();
+            Promise.all(imagePromises.concat([fontsPromise])).then(function () {
+                window.setTimeout(doPrint, 180);
+            });
+        }
+
+        if (printWindow.document.readyState === "complete") {
+            waitForAssets();
+        } else {
+            printWindow.addEventListener("load", waitForAssets, { once: true });
+            window.setTimeout(waitForAssets, 700);
+        }
     }
 
 
