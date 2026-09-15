@@ -1,4809 +1,889 @@
-/* ============================================================
- * Admin Panel — Order Management
- * Standalone Orders Page
- * Vanilla JS only
- * Orders are loaded from Django / database
- * ============================================================ */
+// ========================================
+// Sanaa Customer Panel
+// ========================================
 
-(function () {
+const USD_TO_RIAL = 605000;
 
-    "use strict";
 
-    const CURRENCY_FIELD_MAP_F = {
-        USD: "unitPriceUsd",
-        EUR: "unitPriceEur",
-        TRY: "unitPriceTry",
-        GBP: "unitPriceGbp",
-        AED: "unitPriceAed"
-    };
-    /* ============================================================
-     * EXCHANGE RATES
-     * ============================================================ */
+function getMockOrders() {
 
-    var EXCHANGE_RATES_F = {
-
-        USD: {
-            label: "دلار",
-            rate: 605000
-        },
-
-        TRY: {
-            label: "لیر",
-            rate: 18000
-        },
-
-        EUR: {
-            label: "یورو",
-            rate: 655000
-        },
-
-        GBP: {
-            label: "پوند",
-            rate: 765000
-        },
-
-        AED: {
-            label: "درهم امارات",
-            rate: 165000
-        }
-
-    };
-
-
-    /* ============================================================
-     * ORDERS DATA — injected by Django via json_script
-     * ============================================================ */
-
-    var ordersF = [];
-
-    var ordersDataElementF =
-        document.getElementById(
-            "orders-data-f"
-        );
-
-    if (ordersDataElementF) {
-
-        try {
-
-            var parsedOrdersF =
-                JSON.parse(
-                    ordersDataElementF.textContent
-                );
-
-            ordersF =
-                Array.isArray(parsedOrdersF)
-                    ? parsedOrdersF
-                    : [];
-
-        } catch (error) {
-
-            console.error(
-                "Could not parse orders data:",
-                error
-            );
-
-            ordersF = [];
-        }
-    }
-
-
-    function findOrderByNumberF(orderNumber) {
-
-        return ordersF.find(
-            function (order) {
-
-                return (
-                    order.number ===
-                    orderNumber
-                );
-
-            }
-        );
-    }
-
-
-    function replaceOrderF(savedOrder) {
-
-        var index =
-            ordersF.findIndex(
-                function (order) {
-
-                    return (
-                        Number(order.id) ===
-                        Number(savedOrder.id)
-                    );
-
-                }
-            );
-
-
-        if (index === -1) {
-
-            ordersF.unshift(
-                savedOrder
-            );
-
-        } else {
-
-            ordersF[index] =
-                savedOrder;
-        }
-    }
-
-
-    function buildOrderUrlF(template, orderId) {
-
-        if (!template) {
-            return "";
-        }
-
-        return template.replace(
-            "/0/",
-            "/" + orderId + "/"
-        );
-    }
-
-
-    function getCsrfTokenF() {
-
-        var input =
-            document.querySelector(
-                'input[name="csrfmiddlewaretoken"]'
-            );
-
-        return input
-            ? input.value
-            : "";
-    }
-
-
-    function fetchJsonF(url, options) {
-
-        return fetch(
-            url,
-            options
-        )
-        .then(function (response) {
-
-            return response
-                .text()
-                .then(function (text) {
-
-                    var data = {};
-
-                    try {
-
-                        data =
-                            JSON.parse(
-                                text
-                            );
-
-                    } catch (error) {
-
-                        console.error(
-                            "Invalid JSON response:",
-                            text
-                        );
-                    }
-
-
-                    if (!response.ok) {
-
-                        throw new Error(
-                            data.message ||
-                            (
-                                "خطای سرور: " +
-                                response.status
-                            )
-                        );
-                    }
-
-
-                    return data;
-                });
-
-        });
-    }
-
-
-    var openEditOrderModalF =
-        null;
-
-
-    /* ============================================================
-     * STATUS MAPS
-     * ============================================================ */
-
-    var ORDER_STATUS_F = {
-
-        registered: {
-            label: "ثبت‌شده",
-            color: "neutral"
-        },
-
-        confirmed: {
-            label: "تأییدشده",
-            color: "info"
-        },
-
-        preparing: {
-            label: "در حال آماده‌سازی",
-            color: "warning"
-        },
-
-        shipped: {
-            label: "ارسال‌شده",
-            color: "primary"
-        },
-
-        delivered: {
-            label: "تحویل داده‌شده",
-            color: "success"
-        },
-
-        cancelled: {
-            label: "لغوشده",
-            color: "danger"
-        },
-
-        returned: {
-            label: "مرجوع‌شده",
-            color: "danger"
-        }
-
-    };
-
-
-    var PAYMENT_STATUS_F = {
-
-        paid: {
-            label: "پرداخت‌شده",
-            color: "success"
-        },
-
-        pending: {
-            label: "در انتظار پرداخت",
-            color: "warning"
-        },
-
-        failed: {
-            label: "پرداخت ناموفق",
-            color: "danger"
-        },
-
-        partial: {
-            label: "پرداخت ناقص",
-            color: "warning"
-        },
-
-        cancelled: {
-            label: "لغوشده",
-            color: "danger"
-        }
-
-    };
-
-
-    var INVOICE_STATUS_F = {
-
-        issued: {
-            label: "صادرشده",
-            color: "success"
-        },
-
-        sent: {
-            label: "ارسال‌شده",
-            color: "primary"
-        },
-
-        waiting: {
-            label: "در انتظار صدور",
-            color: "warning"
-        },
-
-        error: {
-            label: "خطا در تولید فاکتور",
-            color: "danger"
-        }
-
-    };
-
-
-    /* ============================================================
-     * HELPERS
-     * ============================================================ */
-
-    function formatNumberF(value) {
-
-        return Math.round(value).toLocaleString("fa-IR");
-
-    }
-
-
-    function currentJalaliDateF() {
-
-        try {
-
-            return new Intl.DateTimeFormat(
-                "fa-IR-u-ca-persian",
+    return [
+        {
+            id: "SN-10482",
+            date: "1404/05/12",
+            status: "delivered",
+            items: [
                 {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit"
-                }
-            ).format(
-                new Date()
-            );
-
-        } catch (error) {
-
-            return "";
-
-        }
-
-    }
-
-
-    function unitPriceF(product) {
-
-        if (typeof product.unitPriceUsd === "number") {
-            return product.unitPriceUsd;
-        }
-
-        if (typeof product.unitPriceEur === "number") {
-            return product.unitPriceEur;
-        }
-
-        if (typeof product.unitPriceTry === "number") {
-            return product.unitPriceTry;
-        }
-
-        if (typeof product.unitPriceGbp === "number") {
-            return product.unitPriceGbp;
-        }
-
-        if (typeof product.unitPriceAed === "number") {
-            return product.unitPriceAed;
-        }
-
-        return 0;
-
-    }
-
-
-    function orderTotalsF(order) {
-
-        var products =
-            Array.isArray(order.products)
-                ? order.products
-                : [];
-
-        var baseAmount =
-            products.reduce(
-                function (sum, product) {
-
-                    return (
-                        sum +
-                        unitPriceF(product) *
-                        (Number(product.qty) || 0)
-                    );
-
+                    name: "پیراهن کتان سنا",
+                    image: "https://picsum.photos/seed/sanaa-dress/120/120",
+                    qty: 1,
+                    priceUSD: 42
                 },
-                0
-            );
-
-
-        var productsRial =
-            products.reduce(
-                function (sum, product) {
-
-                    var currency =
-                        product.currency ||
-                        order.currency;
-
-                    var rate =
-                        typeof product.exchangeRate === "number"
-                            ? product.exchangeRate
-                            : (
-                                EXCHANGE_RATES_F[currency]
-                                    ? EXCHANGE_RATES_F[currency].rate
-                                    : 0
-                            );
-
-                    return (
-                        sum +
-                        unitPriceF(product) *
-                        (Number(product.qty) || 0) *
-                        rate
-                    );
-
-                },
-                0
-            );
-
-
-        var totalRial =
-            productsRial -
-            (Number(order.discountRial) || 0) +
-            (Number(order.shippingRial) || 0) +
-            (Number(order.serviceRial) || 0);
-
-
-        return {
-
-            baseAmount: baseAmount,
-            productsRial: productsRial,
-            totalRial: totalRial,
-
-            rate:
-                EXCHANGE_RATES_F[order.currency]
-                    ? EXCHANGE_RATES_F[order.currency].rate
-                    : 0
-
-        };
-
-    }
-
-    function badgeHtmlF(statusMap, key) {
-
-        var entry = statusMap[key];
-
-        if (!entry) {
-            return "";
-        }
-
-        return (
-            '<span class="admin-badge-f admin-badge-f--' +
-            entry.color +
-            '-f">' +
-            entry.label +
-            "</span>"
-        );
-
-    }
-
-
-    function sheetRowF(label, value) {
-
-        return (
-            '<div class="admin-orders-f__sheet-row">' +
-            "<span>" +
-            label +
-            "</span>" +
-            "<span>" +
-            value +
-            "</span>" +
-            "</div>"
-        );
-
-    }
-
-
-    /* ============================================================
-     * TOAST
-     * ============================================================ */
-
-    function showToastF(message, type) {
-
-        var region =
-            document.getElementById("adminToastRegionF");
-
-        if (!region) {
-            return;
-        }
-
-
-        var toast =
-            document.createElement("div");
-
-
-        toast.className =
-            "admin-toast-f" +
-            (type
-                ? " admin-toast-f--" + type + "-f"
-                : "");
-
-
-        toast.innerHTML =
-            (
-                type === "error"
-
-                    ?
-
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
-                    '<circle cx="12" cy="12" r="9"/>' +
-                    '<path d="M12 8v5M12 16h.01" stroke-linecap="round"/>' +
-                    "</svg>"
-
-                    :
-
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
-                    '<path d="m5 13 4 4 10-10" stroke-linecap="round" stroke-linejoin="round"/>' +
-                    "</svg>"
-
-            ) +
-
-            "<span>" +
-            message +
-            "</span>";
-
-
-        region.appendChild(toast);
-
-
-        window.setTimeout(function () {
-
-            toast.remove();
-
-        }, 3200);
-
-    }
-
-
-    /* ============================================================
-     * TABLE
-     * ============================================================ */
-
-    function productSummaryF(order) {
-
-        var first =
-            order.products[0].name;
-
-
-        if (order.products.length > 1) {
-
-            return (
-                first +
-                "<small>+ " +
-                formatNumberF(
-                    order.products.length - 1
-                ) +
-                " محصول دیگر</small>"
-            );
-
-        }
-
-
-        return (
-            first +
-            "<small>تعداد: " +
-            formatNumberF(
-                order.products[0].qty
-            ) +
-            "</small>"
-        );
-
-    }
-
-
-    function actionButtonsHtmlF(orderNumber) {
-
-        return (
-
-            '<button type="button" class="admin-icon-btn-f" ' +
-            'data-view-order-f="' +
-            orderNumber +
-            '" ' +
-            'aria-label="مشاهده جزئیات سفارش ' +
-            orderNumber +
-            '" ' +
-            'title="مشاهده جزئیات">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-
-            '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke-linecap="round" stroke-linejoin="round"/>' +
-
-            '<circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>' +
-
-            "</svg>" +
-
-            "</button>" +
-
-
-            '<button type="button" class="admin-icon-btn-f admin-icon-btn-f--download-f" ' +
-            'data-download-order-f="' +
-            orderNumber +
-            '" ' +
-            'aria-label="دانلود PDF سفارش ' +
-            orderNumber +
-            '" ' +
-            'title="دانلود PDF">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-
-            '<path d="M12 3v12m0 0-4-4m4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>' +
-
-            '<path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17" stroke-linecap="round" stroke-linejoin="round"/>' +
-
-            "</svg>" +
-
-            "</button>" +
-
-
-            '<div class="admin-menu-f">' +
-
-            '<button type="button" class="admin-icon-btn-f" ' +
-            'data-more-menu-btn-f="' +
-            orderNumber +
-            '" ' +
-            'aria-haspopup="true" ' +
-            'aria-expanded="false" ' +
-            'title="بیشتر">' +
-
-            '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
-            '<circle cx="5" cy="12" r="1.6"/>' +
-            '<circle cx="12" cy="12" r="1.6"/>' +
-            '<circle cx="19" cy="12" r="1.6"/>' +
-            "</svg>" +
-
-            "</button>" +
-
-
-            '<div class="admin-menu-f__panel" ' +
-            'data-more-menu-panel-f="' +
-            orderNumber +
-            '" hidden>' +
-
-
-            '<button type="button" class="admin-menu-f__item" ' +
-            'data-edit-order-f="' +
-            orderNumber +
-            '">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<path d="M4 20h4l11-11-4-4L4 16v4Z" stroke-linecap="round" stroke-linejoin="round"/>' +
-            "</svg>" +
-
-            "ویرایش سفارش" +
-
-            "</button>" +
-
-
-            '<button type="button" class="admin-menu-f__item" ' +
-            'data-resend-invoice-f="' +
-            orderNumber +
-            '">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<path d="M4 4v6h6M20 20v-6h-6" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '<path d="M5 15a7 7 0 0 0 12 3l3-3M19 9A7 7 0 0 0 7 6L4 9" stroke-linecap="round" stroke-linejoin="round"/>' +
-            "</svg>" +
-
-            "ارسال مجدد فاکتور" +
-
-            "</button>" +
-
-
-            '<button type="button" class="admin-menu-f__item admin-menu-f__item--danger-f" ' +
-            'data-delete-order-f="' +
-            orderNumber +
-            '">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<circle cx="12" cy="12" r="9" stroke-linecap="round"/>' +
-            '<path d="m9 9 6 6m0-6-6 6" stroke-linecap="round"/>' +
-            "</svg>" +
-
-            "حذف سفارش" +
-
-            "</button>" +
-
-
-            "</div>" +
-
-            "</div>"
-
-        );
-
-    }
-
-
-    function tableRowHtmlF(order) {
-
-        var totals =
-            orderTotalsF(order);
-
-
-        var currencyLabel =
-            EXCHANGE_RATES_F[
-                order.currency
-            ].label;
-
-
-        return (
-
-            "<tr data-order-row-f=\"" +
-            order.number +
-            "\">" +
-
-
-            "<td>" +
-            order.number +
-            "</td>" +
-
-
-            '<td class="admin-orders-f__table-product">' +
-            productSummaryF(order) +
-            "</td>" +
-
-
-            "<td>" +
-            order.customer.name +
-            "</td>" +
-
-
-            "<td>" +
-            order.date +
-            "</td>" +
-
-
-            "<td>" +
-            formatNumberF(
-                totals.baseAmount
-            ) +
-            "</td>" +
-
-
-            '<td class="admin-orders-f__col--secondary-f">' +
-            currencyLabel +
-            "</td>" +
-
-
-            '<td class="admin-orders-f__table-amount-rial">' +
-            formatNumberF(
-                totals.totalRial
-            ) +
-            " ریال</td>" +
-
-
-            "<td>" +
-            badgeHtmlF(
-                PAYMENT_STATUS_F,
-                order.paymentStatus
-            ) +
-            "</td>" +
-
-
-            "<td>" +
-            badgeHtmlF(
-                ORDER_STATUS_F,
-                order.orderStatus
-            ) +
-            "</td>" +
-
-
-            '<td class="admin-orders-f__col--secondary-f">' +
-            badgeHtmlF(
-                INVOICE_STATUS_F,
-                order.invoiceStatus
-            ) +
-            "</td>" +
-
-
-            "<td>" +
-
-            '<div class="admin-orders-f__table-actions">' +
-
-            actionButtonsHtmlF(
-                order.number
-            ) +
-
-            "</div>" +
-
-            "</td>" +
-
-            "</tr>"
-
-        );
-
-    }
-
-
-    /* ============================================================
-     * MOBILE CARD
-     * ============================================================ */
-
-    function cardHtmlF(order) {
-
-        var totals =
-            orderTotalsF(order);
-
-
-        return (
-
-            '<li class="admin-orders-f__card" data-order-row-f="' +
-            order.number +
-            '">' +
-
-
-            '<div class="admin-orders-f__card-top">' +
-
-            '<span class="admin-orders-f__card-number">' +
-            order.number +
-            "</span>" +
-
-            badgeHtmlF(
-                ORDER_STATUS_F,
-                order.orderStatus
-            ) +
-
-            "</div>" +
-
-
-            '<div class="admin-orders-f__card-body">' +
-
-            '<span class="admin-orders-f__card-customer">' +
-            order.customer.name +
-            "</span>" +
-
-
-            '<span class="admin-orders-f__card-product">' +
-            order.products[0].name +
-            (
-                order.products.length > 1
-                    ? " (+ " +
-                    formatNumberF(
-                        order.products.length - 1
-                    ) +
-                    " محصول دیگر)"
-                    : ""
-            ) +
-            "</span>" +
-
-
-            '<span class="admin-orders-f__card-date">' +
-            order.date +
-            "</span>" +
-
-
-            '<span class="admin-orders-f__card-amount">' +
-            formatNumberF(
-                totals.totalRial
-            ) +
-            " ریال</span>" +
-
-            "</div>" +
-
-
-            '<div class="admin-orders-f__card-bottom">' +
-
-            '<span class="admin-orders-f__card-payment">' +
-
-            badgeHtmlF(
-                PAYMENT_STATUS_F,
-                order.paymentStatus
-            ) +
-
-            "</span>" +
-
-
-            '<div class="admin-orders-f__card-actions">' +
-
-            actionButtonsHtmlF(
-                order.number
-            ) +
-
-            "</div>" +
-
-            "</div>" +
-
-            "</li>"
-
-        );
-
-    }
-
-
-    /* ============================================================
-     * STATES + RENDER
-     * ============================================================ */
-
-    function setStateF(state) {
-
-        [
-            "Loading",
-            "Empty",
-            "Error"
-        ].forEach(function (name) {
-
-            var element =
-                document.getElementById(
-                    "adminOrders" +
-                    name +
-                    "F"
-                );
-
-
-            if (element) {
-
-                element.hidden =
-                    state !==
-                    name.toLowerCase();
-
-            }
-
-        });
-
-
-        var tableWrap =
-            document.getElementById(
-                "adminOrdersTableWrapF"
-            );
-
-
-        var cardsWrap =
-            document.getElementById(
-                "adminOrdersCardsF"
-            );
-
-
-        var show =
-            !state;
-
-
-        if (tableWrap) {
-
-            tableWrap.style.display =
-                show ? "" : "none";
-
-        }
-
-
-        if (cardsWrap) {
-
-            cardsWrap.style.display =
-                show ? "" : "none";
-
-        }
-
-    }
-
-
-    function renderListF(orders) {
-
-        var tbody =
-            document.getElementById(
-                "adminOrdersTableBodyF"
-            );
-
-
-        var cards =
-            document.getElementById(
-                "adminOrdersCardsF"
-            );
-
-
-        if (!orders.length) {
-
-            if (tbody) {
-                tbody.innerHTML = "";
-            }
-
-            if (cards) {
-                cards.innerHTML = "";
-            }
-
-            setStateF("empty");
-
-            return;
-
-        }
-
-
-        setStateF(null);
-
-
-        if (tbody) {
-
-            tbody.innerHTML =
-                orders
-                    .map(tableRowHtmlF)
-                    .join("");
-
-        }
-
-
-        if (cards) {
-
-            cards.innerHTML =
-                orders
-                    .map(cardHtmlF)
-                    .join("");
-
-        }
-
-    }
-
-
-    /* ============================================================
-     * FILTERS
-     * ============================================================ */
-
-    var filtersF = {
-
-        search: "",
-        orderStatus: "all",
-        paymentStatus: "all",
-        invoiceStatus: "all",
-        sort: "newest"
-
-    };
-
-
-    function applyFiltersF() {
-
-        var filtered = ordersF.filter(
-            function (order) {
-
-                // وضعیت سفارش
-                if (
-                    filtersF.orderStatus !== "all" &&
-                    order.orderStatus !== filtersF.orderStatus
-                ) {
-                    return false;
-                }
-
-                // وضعیت پرداخت
-                if (
-                    filtersF.paymentStatus !== "all" &&
-                    order.paymentStatus !== filtersF.paymentStatus
-                ) {
-                    return false;
-                }
-
-                // وضعیت فاکتور
-                if (
-                    filtersF.invoiceStatus !== "all" &&
-                    order.invoiceStatus !== filtersF.invoiceStatus
-                ) {
-                    return false;
-                }
-
-                // جستجو
-                if (filtersF.search) {
-
-                    var q =
-                        filtersF.search
-                            .toLowerCase()
-                            .trim();
-
-                    var orderNumber =
-                        order.number
-                            ? String(order.number).toLowerCase()
-                            : "";
-
-                    var customerName =
-                        order.customer &&
-                        order.customer.name
-                            ? String(
-                                order.customer.name
-                            ).toLowerCase()
-                            : "";
-
-                    var matchesProduct =
-                        Array.isArray(order.products)
-                            ? order.products.some(
-                                function (product) {
-
-                                    var productName =
-                                        product &&
-                                        product.name
-                                            ? String(
-                                                product.name
-                                            ).toLowerCase()
-                                            : "";
-
-                                    return (
-                                        productName.indexOf(q) !== -1
-                                    );
-                                }
-                            )
-                            : false;
-
-                    var matches =
-                        orderNumber.indexOf(q) !== -1 ||
-                        customerName.indexOf(q) !== -1 ||
-                        matchesProduct;
-
-                    if (!matches) {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-        );
-
-        // یک کپی برای sort
-        var sorted = filtered.slice();
-
-        switch (filtersF.sort) {
-
-            case "oldest":
-
-                sorted.reverse();
-
-                break;
-
-
-            case "amount-desc":
-
-                sorted.sort(
-                    function (a, b) {
-
-                        return (
-                            orderTotalsF(b).totalRial -
-                            orderTotalsF(a).totalRial
-                        );
-                    }
-                );
-
-                break;
-
-
-            case "amount-asc":
-
-                sorted.sort(
-                    function (a, b) {
-
-                        return (
-                            orderTotalsF(a).totalRial -
-                            orderTotalsF(b).totalRial
-                        );
-                    }
-                );
-
-                break;
-
-
-            case "last-changed":
-
-                sorted.sort(
-                    function (a, b) {
-
-                        var aDate =
-                            a.lastChangeDate || "";
-
-                        var bDate =
-                            b.lastChangeDate || "";
-
-                        if (aDate < bDate) {
-                            return 1;
-                        }
-
-                        if (aDate > bDate) {
-                            return -1;
-                        }
-
-                        return 0;
-                    }
-                );
-
-                break;
-
-
-            case "newest":
-            default:
-
-                break;
-        }
-
-        renderListF(sorted);
-    }
-
-
-    /* ============================================================
-     * TOOLBAR
-     * ============================================================ */
-
-    function initToolbarF() {
-
-        var searchInput =
-            document.getElementById(
-                "adminOrderSearchF"
-            );
-
-
-        var orderStatusSelect =
-            document.getElementById(
-                "adminOrderStatusFilterF"
-            );
-
-
-        var paymentStatusSelect =
-            document.getElementById(
-                "adminPaymentStatusFilterF"
-            );
-
-
-        var invoiceStatusSelect =
-            document.getElementById(
-                "adminInvoiceStatusFilterF"
-            );
-
-
-        var sortSelect =
-            document.getElementById(
-                "adminOrderSortF"
-            );
-
-
-        var clearBtn =
-            document.getElementById(
-                "adminClearFiltersF"
-            );
-
-
-        var exportBtn =
-            document.getElementById(
-                "adminExportOrdersF"
-            );
-
-
-        var filtersToggle =
-            document.getElementById(
-                "adminFiltersToggleF"
-            );
-
-
-        var filtersPanel =
-            document.getElementById(
-                "adminFiltersPanelF"
-            );
-
-
-        if (searchInput) {
-
-            searchInput.addEventListener(
-                "input",
-                function () {
-
-                    filtersF.search =
-                        searchInput.value.trim();
-
-                    applyFiltersF();
-
-                }
-            );
-
-        }
-
-
-        if (orderStatusSelect) {
-
-            orderStatusSelect.addEventListener(
-                "change",
-                function () {
-
-                    filtersF.orderStatus =
-                        orderStatusSelect.value;
-
-                    applyFiltersF();
-
-                }
-            );
-
-        }
-
-
-        if (paymentStatusSelect) {
-
-            paymentStatusSelect.addEventListener(
-                "change",
-                function () {
-
-                    filtersF.paymentStatus =
-                        paymentStatusSelect.value;
-
-                    applyFiltersF();
-
-                }
-            );
-
-        }
-
-
-        if (invoiceStatusSelect) {
-
-            invoiceStatusSelect.addEventListener(
-                "change",
-                function () {
-
-                    filtersF.invoiceStatus =
-                        invoiceStatusSelect.value;
-
-                    applyFiltersF();
-
-                }
-            );
-
-        }
-
-
-        if (sortSelect) {
-
-            sortSelect.addEventListener(
-                "change",
-                function () {
-
-                    filtersF.sort =
-                        sortSelect.value;
-
-                    applyFiltersF();
-
-                }
-            );
-
-        }
-
-
-        if (clearBtn) {
-
-            clearBtn.addEventListener(
-                "click",
-                function () {
-
-                    filtersF = {
-
-                        search: "",
-                        orderStatus: "all",
-                        paymentStatus: "all",
-                        invoiceStatus: "all",
-                        sort: "newest"
-
-                    };
-
-
-                    if (searchInput) {
-                        searchInput.value = "";
-                    }
-
-
-                    if (orderStatusSelect) {
-                        orderStatusSelect.value = "all";
-                    }
-
-
-                    if (paymentStatusSelect) {
-                        paymentStatusSelect.value = "all";
-                    }
-
-
-                    if (invoiceStatusSelect) {
-                        invoiceStatusSelect.value = "all";
-                    }
-
-
-                    if (sortSelect) {
-                        sortSelect.value = "newest";
-                    }
-
-
-                    applyFiltersF();
-
-
-                    showToastF(
-                        "فیلترها پاک شد.",
-                        "success"
-                    );
-
-                }
-            );
-
-        }
-
-
-        if (exportBtn) {
-
-            exportBtn.addEventListener(
-                "click",
-                exportOrdersCsvF
-            );
-
-        }
-
-
-        if (
-            filtersToggle &&
-            filtersPanel
-        ) {
-
-            filtersToggle.addEventListener(
-                "click",
-                function () {
-
-                    var isHidden =
-                        filtersPanel.hasAttribute(
-                            "hidden"
-                        );
-
-
-                    if (isHidden) {
-
-                        filtersPanel.removeAttribute(
-                            "hidden"
-                        );
-
-                    } else {
-
-                        filtersPanel.setAttribute(
-                            "hidden",
-                            ""
-                        );
-
-                    }
-
-
-                    filtersToggle.setAttribute(
-                        "aria-expanded",
-                        String(isHidden)
-                    );
-
-                }
-            );
-
-        }
-
-    }
-
-
-    /* ============================================================
-     * CSV
-     * ============================================================ */
-
-    function exportOrdersCsvF() {
-
-        var rows = [
-
-            [
-                "شماره سفارش",
-                "مشتری",
-                "تاریخ",
-                "مبلغ ریالی",
-                "وضعیت پرداخت",
-                "وضعیت سفارش"
-            ]
-
-        ];
-
-
-        
-
-
-        ordersF.forEach(
-            function (order) {
-
-                var totals =
-                    orderTotalsF(order);
-
-                rows.push(
-                    [
-                        order.number || "",
-                        order.customer
-                            ? order.customer.name || ""
-                            : "",
-                        order.date || "",
-                        Math.round(
-                            totals.totalRial
-                        ),
-                        PAYMENT_STATUS_F[
-                            order.paymentStatus
-                        ]
-                            ? PAYMENT_STATUS_F[
-                                order.paymentStatus
-                            ].label
-                            : order.paymentStatus || "",
-                        ORDER_STATUS_F[
-                            order.orderStatus
-                        ]
-                            ? ORDER_STATUS_F[
-                                order.orderStatus
-                            ].label
-                            : order.orderStatus || ""
-                    ]
-                );
-
-            }
-        );
-
-
-        var csv =
-            rows.map(
-                function (row) {
-
-                    return row
-                        .map(
-                            function (cell) {
-
-                                return (
-                                    '"' +
-                                    String(cell)
-                                        .replace(
-                                            /"/g,
-                                            '""'
-                                        ) +
-                                    '"'
-                                );
-
-                            }
-                        )
-                        .join(",");
-
-                }
-            )
-            .join("\n");
-
-
-        var blob =
-            new Blob(
-                ["\uFEFF" + csv],
                 {
-                    type:
-                        "text/csv;charset=utf-8;"
+                    name: "شال ابریشم گلدار",
+                    image: "https://picsum.photos/seed/sanaa-scarf/120/120",
+                    qty: 2,
+                    priceUSD: 16
                 }
-            );
+            ],
+            shipping: 450000,
+            services: 120000
+        },
+        {
+            id: "SN-10417",
+            date: "1404/04/28",
+            status: "shipped",
+            items: [
+                {
+                    name: "کیف دستی چرم",
+                    image: "https://picsum.photos/seed/sanaa-bag/120/120",
+                    qty: 1,
+                    priceUSD: 68
+                }
+            ],
+            shipping: 0,
+            services: 90000
+        },
+        {
+            id: "SN-10355",
+            date: "1404/04/03",
+            status: "registered",
+            items: [
+                {
+                    name: "بلوز آستین‌بلند",
+                    image: "https://picsum.photos/seed/sanaa-blouse/120/120",
+                    qty: 1,
+                    priceUSD: 24
+                },
+                {
+                    name: "شلوار پارچه‌ای",
+                    image: "https://picsum.photos/seed/sanaa-pants/120/120",
+                    qty: 1,
+                    priceUSD: 29
+                },
+                {
+                    name: "روسری ابریشمی",
+                    image: "https://picsum.photos/seed/sanaa-hijab/120/120",
+                    qty: 1,
+                    priceUSD: 11
+                }
+            ],
+            shipping: 450000,
+            services: 120000
+        }
+    ];
+}
+
+const ORDER_STATUS_LABELS = {
+    registered: "ثبت شده",
+    confirmed: "تأیید شده",
+    preparing: "در حال آماده‌سازی",
+    shipped: "ارسال شده",
+    delivered: "تحویل داده شده",
+    cancelled: "لغو شده",
+    returned: "مرجوع شده"
+};
 
 
-        var url =
-            URL.createObjectURL(blob);
+// ========================================
+// Formatting Helpers
+// ========================================
 
+function formatUSD(value) {
 
-        var link =
-            document.createElement("a");
+    return "$" + value.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
 
+function formatRial(value) {
 
-        link.href = url;
+    return Math.round(value).toLocaleString("fa-IR") + " ریال";
+}
 
-        link.download =
-            "orders-export.csv";
+function toPersianDigits(value) {
 
+    const persianDigits = ["۰", "۱", "۲", "۳", "۴", "۵", "۶", "۷", "۸", "۹"];
 
-        document.body.appendChild(link);
+    return String(value).replace(/[0-9]/g, (digit) => persianDigits[digit]);
+}
 
-        link.click();
+function escapeHtml(text) {
 
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(url);
-
-
-        showToastF(
-            "خروجی سفارش‌ها دانلود شد.",
-            "success"
-        );
-
+    if (text === null || text === undefined) {
+        return "";
     }
 
+    const div = document.createElement("div");
+    div.textContent = text;
 
-    /* ============================================================
-     * DETAILS SHEET
-     * ============================================================ */
+    return div.innerHTML;
+}
 
-    function renderDetailsSheetF(order) {
+function calcItemsSubtotalUSD(items) {
 
-        var totals =
-            orderTotalsF(order);
+    return items.reduce((sum, item) => {
+        return sum + (item.priceUSD * item.qty);
+    }, 0);
+}
 
+function calcOrderTotalRial(order) {
 
-        var currencyLabel =
-            EXCHANGE_RATES_F[
-                order.currency
-            ].label;
+    const itemsSubtotalRial =
+        calcItemsSubtotalUSD(order.items) * USD_TO_RIAL;
 
+    return itemsSubtotalRial + order.shipping + order.services;
+}
 
-        document.getElementById(
-            "adminSheetTitleF"
-        ).textContent =
-            "سفارش " +
-            order.number;
 
+// ========================================
+// Customer Tabs
+// ========================================
 
-        document.getElementById(
-            "adminSheetBasicF"
-        ).innerHTML =
+function initCustomerTabs() {
 
-            sheetRowF(
-                "شماره سفارش",
-                order.number
-            )
+    const tabs =
+        document.querySelectorAll("[data-customer-tab]");
 
-            +
+    const panels =
+        document.querySelectorAll("[data-customer-panel]");
 
-            sheetRowF(
-                "تاریخ ثبت",
-                order.date
-            )
-
-            +
-
-            sheetRowF(
-                "تاریخ آخرین تغییر",
-                order.lastChangeDate
-            )
-
-            +
-
-            sheetRowF(
-                "وضعیت سفارش",
-                badgeHtmlF(
-                    ORDER_STATUS_F,
-                    order.orderStatus
-                )
-            )
-
-            +
-
-            sheetRowF(
-                "وضعیت فاکتور",
-                badgeHtmlF(
-                    INVOICE_STATUS_F,
-                    order.invoiceStatus
-                )
-            );
-
-
-        document.getElementById(
-            "adminSheetCustomerF"
-        ).innerHTML =
-
-            sheetRowF(
-                "نام و نام خانوادگی",
-                order.customer.name
-            )
-
-            +
-
-            sheetRowF(
-                "شماره تماس",
-                '<span dir="ltr">' +
-                order.customer.phone +
-                "</span>"
-            )
-
-            +
-
-            sheetRowF(
-                "آدرس",
-                order.customer.address
-            )
-
-            +
-
-            (
-                order.customer.note
-                    ?
-                    sheetRowF(
-                        "اطلاعات تکمیلی",
-                        order.customer.note
-                    )
-                    :
-                    ""
-            );
-
-
-        document.getElementById(
-            "adminSheetProductsF"
-        ).innerHTML =
-
-            order.products
-                .map(
-                    function (product) {
-
-                        var price =
-                            unitPriceF(product);
-
-
-                        return (
-
-                            '<div class="admin-orders-f__sheet-product">' +
-
-                            "<div>" +
-
-                            '<p class="admin-orders-f__sheet-product-name">' +
-                            product.name +
-                            "</p>" +
-
-                            '<span class="admin-orders-f__sheet-product-qty">' +
-
-                            "تعداد: " +
-                            formatNumberF(
-                                product.qty
-                            ) +
-
-                            " · قیمت واحد: " +
-
-                            formatNumberF(
-                                price
-                            ) +
-
-                            " " +
-
-                            currencyLabel +
-
-                            "</span>" +
-
-                            "</div>" +
-
-
-                            "<span>" +
-
-                            formatNumberF(
-                                price *
-                                product.qty *
-                                totals.rate
-                            ) +
-
-                            " ریال</span>" +
-
-                            "</div>"
-
-                        );
-
-                    }
-                )
-                .join("")
-
-            +
-
-            '<div class="admin-orders-f__sheet-row">' +
-
-            "<span>مبلغ کل محصولات</span>" +
-
-            "<span>" +
-
-            formatNumberF(
-                totals.productsRial
-            ) +
-
-            " ریال</span>" +
-
-            "</div>"
-
-            +
-
-            '<div class="admin-orders-f__sheet-row">' +
-
-            "<span>تخفیف</span>" +
-
-            "<span>" +
-
-            (
-                order.discountRial
-                    ?
-                    "-" +
-                    formatNumberF(
-                        order.discountRial
-                    ) +
-                    " ریال"
-                    :
-                    "ندارد"
-            ) +
-
-            "</span>" +
-
-            "</div>"
-
-            +
-
-            '<div class="admin-orders-f__sheet-row">' +
-
-            "<span>هزینه ارسال</span>" +
-
-            "<span>" +
-
-            (
-                order.shippingRial
-                    ?
-                    formatNumberF(
-                        order.shippingRial
-                    ) +
-                    " ریال"
-                    :
-                    "رایگان"
-            ) +
-
-            "</span>" +
-
-            "</div>";
-
-
-        document.getElementById(
-            "adminSheetFinancialF"
-        ).innerHTML =
-
-            sheetRowF(
-                "مبلغ به ارز مبنا",
-                formatNumberF(
-                    totals.baseAmount
-                ) +
-                " " +
-                currencyLabel
-            )
-
-            +
-
-            sheetRowF(
-                "نوع ارز",
-                currencyLabel
-            )
-
-            +
-
-            sheetRowF(
-                "نرخ تبدیل ارز",
-                formatNumberF(
-                    totals.rate
-                ) +
-                " ریال"
-            )
-
-            +
-
-            sheetRowF(
-                "مبلغ ریالی",
-                formatNumberF(
-                    totals.totalRial
-                ) +
-                " ریال"
-            )
-
-            +
-
-            sheetRowF(
-                "مبلغ پرداخت‌شده",
-                order.payment.paidRial === null
-                    ?
-                    formatNumberF(
-                        totals.totalRial
-                    ) +
-                    " ریال"
-                    :
-                    formatNumberF(
-                        order.payment.paidRial
-                    ) +
-                    " ریال"
-            )
-
-            +
-
-            sheetRowF(
-                "مبلغ باقی‌مانده",
-                order.payment.remainingRial === null
-                    ?
-                    formatNumberF(
-                        totals.totalRial -
-                        (order.payment.paidRial || 0)
-                    ) +
-                    " ریال"
-                    :
-                    formatNumberF(
-                        order.payment.remainingRial
-                    ) +
-                    " ریال"
-            );
-
-
-        document.getElementById(
-            "adminSheetPaymentF"
-        ).innerHTML =
-
-            sheetRowF(
-                "وضعیت پرداخت",
-                badgeHtmlF(
-                    PAYMENT_STATUS_F,
-                    order.paymentStatus
-                )
-            )
-
-            +
-
-            sheetRowF(
-                "روش پرداخت",
-                order.payment.method
-            )
-
-            +
-
-            sheetRowF(
-                "کد پیگیری",
-                '<span dir="ltr">' +
-                order.payment.trackingCode +
-                "</span>"
-            )
-
-            +
-
-            sheetRowF(
-                "تاریخ پرداخت",
-                order.payment.paidDate
-            );
-
-
-        var statusSelect =
-            document.getElementById(
-                "adminSheetStatusSelectF"
-            );
-
-
-        if (statusSelect) {
-
-            statusSelect.value =
-                order.orderStatus;
-
-        }
-
+    if (!tabs.length || !panels.length) {
+        return;
     }
 
+    tabs.forEach((tab) => {
 
-    /* ============================================================
-     * PDF BACKEND HOOK
-     * ============================================================ */
+        tab.addEventListener("click", () => {
 
-    function invoiceApiEndpointF(
-        orderNumber
-    ) {
+            const target = tab.dataset.customerTab;
 
-        return (
-            "/api/orders/" +
-            encodeURIComponent(
-                orderNumber
-            ) +
-            "/invoice"
-        );
+            tabs.forEach((item) => {
 
-    }
+                const isActive = item === tab;
 
-
-    function fetchInvoicePdfBlobF(
-        orderNumber
-    ) {
-        return fetch(invoiceApiEndpointF(orderNumber), {
-            method: "GET",
-            credentials: "same-origin",
-            headers: { "Accept": "application/pdf" }
-        }).then(function (response) {
-            if (!response.ok) {
-                throw new Error("invoice_backend_not_connected");
-            }
-            var contentType = response.headers.get("content-type") || "";
-            if (contentType.indexOf("application/pdf") === -1) {
-                throw new Error("invoice_backend_invalid_pdf");
-            }
-            return response.blob();
-        });
-    }
-
-
-    function downloadOrderF(
-        orderNumber
-    ) {
-        var order = findOrderByNumberF(orderNumber);
-
-        if (!order) {
-            showToastF("سفارش پیدا نشد.", "error");
-            return;
-        }
-
-        var triggers = document.querySelectorAll(
-            '[data-download-order-f="' + orderNumber + '"]'
-        );
-
-        triggers.forEach(function (button) {
-            button.setAttribute("aria-busy", "true");
-            button.disabled = true;
-        });
-
-        showToastF("در حال آماده‌سازی PDF سفارش " + orderNumber + "…", null);
-
-        fetchInvoicePdfBlobF(orderNumber)
-            .then(function (blob) {
-                var url = URL.createObjectURL(blob);
-                var link = document.createElement("a");
-                link.href = url;
-                link.download = "invoice-" + orderNumber + ".pdf";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                showToastF("فایل PDF سفارش " + orderNumber + " دانلود شد.", "success");
-            })
-            .catch(function () {
-                // The browser print engine is the fallback when the Django
-                // PDF endpoint is not ready. It prints the exact same DOM
-                // and styling that is visible in the invoice modal.
-                var invoice = document.getElementById("adminCustomerInvoiceF");
-                if (!invoice) {
-                    showToastF("نمایش فاکتور پیدا نشد.", "error");
-                    return;
-                }
-                printInvoiceF("adminCustomerInvoiceF", true);
-            })
-            .finally(function () {
-                triggers.forEach(function (button) {
-                    button.removeAttribute("aria-busy");
-                    button.disabled = false;
-                });
-            });
-    }
-
-
-    /* ============================================================
-     * DETAILS MODAL INIT
-     * ============================================================ */
-
-    var openDetailsSheetF;
-
-
-    function initDetailsSheetF() {
-
-        var modal =
-            document.getElementById(
-                "adminOrderDetailsModalF"
-            );
-
-
-        var closeBtn =
-            document.getElementById(
-                "adminSheetCloseF"
-            );
-
-
-        var downloadBtn =
-            document.getElementById(
-                "adminSheetDownloadF"
-            );
-
-
-        var editBtn =
-            document.getElementById(
-                "adminSheetEditF"
-            );
-
-
-        var statusBtn =
-            document.getElementById(
-                "adminSheetStatusBtnF"
-            );
-
-
-        var statusSelect =
-            document.getElementById(
-                "adminSheetStatusSelectF"
-            );
-
-
-        if (!modal) {
-            return;
-        }
-
-
-        var activeOrderNumber =
-            null;
-
-
-        openDetailsSheetF =
-            function (orderNumber) {
-
-                var order =
-                    ordersF.filter(
-                        function (item) {
-
-                            return (
-                                item.number ===
-                                orderNumber
-                            );
-
-                        }
-                    )[0];
-
-
-                if (!order) {
-                    return;
-                }
-
-
-                activeOrderNumber =
-                    orderNumber;
-
-
-                renderDetailsSheetF(
-                    order
-                );
-
-
-                modal.hidden =
-                    false;
-
-            };
-
-
-        function closeModal() {
-
-            modal.hidden =
-                true;
-
-            activeOrderNumber =
-                null;
-
-        }
-
-
-        if (closeBtn) {
-
-            closeBtn.addEventListener(
-                "click",
-                closeModal
-            );
-
-        }
-
-
-        var backdrop =
-            modal.querySelector(
-                ".modal__backdrop"
-            );
-
-
-        if (backdrop) {
-
-            backdrop.addEventListener(
-                "click",
-                closeModal
-            );
-
-        }
-
-
-        document.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Escape" &&
-                    !modal.hidden
-                ) {
-
-                    closeModal();
-
-                }
-
-            }
-        );
-
-
-        if (downloadBtn) {
-
-            downloadBtn.addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        activeOrderNumber
-                    ) {
-
-                        downloadOrderF(
-                            activeOrderNumber
-                        );
-
-                    }
-
-                }
-            );
-
-        }
-
-
-        if (editBtn) {
-
-            editBtn.addEventListener(
-                "click",
-                function () {
-
-                    if (
-                        !activeOrderNumber
-                    ) {
-                        return;
-                    }
-
-
-                    var order =
-                        findOrderByNumberF(
-                            activeOrderNumber
-                        );
-
-
-                    if (!order) {
-
-                        showToastF(
-                            "سفارش پیدا نشد.",
-                            "error"
-                        );
-
-                        return;
-                    }
-
-
-                    if (
-                        !openEditOrderModalF
-                    ) {
-                        return;
-                    }
-
-
-                    closeModal();
-
-
-                    openEditOrderModalF(
-                        order
-                    );
-
-                }
-            );
-
-        }
-
-
-        if (statusBtn) {
-
-            statusBtn.addEventListener(
-                "click",
-                function () {
-
-                    if (!activeOrderNumber) {
-                        return;
-                    }
-
-                    showToastF(
-                        "تغییر وضعیت سفارش هنوز به بک‌اند متصل نشده است.",
-                        "error"
-                    );
-
-                }
-            );
-
-        }
-
-
-
-    }
-
-
-    /* ============================================================
-     * MENUS + GLOBAL ACTIONS
-     * ============================================================ */
-
-    function closeAllMenusF() {
-
-        document
-            .querySelectorAll(
-                "[data-more-menu-panel-f]"
-            )
-            .forEach(
-                function (panel) {
-
-                    panel.hidden =
-                        true;
-
-                }
-            );
-
-
-        document
-            .querySelectorAll(
-                "[data-more-menu-btn-f]"
-            )
-            .forEach(
-                function (button) {
-
-                    button.setAttribute(
-                        "aria-expanded",
-                        "false"
-                    );
-
-                }
-            );
-
-    }
-
-
-    function initGlobalActionsF() {
-
-        document.addEventListener(
-            "click",
-            function (event) {
-
-
-                var moreBtn =
-                    event.target.closest(
-                        "[data-more-menu-btn-f]"
-                    );
-
-
-                if (moreBtn) {
-
-                    var orderNumber =
-                        moreBtn.getAttribute(
-                            "data-more-menu-btn-f"
-                        );
-
-
-                    var panel =
-                        document.querySelector(
-                            '[data-more-menu-panel-f="' +
-                            orderNumber +
-                            '"]'
-                        );
-
-
-                    if (!panel) {
-                        return;
-                    }
-
-
-                    var wasHidden =
-                        panel.hidden;
-
-
-                    closeAllMenusF();
-
-
-                    panel.hidden =
-                        !wasHidden;
-
-
-                    moreBtn.setAttribute(
-                        "aria-expanded",
-                        String(!wasHidden)
-                    );
-
-
-                    return;
-
-                }
-
-
-                var downloadTrigger =
-                    event.target.closest(
-                        "[data-download-order-f]"
-                    );
-
-
-                if (downloadTrigger) {
-
-                    downloadOrderF(
-                        downloadTrigger.getAttribute(
-                            "data-download-order-f"
-                        )
-                    );
-
-
-                    closeAllMenusF();
-
-                    return;
-
-                }
-
-
-                var editTrigger =
-                    event.target.closest(
-                        "[data-edit-order-f]"
-                    );
-
-
-                if (editTrigger) {
-
-                    var orderNumber =
-                        editTrigger.getAttribute(
-                            "data-edit-order-f"
-                        );
-
-
-                    var order =
-                        findOrderByNumberF(
-                            orderNumber
-                        );
-
-
-                    closeAllMenusF();
-
-
-                    if (!order) {
-
-                        showToastF(
-                            "سفارش پیدا نشد.",
-                            "error"
-                        );
-
-                        return;
-                    }
-
-
-                    if (
-                        openEditOrderModalF
-                    ) {
-
-                        openEditOrderModalF(
-                            order
-                        );
-                    }
-
-
-                    return;
-                }
-
-
-                var resendTrigger =
-                    event.target.closest(
-                        "[data-resend-invoice-f]"
-                    );
-
-
-                if (resendTrigger) {
-
-                    showToastF(
-                        "ارسال مجدد فاکتور هنوز به بک‌اند متصل نشده است.",
-                        "error"
-                    );
-
-
-                    closeAllMenusF();
-
-                    return;
-
-                }
-
-
-                var deleteTrigger =
-                    event.target.closest(
-                        "[data-delete-order-f]"
-                    );
-
-
-                if (deleteTrigger) {
-
-                    var orderNumber =
-                        deleteTrigger.getAttribute(
-                            "data-delete-order-f"
-                        );
-
-
-                    var order =
-                        findOrderByNumberF(
-                            orderNumber
-                        );
-
-
-                    closeAllMenusF();
-
-
-                    if (!order) {
-
-                        showToastF(
-                            "سفارش پیدا نشد.",
-                            "error"
-                        );
-
-                        return;
-                    }
-
-
-                    var confirmed =
-                        window.confirm(
-                            "آیا از حذف کامل سفارش " +
-                            order.number +
-                            " مطمئن هستید؟\n" +
-                            "این عملیات قابل بازگشت نیست."
-                        );
-
-
-                    if (!confirmed) {
-                        return;
-                    }
-
-
-                    var form =
-                        document.getElementById(
-                            "adminNewOrderFormF"
-                        );
-
-
-                    if (!form) {
-
-                        showToastF(
-                            "فرم سفارش پیدا نشد.",
-                            "error"
-                        );
-
-                        return;
-                    }
-
-
-                    var deleteUrl =
-                        buildOrderUrlF(
-                            form.dataset
-                                .deleteUrlTemplate,
-                            order.id
-                        );
-
-
-                    var formData =
-                        new FormData();
-
-
-                    formData.append(
-                        "csrfmiddlewaretoken",
-                        getCsrfTokenF()
-                    );
-
-
-                    fetchJsonF(
-                        deleteUrl,
-                        {
-                            method: "POST",
-                            body: formData
-                        }
-                    )
-
-                    .then(function () {
-
-                        // فقط بعد از حذف موفق در Django
-                        // از لیست مرورگر هم حذف می‌کنیم.
-                        ordersF =
-                            ordersF.filter(
-                                function (item) {
-
-                                    return (
-                                        Number(item.id) !==
-                                        Number(order.id)
-                                    );
-
-                                }
-                            );
-
-
-                        applyFiltersF();
-
-
-                        showToastF(
-                            "سفارش " +
-                            order.number +
-                            " با موفقیت حذف شد.",
-                            "success"
-                        );
-
-                    })
-
-                    .catch(function (error) {
-
-                        console.error(
-                            "Delete order error:",
-                            error
-                        );
-
-
-                        showToastF(
-                            error.message ||
-                            "حذف سفارش انجام نشد.",
-                            "error"
-                        );
-
-                    });
-
-
-                    return;
-                }
-
-
-                var viewTrigger =
-                    event.target.closest(
-                        "[data-view-order-f]"
-                    );
-
-
-                if (viewTrigger) {
-
-                    if (openDetailsSheetF) {
-
-                        openDetailsSheetF(
-                            viewTrigger.getAttribute(
-                                "data-view-order-f"
-                            )
-                        );
-
-                    }
-
-
-                    closeAllMenusF();
-
-                    return;
-
-                }
-
-
-                var row =
-                    event.target.closest(
-                        "[data-order-row-f]"
-                    );
-
-
-                if (
-                    row &&
-                    !event.target.closest(
-                        ".admin-menu-f"
-                    ) &&
-                    !event.target.closest(
-                        "button"
-                    )
-                ) {
-
-                    if (openDetailsSheetF) {
-
-                        openDetailsSheetF(
-                            row.getAttribute(
-                                "data-order-row-f"
-                            )
-                        );
-
-                    }
-
-                    return;
-
-                }
-
-
-                if (
-                    !event.target.closest(
-                        ".admin-menu-f"
-                    )
-                ) {
-
-                    closeAllMenusF();
-
-                }
-
-            }
-        );
-
-    }
-
-
-    /* ============================================================
-     * NEW ORDER
-     * ============================================================ */
-
-    /* ----------------------------------------------------------
-     * Item rows (image upload, price+currency, qty stepper,
-     * remove) — cloned from <template id="adminOrderItemTemplateF">
-     * ---------------------------------------------------------- */
-
-    function createOrderItemRowF(
-        product
-    ) {
-
-        var template =
-            document.getElementById(
-                "adminOrderItemTemplateF"
-            );
-
-
-        if (!template) {
-            return null;
-        }
-
-
-        var row =
-            template
-                .content
-                .firstElementChild
-                .cloneNode(true);
-
-
-        var removeBtn =
-            row.querySelector(
-                ".admin-order-item-f__remove"
-            );
-
-
-        var fileInput =
-            row.querySelector(
-                ".admin-order-item-f__file-input"
-            );
-
-
-        var preview =
-            row.querySelector(
-                ".admin-order-item-f__preview"
-            );
-
-
-        var nameInput =
-            row.querySelector(
-                ".admin-order-item-f__name"
-            );
-
-
-        var priceInput =
-            row.querySelector(
-                ".admin-order-item-f__price"
-            );
-
-
-        var currencyInput =
-            row.querySelector(
-                ".admin-order-item-f__currency"
-            );
-
-
-        var brandInput =
-            row.querySelector(
-                ".admin-order-item-f__brand"
-            );
-
-
-        var sizeInput =
-            row.querySelector(
-                ".admin-order-item-f__size"
-            );
-
-
-        var descriptionInput =
-            row.querySelector(
-                ".admin-order-item-f__description"
-            );
-
-
-        var qtyInput =
-            row.querySelector(
-                ".admin-order-item-f__qty"
-            );
-
-
-        if (removeBtn) {
-
-            removeBtn.addEventListener(
-                "click",
-                function () {
-
-                    row.remove();
-
-                }
-            );
-        }
-
-
-        if (fileInput) {
-
-            fileInput.addEventListener(
-                "change",
-                function () {
-
-                    var file =
-                        fileInput.files[0];
-
-
-                    if (!file) {
-                        return;
-                    }
-
-
-                    var reader =
-                        new FileReader();
-
-
-                    reader.onload =
-                        function () {
-
-                            preview.src =
-                                reader.result;
-
-                            preview.hidden =
-                                false;
-
-                        };
-
-
-                    reader.readAsDataURL(
-                        file
-                    );
-
-                }
-            );
-        }
-
-
-        row.querySelectorAll(
-            "[data-qty-action]"
-        )
-        .forEach(
-            function (btn) {
-
-                btn.addEventListener(
-                    "click",
-                    function () {
-
-                        var current =
-                            Number(
-                                qtyInput.value
-                            ) || 1;
-
-
-                        var next =
-                            btn.dataset.qtyAction ===
-                            "increase"
-                                ?
-                                current + 1
-                                :
-                                current - 1;
-
-
-                        qtyInput.value =
-                            Math.max(
-                                1,
-                                next
-                            );
-
-                    }
-                );
-
-            }
-        );
-
-
-        // اگر در حالت ویرایش هستیم
-        if (product) {
-
-            if (product.id) {
-
-                row.dataset.itemId =
-                    String(
-                        product.id
-                    );
-            }
-
-
-            if (nameInput) {
-
-                nameInput.value =
-                    product.name || "";
-            }
-
-
-            if (priceInput) {
-
-                priceInput.value =
-                    unitPriceF(
-                        product
-                    );
-            }
-
-
-            if (currencyInput) {
-
-                currencyInput.value =
-                    product.currency ||
-                    "USD";
-            }
-
-
-            if (brandInput) {
-
-                brandInput.value =
-                    product.brand || "";
-            }
-
-
-            if (sizeInput) {
-
-                sizeInput.value =
-                    product.size || "";
-            }
-
-
-            if (descriptionInput) {
-
-                descriptionInput.value =
-                    product.description || "";
-            }
-
-
-            if (qtyInput) {
-
-                qtyInput.value =
-                    Number(
-                        product.qty
-                    ) || 1;
-            }
-
-
-            if (
-                preview &&
-                product.image
-            ) {
-
-                preview.src =
-                    product.image;
-
-                preview.hidden =
-                    false;
-            }
-        }
-
-
-        return row;
-    }
-
-
-    function resetOrderItemsF() {
-
-        var container =
-            document.getElementById(
-                "adminOrderItemsF"
-            );
-
-        if (!container) {
-            return;
-        }
-
-        container.innerHTML = "";
-
-        var firstRow = createOrderItemRowF();
-
-        if (firstRow) {
-            container.appendChild(firstRow);
-        }
-
-    }
-
-
-    function initOrderItemsF() {
-
-        var addBtn =
-            document.getElementById(
-                "adminAddOrderItemF"
-            );
-
-        var container =
-            document.getElementById(
-                "adminOrderItemsF"
-            );
-
-        if (!addBtn || !container) {
-            return;
-        }
-
-        addBtn.addEventListener(
-            "click",
-            function () {
-
-                var row = createOrderItemRowF();
-
-                if (row) {
-                    container.appendChild(row);
-                }
-
-            }
-        );
-
-    }
-
-
-    // Reads + validates every item row. Returns { items, error }
-    // — items is null when validation fails, with error set to a
-    // user-facing message.
-
-
-
-
-    function readOrderItemsF() {
-
-        var container =
-            document.getElementById(
-                "adminOrderItemsF"
-            );
-
-        if (!container) {
-            return {
-                items: null,
-                error: "خطای داخلی فرم."
-            };
-        }
-
-        var rows =
-            container.querySelectorAll(
-                ".admin-order-item-f"
-            );
-
-        if (!rows.length) {
-            return {
-                items: null,
-                error: "حداقل یک آیتم به سفارش اضافه کنید."
-            };
-        }
-
-        var items = [];
-        var error = null;
-
-        rows.forEach(function (row) {
-
-            if (error) {
-                return;
-            }
-
-            var nameInput =
-                row.querySelector(
-                    ".admin-order-item-f__name"
-                );
-
-            var priceInput =
-                row.querySelector(
-                    ".admin-order-item-f__price"
-                );
-
-            var currencyInput =
-                row.querySelector(
-                    ".admin-order-item-f__currency"
-                );
-
-            var brandInput =
-                row.querySelector(
-                    ".admin-order-item-f__brand"
-                );
-
-            var sizeInput =
-                row.querySelector(
-                    ".admin-order-item-f__size"
-                );
-
-            var descriptionInput =
-                row.querySelector(
-                    ".admin-order-item-f__description"
-                );
-
-            var qtyInput =
-                row.querySelector(
-                    ".admin-order-item-f__qty"
-                );
-
-            var preview =
-                row.querySelector(
-                    ".admin-order-item-f__preview"
-                );
-
-            var fileInput =
-                row.querySelector(
-                    ".admin-order-item-f__file-input"
-                );
-
-            var name =
-                nameInput
-                    ? nameInput.value.trim()
-                    : "";
-
-            var price =
-                priceInput
-                    ? Number(priceInput.value)
-                    : 0;
-
-            var currency =
-                currencyInput
-                    ? currencyInput.value
-                    : "";
-
-            var brand =
-                brandInput
-                    ? brandInput.value.trim()
-                    : "";
-
-            var size =
-                sizeInput
-                    ? sizeInput.value.trim()
-                    : "";
-
-            var description =
-                descriptionInput
-                    ? descriptionInput.value.trim()
-                    : "";
-
-            var qty =
-                qtyInput
-                    ? Number(qtyInput.value)
-                    : 0;
-
-            var image =
-                preview &&
-                !preview.hidden
-                    ? preview.src
-                    : "";
-
-            var file =
-                fileInput &&
-                fileInput.files &&
-                fileInput.files.length
-                    ? fileInput.files[0]
-                    : null;
-
-            if (
-                !name ||
-                !price ||
-                price <= 0 ||
-                !qty ||
-                qty < 1
-            ) {
-
-                error =
-                    "برای هر آیتم، نام و قیمت معتبر و حداقل ۱ عدد تعداد وارد کنید.";
-
-                return;
-            }
-            var itemId =
-                row.dataset.itemId
-                    ?
-                    Number(
-                        row.dataset.itemId
-                    )
-                    :
-                    null;
-            items.push({
-
-                id:
-                    itemId,
-
-                name:
-                    name,
-
-                price:
-                    price,
-
-                currency:
-                    currency,
-
-                brand:
-                    brand,
-
-                size:
-                    size,
-
-                description:
-                    description,
-
-                qty:
-                    qty,
-
-                image:
-                    image,
-
-                file:
-                    file
-
+                item.classList.toggle("is-active", isActive);
+                item.setAttribute("aria-selected", isActive);
             });
 
-        });
+            panels.forEach((panel) => {
 
-        return {
-            items: error ? null : items,
-            error: error
-        };
+                panel.classList.toggle(
+                    "is-active",
+                    panel.dataset.customerPanel === target
+                );
+            });
+        });
+    });
+}
+
+
+// ========================================
+// Profile Form
+// ========================================
+
+function populateProfileForm(user) {
+
+    const form = document.getElementById("profileForm");
+
+    if (!form || !user) {
+        return;
     }
 
+    form.elements.phone.value = user.phone || "";
+    form.elements.address.value = user.address || "";
+}
 
 
+function clearFieldError(fieldName, prefix = "profile") {
 
+    const input = document.getElementById(`${prefix}${capitalize(fieldName)}`);
+    const error = document.getElementById(`${prefix}${capitalize(fieldName)}Error`);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /* ----------------------------------------------------------
-     * Exchange rate "fetch"
-     *
-     * Temporary local exchange-rate source.
-     * Replace the body of this function with a real backend/API
-     * request when the exchange-rate endpoint is implemented.
-     * Keep the same resolved shape
-     * ({ USD: { label, rate }, ... }).
-     * ---------------------------------------------------------- */
-
-    function fetchExchangeRatesF() {
-
-        return new Promise(function (resolve) {
-
-            setTimeout(function () {
-                resolve(EXCHANGE_RATES_F);
-            }, 700);
-
-        });
-
+    if (input) {
+        input.classList.remove("is-invalid");
     }
 
+    if (error) {
+        error.textContent = "";
+    }
+}
 
-    /* ----------------------------------------------------------
-     * Invoice calculation
-     * ---------------------------------------------------------- */
 
-    function buildInvoiceCalcF(items, rates, shippingRial, serviceRial) {
+function setFieldError(fieldName, message, prefix = "profile") {
 
-        // Per-currency subtotal in that currency's own units —
-        // covers orders that mix currencies across items.
-        var byCurrency = {};
+    const input = document.getElementById(`${prefix}${capitalize(fieldName)}`);
+    const error = document.getElementById(`${prefix}${capitalize(fieldName)}Error`);
 
-        var itemsRial = 0;
-
-        var lines = items.map(function (item) {
-
-            var rate =
-                rates[item.currency]
-                    ? rates[item.currency].rate
-                    : 0;
-
-            // In the SANAA reference invoice, the stored `price` is the
-            // amount printed in the "قیمت واحد" column and is already the
-            // invoice line amount. Quantity is displayed separately and is
-            // not multiplied into the invoice subtotal.
-            var lineForeign = item.price;
-            var lineRial = lineForeign * rate;
-
-            itemsRial += lineRial;
-
-            byCurrency[item.currency] =
-                (byCurrency[item.currency] || 0) + lineForeign;
-
-            return {
-                name: item.name,
-                brand: item.brand,
-                size: item.size,
-                description: item.description,
-                image: item.image,
-                qty: item.qty,
-                currency: item.currency,
-                price: item.price,
-                lineForeign: lineForeign,
-                lineRial: lineRial,
-                rate: rate
-            };
-
-        });
-
-        var grandTotalRial =
-            itemsRial + shippingRial + serviceRial;
-
-        return {
-            lines: lines,
-            byCurrency: byCurrency,
-            itemsRial: itemsRial,
-            shippingRial: shippingRial,
-            serviceRial: serviceRial,
-            grandTotalRial: grandTotalRial,
-
-            // Admin cost is no longer collected on the frontend —
-            // profit is now the backend's responsibility. Replace
-            // this with the real figure from the create/update
-            // order response once that field exists there.
-            profitRial: 0
-        };
-
+    if (input) {
+        input.classList.add("is-invalid");
     }
 
+    if (error) {
+        error.textContent = message;
+    }
+}
 
-    /* ----------------------------------------------------------
-     * Invoice rendering — one shared layout, two content sets
-     * (the admin version adds the profit block).
-     * ---------------------------------------------------------- */
 
-    function renderInvoiceHtmlF(calc, meta, isAdminF) {
+function capitalize(text) {
 
-        var itemRows = calc.lines.map(function (line) {
-            return (
-                "<tr>" +
-                "<td class=\"invoice-item-name\">" + (line.name || "—") + "</td>" +
-                "<td>" + (line.brand || "—") + "</td>" +
-                "<td>" + (line.size || "—") + "</td>" +
-                "<td>" + Number(line.qty || 0).toLocaleString("fa-IR") + "</td>" +
-                "<td class=\"invoice-price\">" + formatNumberF(line.price) + "</td>" +
-                "</tr>"
-            );
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+
+function validateProfileForm(data) {
+
+    let isValid = true;
+
+    clearFieldError("phone");
+    clearFieldError("address");
+
+    const phonePattern = /^09\d{9}$/;
+
+    if (!phonePattern.test(data.phone.trim())) {
+
+        setFieldError(
+            "phone",
+            "شماره تلفن باید به‌صورت ۰۹xxxxxxxxx باشد."
+        );
+
+        isValid = false;
+    }
+
+    if (data.address.trim().length < 10) {
+
+        setFieldError(
+            "address",
+            "آدرس باید حداقل ۱۰ کاراکتر باشد."
+        );
+
+        isValid = false;
+    }
+
+    return isValid;
+}
+
+
+function handleProfileSubmit(event) {
+
+    const form = event.currentTarget;
+
+    clearAuthError("profileForm");
+
+    const formData = new FormData(form);
+
+    const data = {
+        phone: formData.get("phone") || "",
+        address: formData.get("address") || ""
+    };
+
+    if (!validateProfileForm(data)) {
+        event.preventDefault();
+        return;
+    }
+
+    // اگر معتبر بود، اجازه بده فرم به Django ارسال شود.
+}
+
+
+function initProfileForm() {
+
+    const form = document.getElementById("profileForm");
+
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener("submit", handleProfileSubmit);
+
+    populateProfileForm(getCurrentUser());
+}
+
+
+// ========================================
+// Change Password
+// ========================================
+
+
+function validateChangePasswordForm(data) {
+
+    let isValid = true;
+
+    clearFieldError("password", "old");
+    clearFieldError("password", "new");
+
+    if (!data.oldPassword) {
+
+        setFieldError(
+            "password",
+            "رمز عبور فعلی را وارد کنید.",
+            "old"
+        );
+
+        isValid = false;
+    }
+
+    if (!data.newPassword || data.newPassword.trim().length < 6) {
+
+        setFieldError(
+            "password",
+            "رمز عبور جدید باید حداقل ۶ کاراکتر باشد.",
+            "new"
+        );
+
+        isValid = false;
+
+    } else if (data.newPassword === data.oldPassword) {
+
+        setFieldError(
+            "password",
+            "رمز عبور جدید باید با رمز فعلی متفاوت باشد.",
+            "new"
+        );
+
+        isValid = false;
+    }
+
+    return isValid;
+}
+
+
+function handleChangePasswordSubmit(event) {
+
+    const form = event.currentTarget;
+
+    clearAuthError("changePasswordForm");
+
+    const formData = new FormData(form);
+
+    const data = {
+        oldPassword: formData.get("oldPassword") || "",
+        newPassword: formData.get("newPassword") || ""
+    };
+
+    if (!validateChangePasswordForm(data)) {
+
+        event.preventDefault();
+
+        return;
+    }
+
+    // اطلاعات معتبر است.
+    // اجازه بده فرم به صورت معمول به Django ارسال شود.
+}
+
+
+
+function initChangePasswordForm() {
+
+    const form = document.getElementById("changePasswordForm");
+
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener("submit", handleChangePasswordSubmit);
+}
+
+
+// ========================================
+// Order List
+// ========================================
+async function getCustomerOrders() {
+
+    try {
+        const response = await fetch("/profile/orders/");
+
+        if (!response.ok) {
+            throw new Error("خطا در دریافت سفارش‌ها");
+        }
+
+        return await response.json();
+
+    } catch (error) {
+
+        console.error("Customer orders error:", error);
+
+        return [];
+    }
+}
+
+
+async function renderOrderList() {
+
+    const list = document.getElementById("orderList");
+    const emptyState = document.getElementById("orderEmpty");
+
+    if (!list) {
+        return;
+    }
+
+    const orders = await getCustomerOrders();
+
+    if (!orders.length) {
+
+        list.innerHTML = "";
+        list.hidden = true;
+
+        if (emptyState) {
+            emptyState.hidden = false;
+        }
+
+        return;
+    }
+
+    list.hidden = false;
+
+    if (emptyState) {
+        emptyState.hidden = true;
+    }
+
+    list.innerHTML = "";
+
+    orders.forEach((order) => {
+
+        const li = document.createElement("li");
+
+        li.innerHTML = `
+            <button
+                type="button"
+                class="order-card"
+                data-order-id="${order.id}"
+            >
+                <div class="order-card__top">
+                    <span class="order-card__number">
+                        سفارش ${toPersianDigits(order.id)}
+                    </span>
+
+                    <span class="order-status order-status--${order.status}">
+                        ${ORDER_STATUS_LABELS[order.status] || order.status}
+                    </span>
+                </div>
+
+                <div class="order-card__bottom">
+                    <span class="order-card__date">
+                        ${toPersianDigits(order.date)}
+                    </span>
+
+                    <span class="order-card__total">
+                        ${formatRial(order.totalIRR)}
+                    </span>
+                </div>
+            </button>
+        `;
+
+        list.appendChild(li);
+    });
+}
+
+
+function initOrderList() {
+
+    const list = document.getElementById("orderList");
+
+    if (!list) {
+        return;
+    }
+
+    renderOrderList();
+
+    list.addEventListener("click", (event) => {
+
+        const card = event.target.closest("[data-order-id]");
+
+        if (!card) {
+            return;
+        }
+
+        openOrderModal(card.dataset.orderId);
+    });
+}
+
+
+// ========================================
+// Order Modal
+// ========================================
+
+function fitInvoiceToWrapF(wrapId) {
+
+    const wrap = document.getElementById(wrapId);
+
+    if (!wrap) {
+        return;
+    }
+
+    const invoice = wrap.querySelector(".admin-invoice-f");
+
+    if (!invoice) {
+        return;
+    }
+
+    invoice.style.transform = "none";
+
+    const naturalWidth = invoice.offsetWidth;
+    const naturalHeight = invoice.offsetHeight;
+    const availableWidth = wrap.clientWidth;
+
+    const scale =
+        availableWidth > 0 && naturalWidth > 0
+            ? Math.min(1, availableWidth / naturalWidth)
+            : 1;
+
+    invoice.style.transform = `scale(${scale})`;
+    wrap.style.height = `${naturalHeight * scale}px`;
+
+}
+
+window.addEventListener("resize", () => {
+
+    const wrap = document.getElementById("orderInvoiceScaleWrapF");
+
+    if (wrap && !wrap.closest("[hidden]")) {
+        fitInvoiceToWrapF("orderInvoiceScaleWrapF");
+    }
+
+});
+
+
+async function openOrderModal(orderId) {
+
+    try {
+
+        const response = await fetch(
+            `/profile/orders/${orderId}/`
+        );
+
+        if (!response.ok) {
+            throw new Error("خطا در دریافت جزئیات سفارش");
+        }
+
+        const order = await response.json();
+
+        const modal = document.getElementById("orderModal");
+        const title = document.getElementById("orderModalTitle");
+        const body = document.getElementById("orderModalBody");
+
+        if (!modal || !body) {
+            return;
+        }
+
+        if (title) {
+            title.textContent = "";
+        }
+
+        // ساختار، متن‌ها و منطق محاسبه اینجا دقیقاً همان چیزی‌ست
+        // که سمت ادمین در renderInvoiceHtmlF (حالت غیرادمین) صادر
+        // می‌شود — تا فاکتور مشتری با فاکتوری که ادمین صادر کرده
+        // یکی باشد.
+
+        const itemsSubtotalUSD = order.items.reduce(
+            (sum, item) => sum + (item.priceUSD * item.qty),
+            0
+        );
+
+        const itemsSubtotalRial =
+            itemsSubtotalUSD * USD_TO_RIAL;
+
+        const grandTotal = order.totalIRR;
+
+        // این دو فیلد فعلاً از API مشتری برنمی‌گردن — تا وقتی
+        // بک‌اند اضافه‌شون نکنه به‌صورت امن fallback نشون داده می‌شن.
+        const customerName =
+            order.customerName
+            || document.getElementById("profilePhone")?.value
+            || "—";
+
+        const paymentStatusLabel =
+            order.paymentStatusLabel || "—";
+
+        const itemRowsHtml = order.items.map((item) => {
+
+            const lineRial =
+                item.priceUSD * item.qty * USD_TO_RIAL;
+
+            return `
+                <tr>
+                    <td class="invoice-item-name">${item.name ? escapeHtml(item.name) : "—"}</td>
+                    <td>${item.brand ? escapeHtml(item.brand) : "—"}</td>
+                    <td>${item.size ? escapeHtml(item.size) : "—"}</td>
+                    <td>${toPersianDigits(item.qty || 0)}</td>
+                    <td class="invoice-price">${formatRial(lineRial)}</td>
+                </tr>
+            `;
+
         }).join("");
 
-        var profitBlock = "";
-        if (isAdminF) {
-            profitBlock =
-                '<div class="invoice-profit-f">' +
-                    '<div class="invoice-profit-title-f">فاکتور داخلی — فقط ادمین</div>' +
-                    '<div class="invoice-summary-row-f">' +
-                        '<span>سود ادمین این سفارش</span>' +
-                        '<strong>' + formatNumberF(calc.profitRial) + ' ریال</strong>' +
-                    '</div>' +
-                '</div>';
-        }
+        body.innerHTML = `
 
-        return (
-            "<style id=\"admin-invoice-reference-style-f\">\n.admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;color:#201B1D;direction:rtl;overflow:hidden;font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;}.admin-invoice-f__band{min-height:148px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#B8C2B8;text-align:center;}.admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#AE0F7C;letter-spacing:.13em;font-weight:400;}.admin-invoice-f__band-sub{margin-top:7px;font-family:'Belleza',Georgia,serif;font-size:16px;line-height:1;color:#AE0F7C;letter-spacing:.25em;font-weight:400;}.admin-invoice-f__band-type-f{margin-top:10px;font-size:11px;color:#5C5356;font-weight:700;}.admin-invoice-f__card{width:calc(100% - 16px);min-height:0;margin:-1px auto 0;background:#fff;padding:0 12px 28px;box-shadow:0 0 0 1px rgba(0,0,0,.02);page-break-inside:avoid;}.admin-invoice-f__meta{min-height:0;padding:14px 0 13px;display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:12px;border-bottom:1px solid #4B4748;font-size:12px;line-height:1.9;}.admin-invoice-f__meta-col{display:flex;flex-direction:column;gap:0;min-width:0;}.admin-invoice-f__meta-col--left{text-align:left;}.admin-invoice-f__meta-col p{margin:0;white-space:normal;overflow-wrap:anywhere;}.admin-invoice-f__table{width:100%;margin:22px 0 0;border-collapse:collapse;table-layout:fixed;font-size:11px;}.admin-invoice-f__table th{height:48px;padding:6px 3px;background:#AE0F7C;color:#fff;border-left:1px solid #fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}.admin-invoice-f__table th:last-child{border-left:0;}.admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}.admin-invoice-f__table td{min-height:52px;height:52px;padding:7px 3px;border:0;text-align:center;vertical-align:middle;font-size:11px;overflow-wrap:anywhere;word-break:break-word;}.admin-invoice-f__table td.invoice-item-name{text-align:right;}.admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}.admin-invoice-f__summary-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:stretch;}.admin-invoice-f__summary{width:100%;max-width:360px;margin-right:auto;display:flex;flex-direction:column;gap:6px;}.invoice-summary-row-f{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.65;direction:rtl;}.invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;}.invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:15px;font-weight:700;}.invoice-summary-total-f strong:first-child{font-weight:800;}.invoice-profit-f{width:100%;max-width:360px;margin:18px 0 0 auto;padding:10px 12px;border:1px dashed #AE0F7C;background:#FBF2F8;}.invoice-profit-title-f{margin-bottom:7px;color:#AE0F7C;font-size:11px;font-weight:700;}.admin-invoice-f__footer{min-height:0;padding:22px 16px 24px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;background:#F3EFE8;color:#AE0F7C;}.admin-invoice-f__contact-f{font-family:Arial,Tahoma,sans-serif;font-size:11px;line-height:1.7;text-align:left;}.admin-invoice-f__contact-f p{margin:0;}.admin-invoice-f__thanks-f{margin:0;font-size:17px;font-weight:700;text-align:right;white-space:normal;}.admin-invoice-f__footer-note{display:none;}@media(min-width:701px){.admin-invoice-f{width:640px;min-height:980px;}.admin-invoice-f__band{height:203px;min-height:203px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{margin-top:9px;font-size:22px;letter-spacing:.34em;}.admin-invoice-f__band-type-f{margin-top:12px;font-size:12px;}.admin-invoice-f__card{width:630px;min-height:720px;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-start;}.admin-invoice-f__summary,.invoice-profit-f{width:315px;max-width:none;}.admin-invoice-f__summary{margin-right:0;}.invoice-profit-f{margin-top:22px;}.invoice-summary-row-f{font-size:15px;}.invoice-summary-total-f{font-size:18px;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;white-space:nowrap;}}@media(max-width:360px){.admin-invoice-f__card{width:calc(100% - 10px);padding-left:8px;padding-right:8px;}.admin-invoice-f__meta{grid-template-columns:1fr;gap:5px;}.admin-invoice-f__meta-col--left{text-align:right;}.admin-invoice-f__table{font-size:10px;}.admin-invoice-f__table th{font-size:10px;padding-left:2px;padding-right:2px;}.admin-invoice-f__table td{font-size:10px;padding-left:2px;padding-right:2px;}.invoice-summary-row-f{font-size:11px;}.invoice-summary-total-f{font-size:14px;}}@media print{@page{size:A4 portrait;margin:0;}html,body{margin:0!important;padding:0!important;background:#F3EFE8!important;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:203px!important;min-height:203px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:630px!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-start!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;flex-direction:row!important;justify-content:space-between!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;white-space:nowrap!important;}}</style>" +
-            '<div class="admin-invoice-f" dir="rtl">' +
-                '<div class="admin-invoice-f__band">' +
-                    '<span class="admin-invoice-f__band-logo" dir="ltr">SANAA</span>' +
-                    '<span class="admin-invoice-f__band-sub" dir="ltr">ONLINE SHOP</span>' +
-                    (isAdminF ? '<span class="admin-invoice-f__band-type-f">فاکتور داخلی — فقط ادمین</span>' : '') +
-                '</div>' +
-                '<div class="admin-invoice-f__card">' +
-                    '<div class="admin-invoice-f__meta">' +
-                        '<div class="admin-invoice-f__meta-col">' +
-                            '<p><span>مشتری :</span> ' + (meta.customerName || "—") + '</p>' +
-                            '<p><span>وضعیت پرداخت :</span> ' + (meta.paymentLabel || "—") + '</p>' +
-                        '</div>' +
-                        '<div class="admin-invoice-f__meta-col admin-invoice-f__meta-col--left">' +
-                            '<p><span>شماره سفارش :</span> ' + (meta.orderNumber || "—") + '</p>' +
-                            '<p><span>تاریخ صدور :</span> ' + (meta.date || "—") + '</p>' +
-                        '</div>' +
-                    '</div>' +
-                    '<table class="admin-invoice-f__table">' +
-                        '<thead><tr><th>کالا</th><th>برند</th><th>سایز</th><th>تعداد</th><th>قیمت واحد</th></tr></thead>' +
-                        '<tbody>' + itemRows + '</tbody>' +
-                    '</table>' +
-                    '<div class="admin-invoice-f__summary-wrap">' +
-                        '<div class="admin-invoice-f__summary">' +
-                            '<div class="invoice-summary-row-f"><span>جمع کل :</span><span>' + formatNumberF(calc.itemsRial) + ' ریال</span></div>' +
-                            '<div class="invoice-summary-row-f"><span>هزینه خدمات :</span><span>' + formatNumberF(calc.serviceRial) + ' ریال</span></div>' +
-                            '<div class="invoice-summary-row-f"><span>هزینه باربری :</span><span>' + formatNumberF(calc.shippingRial) + ' ریال</span></div>' +
-                            '<div class="invoice-summary-row-f invoice-summary-total-f"><strong>مجموع کل</strong><strong>' + formatNumberF(calc.grandTotalRial) + ' ریال</strong></div>' +
-                        '</div>' +
-                        profitBlock +
-                    '</div>' +
-                '</div>' +
-                '<div class="admin-invoice-f__footer">' +
-                    '<div class="admin-invoice-f__contact-f" dir="ltr">' +
-                        '<p>instagram : sanaa.onlineshop</p>' +
-                        '<p>phone: +98 915 579 3189</p>' +
-                        '<p>website : sanaaonlineshop.com</p>' +
-                    '</div>' +
-                    '<p class="admin-invoice-f__thanks-f">با تشکر از خرید شما</p>' +
-                '</div>' +
-            '</div>'
-        );
-    }
+            <style id="customer-invoice-reference-style-f">
+.invoice-scale-wrap-f{width:100%;overflow:hidden;display:flex;justify-content:center;align-items:flex-start;}
+.admin-invoice-f{flex:0 0 auto;transform-origin:top center;width:640px;min-height:980px;margin:0 auto;background:#F3EFE8;color:#201B1D;direction:rtl;overflow:hidden;font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;font-variant-numeric:tabular-nums;}
+.admin-invoice-f__band{height:150px;min-height:150px;padding:26px 24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#B8C2B8;text-align:center;}
+.admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:56px;line-height:1;color:#AE0F7C;letter-spacing:.16em;font-weight:400;}
+.admin-invoice-f__band-sub{margin-top:8px;font-family:'Belleza',Georgia,serif;font-size:19px;line-height:1;color:#AE0F7C;letter-spacing:.34em;font-weight:400;}
+.admin-invoice-f__band-type-f{margin-top:10px;font-size:12px;color:#5C5356;font-weight:700;}
+.admin-invoice-f__card{width:630px;min-height:720px;margin:-1px auto 0;background:#fff;padding:0 18px 36px;box-shadow:0 0 0 1px rgba(0,0,0,.02);page-break-inside:avoid;}
+.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;align-items:start;gap:30px;border-bottom:1px solid #4B4748;font-size:15px;line-height:1.8;}
+.admin-invoice-f__meta-col{display:flex;flex-direction:column;gap:0;min-width:0;}
+.admin-invoice-f__meta-col--left{text-align:left;}
+.admin-invoice-f__meta-col p{margin:0;white-space:nowrap;overflow-wrap:anywhere;}
+.admin-invoice-f__table{width:100%;margin:30px 0 0;border-collapse:collapse;table-layout:fixed;font-size:14px;}
+.admin-invoice-f__table th{height:44px;padding:6px 7px;background:#AE0F7C;color:#fff;border-left:2px solid #fff;font-size:13px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;line-height:1.2;}
+.admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}
+.admin-invoice-f__table th:last-child{border-left:0;}
+.admin-invoice-f__table td{min-height:62px;height:62px;padding:8px 7px;border:0;text-align:center;vertical-align:middle;font-size:14px;overflow-wrap:anywhere;word-break:break-word;}
+.admin-invoice-f__table td.invoice-item-name{text-align:right;}
+.admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}
+.admin-invoice-f__summary-wrap{margin-top:42px;display:flex;flex-direction:column;align-items:flex-start;}
+.admin-invoice-f__summary{width:315px;max-width:none;margin-right:0;display:flex;flex-direction:column;gap:6px;}
+.invoice-summary-row-f{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:15px;line-height:1.65;direction:rtl;}
+.invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;text-align:left;}
+.invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:18px;font-weight:700;}
+.invoice-summary-total-f strong:first-child{font-weight:800;}
+.invoice-profit-f{width:315px;max-width:none;margin:22px 0 0 auto;padding:10px 12px;border:1px dashed #AE0F7C;background:#FBF2F8;}
+.invoice-profit-title-f{margin-bottom:7px;color:#AE0F7C;font-size:11px;font-weight:700;}
+.admin-invoice-f__footer{width:90%;margin:0 auto;min-height:120px;padding:28px 0 0;display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;flex-wrap:nowrap;gap:30px;background:#F3EFE8;color:#AE0F7C;}
+.admin-invoice-f__contact-f{flex:0 1 auto;min-width:0;font-family:Arial,Tahoma,sans-serif;font-size:14px;line-height:1.7;text-align:left;}
+.admin-invoice-f__contact-f p{margin:0;overflow-wrap:anywhere;}
+.admin-invoice-f__thanks-f{flex:0 1 auto;min-width:0;margin:0;font-size:22px;font-weight:700;text-align:right;white-space:normal;overflow-wrap:anywhere;}
+.admin-invoice-f__footer-note{display:none;}
+            </style>
 
+            <div class="invoice-scale-wrap-f" id="orderInvoiceScaleWrapF">
+            <div class="admin-invoice-f" dir="rtl">
 
-    /* ----------------------------------------------------------
-     * Invoice modals — open/close/navigate/print
-     * ---------------------------------------------------------- */
+                <div class="admin-invoice-f__band">
+                    <span class="admin-invoice-f__band-logo" dir="ltr">SANAA</span>
+                    <span class="admin-invoice-f__band-sub" dir="ltr">ONLINE SHOP</span>
+                </div>
 
-    function openInvoiceModalF(id) {
+                <div class="admin-invoice-f__card">
 
-        var modal = document.getElementById(id);
+                    <div class="admin-invoice-f__meta">
+                        <div class="admin-invoice-f__meta-col">
+                            <p><span>مشتری :</span> ${toPersianDigits(customerName)}</p>
+                            <p><span>وضعیت پرداخت :</span> ${escapeHtml(paymentStatusLabel)}</p>
+                        </div>
+                        <div class="admin-invoice-f__meta-col admin-invoice-f__meta-col--left">
+                            <p><span>شماره سفارش :</span> ${toPersianDigits(order.id)}</p>
+                            <p><span>تاریخ صدور :</span> ${toPersianDigits(order.date)}</p>
+                        </div>
+                    </div>
 
-        if (modal) {
-            modal.hidden = false;
-        }
+                    <table class="admin-invoice-f__table">
 
-    }
+                        <thead>
+                            <tr>
+                                <th>کالا</th>
+                                <th>برند</th>
+                                <th>سایز</th>
+                                <th>تعداد</th>
+                                <th>قیمت واحد</th>
+                            </tr>
+                        </thead>
 
+                        <tbody>
+                            ${itemRowsHtml}
+                        </tbody>
 
-    function closeInvoiceModalF(id) {
+                    </table>
 
-        var modal = document.getElementById(id);
+                    <div class="admin-invoice-f__summary-wrap">
+                        <div class="admin-invoice-f__summary">
 
-        if (modal) {
-            modal.hidden = true;
-        }
+                            <div class="invoice-summary-row-f">
+                                <span>جمع کل :</span>
+                                <span>${formatRial(itemsSubtotalRial)}</span>
+                            </div>
 
-    }
+                            <div class="invoice-summary-row-f">
+                                <span>هزینه خدمات :</span>
+                                <span>${formatRial(order.services)}</span>
+                            </div>
 
+                            <div class="invoice-summary-row-f">
+                                <span>هزینه باربری :</span>
+                                <span>${formatRial(order.shipping)}</span>
+                            </div>
 
-    /* ----------------------------------------------------------
-     * Printing — instead of hiding the rest of the admin page
-     * with CSS (fragile across this page's nested layout/scroll
-     * containers and produced blank PDFs), open the invoice
-     * markup alone in a fresh window with just the site
-     * stylesheet, then print that. Much more reliable.
-     * ---------------------------------------------------------- */
+                            <div class="invoice-summary-row-f invoice-summary-total-f">
+                                <strong>مجموع کل</strong>
+                                <strong>${formatRial(grandTotal)}</strong>
+                            </div>
 
-    function printInvoiceF(containerId, fromDownloadF) {
-        var content = document.getElementById(containerId);
-        if (!content) {
-            return;
-        }
+                        </div>
+                    </div>
 
-        var fonts = window.SANAA_FONTS_F || {};
-        function absoluteUrlF(path) {
-            return path ? window.location.origin + path : "";
-        }
+                </div>
 
-        var fontFaces =
-            "@font-face{font-family:'Belleza';src:url('" + absoluteUrlF(fonts.belleza) + "') format('woff2');font-weight:400;font-display:block;}" +
-            "@font-face{font-family:'Sanaa Persian';src:url('" + absoluteUrlF(fonts.vazirRegular) + "') format('truetype');font-weight:400;font-display:block;}" +
-            "@font-face{font-family:'Sanaa Persian';src:url('" + absoluteUrlF(fonts.vazirMedium) + "') format('truetype');font-weight:500;font-display:block;}" +
-            "@font-face{font-family:'Sanaa Persian';src:url('" + absoluteUrlF(fonts.vazirBold) + "') format('truetype');font-weight:700;font-display:block;}";
+                <div class="admin-invoice-f__footer">
+                <p class="admin-invoice-f__thanks-f">با تشکر از خرید شما</p>
+                    <div class="admin-invoice-f__contact-f" dir="ltr">
+                        <p>instagram : sanaa.onlineshop</p>
+                        <p>phone: +98 915 579 3189</p>
+                        <p>website : sanaaonlineshop.com</p>
+                    </div>
+                </div>
 
-        var printCss = fontFaces +
-            "html,body{margin:0;padding:0;background:#F3EFE8;}" +
-            "body{font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;color:#201B1D;-webkit-print-color-adjust:exact;print-color-adjust:exact;}" +
-            ".admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;overflow:hidden;direction:rtl;}" +
-            ".admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;}" +
-            ".admin-invoice-f__band{min-height:148px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;background:#B8C2B8;text-align:center;}" +
-            ".admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#AE0F7C;letter-spacing:.13em;}" +
-            ".admin-invoice-f__band-sub{margin-top:7px;font-family:'Belleza',Georgia,serif;font-size:16px;line-height:1;color:#AE0F7C;letter-spacing:.25em;}" +
-            ".admin-invoice-f__band-type-f{margin-top:10px;font-size:11px;color:#5C5356;font-weight:700;}" +
-            ".admin-invoice-f__card{width:calc(100% - 16px);min-height:0;margin:-1px auto 0;background:#fff;padding:0 12px 28px;page-break-inside:avoid;}" +
-            ".admin-invoice-f__meta{min-height:0;padding:14px 0 13px;display:grid;grid-template-columns:1fr 1fr;gap:12px;border-bottom:1px solid #4B4748;font-size:12px;line-height:1.9;}" +
-            ".admin-invoice-f__meta-col{display:flex;flex-direction:column;min-width:0;}" +
-            ".admin-invoice-f__meta-col--left{text-align:left;}" +
-            ".admin-invoice-f__meta-col p{margin:0;white-space:normal;overflow-wrap:anywhere;}" +
-            ".admin-invoice-f__table{width:100%;margin:22px 0 0;border-collapse:collapse;table-layout:fixed;font-size:11px;}" +
-            ".admin-invoice-f__table th{height:48px;padding:6px 3px;background:#AE0F7C;color:#fff;border-left:1px solid #fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}" +
-            ".admin-invoice-f__table th:last-child{border-left:0;}" +
-            ".admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}" +
-            ".admin-invoice-f__table td{min-height:52px;height:52px;padding:7px 3px;border:0;text-align:center;vertical-align:middle;font-size:11px;overflow-wrap:anywhere;word-break:break-word;}" +
-            ".admin-invoice-f__table td.invoice-item-name{text-align:right;}" +
-            ".admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}" +
-            ".admin-invoice-f__summary-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:stretch;}" +
-            ".admin-invoice-f__summary{width:100%;max-width:360px;margin-right:auto;display:flex;flex-direction:column;gap:6px;}" +
-            ".invoice-summary-row-f{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.65;direction:rtl;}" +
-            ".invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;}" +
-            ".invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:15px;font-weight:700;}" +
-            ".invoice-profit-f{width:100%;max-width:360px;margin:18px 0 0 auto;padding:10px 12px;border:1px dashed #AE0F7C;background:#FBF2F8;}" +
-            ".invoice-profit-title-f{margin-bottom:7px;color:#AE0F7C;font-size:11px;font-weight:700;}" +
-            ".admin-invoice-f__footer{padding:22px 16px 24px;display:flex;flex-direction:column;gap:12px;background:#F3EFE8;color:#AE0F7C;}" +
-            ".admin-invoice-f__contact-f{font-family:Arial,Tahoma,sans-serif;font-size:11px;line-height:1.7;text-align:left;}" +
-            ".admin-invoice-f__contact-f p{margin:0;}" +
-            ".admin-invoice-f__thanks-f{margin:0;font-size:17px;font-weight:700;text-align:right;white-space:normal;}" +
-            "@media(min-width:701px){.admin-invoice-f{width:640px;}.admin-invoice-f__band{height:203px;min-height:203px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{font-size:22px;letter-spacing:.34em;}.admin-invoice-f__card{width:630px;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-start;}.admin-invoice-f__summary,.invoice-profit-f{width:315px;max-width:none;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;flex-direction:row;justify-content:space-between;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;white-space:nowrap;}}" +
-            "@media(max-width:360px){.admin-invoice-f__meta{grid-template-columns:1fr;gap:5px;}.admin-invoice-f__meta-col--left{text-align:right;}.admin-invoice-f__table,.admin-invoice-f__table td{font-size:10px;}.admin-invoice-f__table th{font-size:10px;padding-left:2px;padding-right:2px;}.invoice-summary-row-f{font-size:11px;}}" +
-            "@page{size:A4 portrait;margin:0;}@media print{html,body{width:100%;background:#F3EFE8!important;}body{margin:0!important;padding:0!important;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:203px!important;min-height:203px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:630px!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-start!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;flex-direction:row!important;justify-content:space-between!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;white-space:nowrap!important;}}";
+            </div>
+            </div>
+        `;
 
-        var printWindow = window.open("", "_blank", "width=850,height=1050");
-        if (!printWindow) {
-            showToastF("مرورگر اجازه‌ی باز کردن پنجره‌ی چاپ را نداد — لطفاً پاپ‌آپ‌بلاکر را غیرفعال کنید.", "error");
-            return;
-        }
+        modal.hidden = false;
 
-        printWindow.document.write(
-            "<!DOCTYPE html><html lang=\"fa\" dir=\"rtl\"><head>" +
-            "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
-            "<base href=\"" + window.location.origin + "/\"><title>فاکتور — SANAA</title>" +
-            "<style>" + printCss + "</style></head><body>" +
-            content.outerHTML +
-            "</body></html>"
-        );
-        printWindow.document.close();
-
-        var printed = false;
-        function doPrint() {
-            if (printed) return;
-            printed = true;
-            printWindow.focus();
-            printWindow.print();
-            if (fromDownloadF) {
-                showToastF("پنجره چاپ باز شد؛ برای PDF گزینه «Save as PDF» را انتخاب کنید.", null);
-            }
-        }
-
-        function waitForAssets() {
-            var doc = printWindow.document;
-            var images = Array.prototype.slice.call(doc.images || []);
-            var imagePromises = images.map(function (img) {
-                if (img.complete) return Promise.resolve();
-                return new Promise(function (resolve) {
-                    img.addEventListener("load", resolve, { once: true });
-                    img.addEventListener("error", resolve, { once: true });
-                });
-            });
-            var fontsPromise = doc.fonts && doc.fonts.ready
-                ? doc.fonts.ready.catch(function () {})
-                : Promise.resolve();
-            Promise.all(imagePromises.concat([fontsPromise])).then(function () {
-                window.setTimeout(doPrint, 180);
-            });
-        }
-
-        if (printWindow.document.readyState === "complete") {
-            waitForAssets();
-        } else {
-            printWindow.addEventListener("load", waitForAssets, { once: true });
-            window.setTimeout(waitForAssets, 700);
-        }
-    }
-
-
-    function initInvoiceModalsF() {
-
-        document.querySelectorAll(
-            "[data-invoice-close]"
-        ).forEach(function (btn) {
-
-            btn.addEventListener(
-                "click",
-                function () {
-
-                    closeInvoiceModalF(
-                        "adminCustomerInvoiceModalF"
-                    );
-
-                    closeInvoiceModalF(
-                        "adminInternalInvoiceModalF"
-                    );
-
-                }
-            );
-
+        requestAnimationFrame(() => {
+            fitInvoiceToWrapF("orderInvoiceScaleWrapF");
         });
 
-
-        document.querySelectorAll(
-            "[data-invoice-print]"
-        ).forEach(function (btn) {
-
-            btn.addEventListener(
-                "click",
-                function () {
-
-                    var containerId =
-                        btn.dataset.invoicePrint;
-
-                    printInvoiceF(containerId);
-
-                }
-            );
-
-        });
-
-
-        var goToAdminBtn =
-            document.getElementById(
-                "adminGoToAdminInvoiceF"
-            );
-
-        if (goToAdminBtn) {
-
-            goToAdminBtn.addEventListener(
-                "click",
-                function () {
-
-                    closeInvoiceModalF(
-                        "adminCustomerInvoiceModalF"
-                    );
-
-                    openInvoiceModalF(
-                        "adminInternalInvoiceModalF"
-                    );
-
-                }
-            );
-
-        }
-
-
-        var backToCustomerBtn =
-            document.getElementById(
-                "adminBackToCustomerInvoiceF"
-            );
-
-        if (backToCustomerBtn) {
-
-            backToCustomerBtn.addEventListener(
-                "click",
-                function () {
-
-                    closeInvoiceModalF(
-                        "adminInternalInvoiceModalF"
-                    );
-
-                    openInvoiceModalF(
-                        "adminCustomerInvoiceModalF"
-                    );
-
-                }
-            );
-
-        }
-
-
-        var finishBtn =
-            document.getElementById(
-                "adminFinishInvoiceF"
-            );
-
-        if (finishBtn) {
-
-            finishBtn.addEventListener(
-                "click",
-                function () {
-
-                    closeInvoiceModalF(
-                        "adminCustomerInvoiceModalF"
-                    );
-
-                    closeInvoiceModalF(
-                        "adminInternalInvoiceModalF"
-                    );
-
-                }
-            );
-
-        }
-
-    }
-
-
-    /* ----------------------------------------------------------
-     * New order form — wiring
-     * ---------------------------------------------------------- */
-
-    /* ----------------------------------------------------------
-     * Searchable customer select
-     *
-     * The real <select id="adminNewOrderCustomerF"> (server-
-     * rendered from {% for customer in customers %}) stays the
-     * form's source of truth and is kept in the DOM, just hidden.
-     * This layer only adds a filterable text input + list on top
-     * of it; selecting an item sets the real select's value.
-     * ---------------------------------------------------------- */
-
-    function syncCustomerComboDisplayF() {
-
-        var select =
-            document.getElementById(
-                "adminNewOrderCustomerF"
-            );
-
-        var searchInput =
-            document.getElementById(
-                "adminNewOrderCustomerSearchF"
-            );
-
-        if (!select || !searchInput) {
-            return;
-        }
-
-        var selectedOption =
-            select.options[select.selectedIndex];
-
-        searchInput.value =
-            selectedOption && selectedOption.value
-                ? selectedOption.textContent.trim()
-                : "";
-
-    }
-
-
-    function initSearchableCustomerSelectF() {
-
-        var wrapper =
-            document.getElementById(
-                "adminCustomerComboF"
-            );
-
-        var select =
-            document.getElementById(
-                "adminNewOrderCustomerF"
-            );
-
-        var searchInput =
-            document.getElementById(
-                "adminNewOrderCustomerSearchF"
-            );
-
-        var list =
-            document.getElementById(
-                "adminNewOrderCustomerListF"
-            );
-
-        if (!wrapper || !select || !searchInput || !list) {
-            return;
-        }
-
-
-        // Build a plain lookup of the server-rendered options
-        // once, up front.
-        var options =
-            Array.prototype.slice
-                .call(select.options)
-                .filter(function (option) {
-                    return option.value;
-                })
-                .map(function (option) {
-                    return {
-                        value: option.value,
-                        label: option.textContent.trim()
-                    };
-                });
-
-
-        function renderListF(query) {
-
-            var normalized =
-                (query || "").trim().toLowerCase();
-
-            var matches =
-                normalized
-                    ? options.filter(function (option) {
-                        return option.label
-                            .toLowerCase()
-                            .indexOf(normalized) !== -1;
-                    })
-                    : options;
-
-            list.innerHTML = "";
-
-            if (!matches.length) {
-
-                var empty =
-                    document.createElement("li");
-
-                empty.className =
-                    "admin-searchable-select-f__empty";
-
-                empty.textContent =
-                    "مشتری‌ای پیدا نشد.";
-
-                list.appendChild(empty);
-
-                return;
-            }
-
-            matches.forEach(function (option) {
-
-                var item =
-                    document.createElement("li");
-
-                item.className =
-                    "admin-searchable-select-f__item";
-
-                item.textContent = option.label;
-
-                item.addEventListener(
-                    "mousedown",
-                    function (event) {
-
-                        // mousedown (not click) so it fires before
-                        // the search input's blur hides the list.
-                        event.preventDefault();
-
-                        select.value = option.value;
-                        searchInput.value = option.label;
-
-                        list.hidden = true;
-
-                    }
-                );
-
-                list.appendChild(item);
-
-            });
-
-        }
-
-
-        searchInput.addEventListener(
-            "focus",
-            function () {
-
-                renderListF(searchInput.value);
-
-                list.hidden = false;
-
-            }
-        );
-
-
-        searchInput.addEventListener(
-            "input",
-            function () {
-
-                // Typing invalidates whatever was picked before
-                // until a new option is chosen from the list.
-                select.value = "";
-
-                renderListF(searchInput.value);
-
-                list.hidden = false;
-
-            }
-        );
-
-
-        searchInput.addEventListener(
-            "blur",
-            function () {
-
-                list.hidden = true;
-
-                // If nothing valid was picked, don't leave stray
-                // typed text behind.
-                if (!select.value) {
-                    searchInput.value = "";
-                }
-
-            }
+    } catch (error) {
+
+        console.error(
+            "Order detail error:",
+            error
         );
 
     }
+}
 
 
-    function initNewOrderF() {
+function closeOrderModal() {
 
-        var editingOrderId =
-            null;
+    const modal = document.getElementById("orderModal");
 
-
-        var openBtn =
-            document.getElementById(
-                "adminNewOrderBtnF"
-            );
+    if (modal) {
+        modal.hidden = true;
+    }
+}
 
 
-        var modal =
-            document.getElementById(
-                "adminNewOrderModalF"
-            );
+function initOrderModal() {
 
+    const modal = document.getElementById("orderModal");
 
-        var closeBtn =
-            document.getElementById(
-                "adminNewOrderCloseF"
-            );
+    if (!modal) {
+        return;
+    }
 
+    modal.querySelectorAll("[data-modal-close]").forEach((el) => {
 
-        var cancelBtn =
-            document.getElementById(
-                "adminNewOrderCancelF"
-            );
+        el.addEventListener("click", closeOrderModal);
+    });
 
+    document.addEventListener("keydown", (event) => {
 
-        var form =
-            document.getElementById(
-                "adminNewOrderFormF"
-            );
-
-
-        var submitBtn =
-            document.getElementById(
-                "adminSubmitInvoiceF"
-            );
-
-
-        var errorEl =
-            document.getElementById(
-                "adminNewOrderErrorF"
-            );
-
-
-        if (!openBtn || !modal || !form) {
-            return;
+        if (event.key === "Escape" && !modal.hidden) {
+            closeOrderModal();
         }
-
-
-        initOrderItemsF();
-
-
-        function showFormErrorF(message) {
-
-            if (!errorEl) {
-                return;
-            }
-
-            errorEl.textContent = message;
-            errorEl.hidden = !message;
-
-        }
-
-
-        function closeNewOrderModal() {
-
-            modal.hidden =
-                true;
-
-            editingOrderId =
-                null;
-
-        }
-
-
-        function openNewOrderModal() {
-
-            editingOrderId =
-                null;
-
-
-            form.reset();
-
-            resetOrderItemsF();
-
-            showFormErrorF("");
-
-
-            var title =
-                document.getElementById(
-                    "adminNewOrderTitleF"
-                );
-
-
-            if (title) {
-
-                title.textContent =
-                    "ثبت سفارش جدید";
-            }
-
-
-            if (submitBtn) {
-
-                submitBtn.textContent =
-                    "ثبت فاکتور";
-            }
-
-
-            modal.hidden =
-                false;
-        }
-
-
-        openEditOrderModalF =
-            function (order) {
-
-                if (!order) {
-                    return;
-                }
-
-
-                editingOrderId =
-                    order.id;
-
-
-                form.reset();
-
-                showFormErrorF("");
-
-
-                var title =
-                    document.getElementById(
-                        "adminNewOrderTitleF"
-                    );
-
-
-                if (title) {
-
-                    title.textContent =
-                        "ویرایش سفارش " +
-                        order.number;
-                }
-
-
-                if (submitBtn) {
-
-                    submitBtn.textContent =
-                        "ذخیره تغییرات";
-                }
-
-
-                var customerSelect =
-                    document.getElementById(
-                        "adminNewOrderCustomerF"
-                    );
-
-
-                if (customerSelect) {
-
-                    customerSelect.value =
-                        String(
-                            order.customer.id
-                        );
-
-                    syncCustomerComboDisplayF();
-                }
-
-
-                var shippingInput =
-                    document.getElementById(
-                        "adminNewOrderShippingF"
-                    );
-
-
-                if (shippingInput) {
-
-                    shippingInput.value =
-                        Number(
-                            order.shippingRial
-                        ) || 0;
-                }
-
-
-                var serviceInput =
-                    document.getElementById(
-                        "adminNewOrderServiceF"
-                    );
-
-
-                if (serviceInput) {
-
-                    serviceInput.value =
-                        Number(
-                            order.serviceRial
-                        ) || 0;
-                }
-
-
-                var paymentInput =
-                    document.getElementById(
-                        "adminNewOrderPaymentF"
-                    );
-
-
-                if (paymentInput) {
-
-                    paymentInput.value =
-                        order.paymentStatus ||
-                        "pending";
-                }
-
-
-                var container =
-                    document.getElementById(
-                        "adminOrderItemsF"
-                    );
-
-
-                if (container) {
-
-                    container.innerHTML =
-                        "";
-
-
-                    var products =
-                        Array.isArray(order.products)
-                            ? order.products
-                            : [];
-
-
-                    products.forEach(
-                        function (product) {
-
-                            var row =
-                                createOrderItemRowF(
-                                    product
-                                );
-
-
-                            if (row) {
-
-                                container.appendChild(
-                                    row
-                                );
-                            }
-
-                        }
-                    );
-
-
-                    if (!products.length) {
-
-                        var emptyRow =
-                            createOrderItemRowF();
-
-
-                        if (emptyRow) {
-
-                            container.appendChild(
-                                emptyRow
-                            );
-                        }
-                    }
-                }
-
-
-                modal.hidden =
-                    false;
-            };
-
-
-        openBtn.addEventListener(
-            "click",
-            openNewOrderModal
-        );
-
-
-        if (closeBtn) {
-
-            closeBtn.addEventListener(
-                "click",
-                closeNewOrderModal
-            );
-
-        }
-
-
-        if (cancelBtn) {
-
-            cancelBtn.addEventListener(
-                "click",
-                closeNewOrderModal
-            );
-
-        }
-
-
-        var backdrop =
-            modal.querySelector(
-                ".modal__backdrop"
-            );
-
-
-        if (backdrop) {
-
-            backdrop.addEventListener(
-                "click",
-                closeNewOrderModal
-            );
-
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-    form.addEventListener(
-        "submit",
-        function (event) {
-
-            event.preventDefault();
-
-            showFormErrorF("");
-
-            var customerSelect =
-                document.getElementById(
-                    "adminNewOrderCustomerF"
-                );
-
-            var shippingInput =
-                document.getElementById(
-                    "adminNewOrderShippingF"
-                );
-
-            var serviceInput =
-                document.getElementById(
-                    "adminNewOrderServiceF"
-                );
-
-            var paymentInput =
-                document.getElementById(
-                    "adminNewOrderPaymentF"
-                );
-
-            var customer =
-                customerSelect
-                    ? customerSelect.value
-                    : "";
-
-            var shippingRial =
-                shippingInput
-                    ? Number(
-                        shippingInput.value
-                    ) || 0
-                    : 0;
-
-            var serviceRial =
-                serviceInput
-                    ? Number(
-                        serviceInput.value
-                    ) || 0
-                    : 0;
-
-            var paymentStatus =
-                paymentInput
-                    ? paymentInput.value
-                    : "pending";
-
-            // =========================
-            // Customer validation
-            // =========================
-
-            if (!customer) {
-
-                showFormErrorF(
-                    "لطفاً مشتری سفارش را انتخاب کنید."
-                );
-
-                return;
-            }
-
-            // =========================
-            // Items
-            // =========================
-
-            var itemsResult =
-                readOrderItemsF();
-
-            if (!itemsResult.items) {
-
-                showFormErrorF(
-                    itemsResult.error
-                );
-
-                return;
-            }
-
-            var items =
-                itemsResult.items;
-
-            // =========================
-            // Loading
-            // =========================
-            var isEditing =
-                Boolean(
-                    editingOrderId
-                );
-
-
-            var originalLabel =
-                submitBtn
-                    ? submitBtn.textContent
-                    : "";
-
-
-            if (submitBtn) {
-
-                submitBtn.disabled =
-                    true;
-
-                submitBtn.textContent =
-                    isEditing
-                        ? "در حال ذخیره تغییرات..."
-                        : "در حال ثبت سفارش...";
-            }
-            // =========================
-            // Exchange rates
-            // =========================
-
-            fetchExchangeRatesF()
-
-                .then(function (rates) {
-
-                    var calc =
-                        buildInvoiceCalcF(
-                            items,
-                            rates,
-                            shippingRial,
-                            serviceRial
-                        );
-
-                    // =====================
-                    // FormData
-                    // =====================
-
-                    var formData =
-                        new FormData();
-
-                    var csrfInput =
-                        form.querySelector(
-                            'input[name="csrfmiddlewaretoken"]'
-                        );
-
-                    if (csrfInput) {
-
-                        formData.append(
-                            "csrfmiddlewaretoken",
-                            csrfInput.value
-                        );
-                    }
-
-                    formData.append(
-                        "customer_id",
-                        customer
-                    );
-
-                    formData.append(
-                        "shipping_cost",
-                        String(shippingRial)
-                    );
-
-                    formData.append(
-                        "service_cost",
-                        String(serviceRial)
-                    );
-
-                    formData.append(
-                        "payment_status",
-                        paymentStatus
-                    );
-
-                    var usdRate =
-                        rates &&
-                        rates.USD
-                            ? rates.USD.rate
-                            : 0;
-
-                    formData.append(
-                        "usd_rate",
-                        String(usdRate)
-                    );
-
-                    // =====================
-                    // Products
-                    // =====================
-
-                    var backendItems =
-                        items.map(
-                            function (
-                                item,
-                                index
-                            ) {
-
-                                var rateData =
-                                    rates[
-                                        item.currency
-                                    ];
-
-                                var exchangeRate =
-                                    rateData
-                                        ? rateData.rate
-                                        : 0;
-
-                                if (item.file) {
-
-                                    formData.append(
-                                        "item_photo_" +
-                                            index,
-                                        item.file
-                                    );
-                                }
-
-                                return {
-
-                                    id:
-                                        item.id || null,
-
-                                    product_name:
-                                        item.name,
-
-                                    brand:
-                                        item.brand,
-
-                                    size:
-                                        item.size,
-
-                                    description:
-                                        item.description,
-
-                                    quantity:
-                                        item.qty,
-
-                                    currency:
-                                        item.currency,
-
-                                    product_price:
-                                        item.price,
-
-                                    exchange_rate:
-                                        exchangeRate
-
-                                };
-                            }
-                        );
-
-                    formData.append(
-                        "items",
-                        JSON.stringify(
-                            backendItems
-                        )
-                    );
-
-                    var requestUrl =
-                        isEditing
-                            ?
-                            buildOrderUrlF(
-                                form.dataset
-                                    .updateUrlTemplate,
-                                editingOrderId
-                            )
-                            :
-                            form.dataset
-                                .createUrl;
-
-
-                    console.log(
-                        isEditing
-                            ? "Update order URL:"
-                            : "Create order URL:",
-                        requestUrl
-                    );
-
-
-                    console.log(
-                        "Customer ID:",
-                        customer
-                    );
-
-
-                    console.log(
-                        "Items:",
-                        backendItems
-                    );
-                    // =====================
-                    // Django request
-                    // =====================
-
-                    return fetch(
-                        requestUrl,
-                        {
-                            method: "POST",
-                            body: formData
-                        }
-                    )
-                    .then(
-                        function (response) {
-
-                            return response
-                                .text()
-                                .then(
-                                    function (text) {
-
-                                        var data = {};
-
-                                        try {
-
-                                            data =
-                                                JSON.parse(
-                                                    text
-                                                );
-
-                                        } catch (error) {
-
-                                            console.error(
-                                                "Invalid backend response:",
-                                                text
-                                            );
-                                        }
-
-                                        return {
-                                            ok:
-                                                response.ok,
-
-                                            status:
-                                                response.status,
-
-                                            data:
-                                                data,
-
-                                            raw:
-                                                text,
-
-                                            calc:
-                                                calc
-                                        };
-                                    }
-                                );
-                        }
-                    );
-
-                })
-
-                // =========================
-                // Backend response
-                // =========================
-
-                .then(function (result) {
-
-                    console.log(
-                        isEditing
-                            ? "Update order response:"
-                            : "Create order response:",
-                        result
-                    );
-
-
-                    if (!result.ok) {
-
-                        var message =
-                            result.data &&
-                            result.data.message
-                                ?
-                                result.data.message
-                                :
-                                (
-                                    "خطای سرور با کد " +
-                                    result.status
-                                );
-
-
-                        throw new Error(
-                            message
-                        );
-                    }
-
-
-                    if (
-                        !result.data ||
-                        !result.data.order
-                    ) {
-
-                        throw new Error(
-                            "اطلاعات سفارش از سرور دریافت نشد."
-                        );
-                    }
-
-
-                    var savedOrder =
-                        result.data.order;
-
-
-                    var calc =
-                        result.calc;
-
-
-                    // اطلاعات واقعی برگشتی Django
-                    // جای Order قبلی را می‌گیرد.
-                    replaceOrderF(
-                        savedOrder
-                    );
-
-
-                    // =====================
-                    // Invoice
-                    // =====================
-
-                    var paymentLabels = {
-
-                        pending:
-                            "در انتظار پرداخت",
-
-                        paid:
-                            "پرداخت‌شده",
-
-                        partial:
-                            "پرداخت ناقص",
-
-                        failed:
-                            "پرداخت ناموفق",
-
-                        cancelled:
-                            "لغوشده"
-
-                    };
-
-
-                    var meta = {
-
-                        orderNumber:
-                            savedOrder.number,
-
-                        date:
-                            savedOrder.date,
-
-                        customerName:
-                            savedOrder.customer.name,
-
-                        paymentLabel:
-                            paymentLabels[
-                                savedOrder.paymentStatus
-                            ]
-                            ||
-                            savedOrder.paymentStatus
-
-                    };
-
-
-                    var customerInvoiceEl =
-                        document.getElementById(
-                            "adminCustomerInvoiceF"
-                        );
-
-
-                    var adminInvoiceEl =
-                        document.getElementById(
-                            "adminInternalInvoiceF"
-                        );
-
-
-                    if (customerInvoiceEl) {
-
-                        customerInvoiceEl.innerHTML =
-                            renderInvoiceHtmlF(
-                                calc,
-                                meta,
-                                false
-                            );
-                    }
-
-
-                    if (adminInvoiceEl) {
-
-                        adminInvoiceEl.innerHTML =
-                            renderInvoiceHtmlF(
-                                calc,
-                                meta,
-                                true
-                            );
-                    }
-
-
-                    // =====================
-                    // Reset filters
-                    // =====================
-
-                    filtersF = {
-
-                        search: "",
-                        orderStatus: "all",
-                        paymentStatus: "all",
-                        invoiceStatus: "all",
-                        sort: "newest"
-
-                    };
-
-
-                    var searchInput =
-                        document.getElementById(
-                            "adminOrderSearchF"
-                        );
-
-
-                    if (searchInput) {
-
-                        searchInput.value =
-                            "";
-                    }
-
-
-                    // لیست را دوباره از ordersF رندر کن
-                    applyFiltersF();
-
-
-                    closeNewOrderModal();
-
-
-                    openInvoiceModalF(
-                        "adminCustomerInvoiceModalF"
-                    );
-
-
-                    showToastF(
-
-                        isEditing
-                            ?
-                            (
-                                "سفارش " +
-                                savedOrder.number +
-                                " با موفقیت ویرایش شد."
-                            )
-                            :
-                            (
-                                "سفارش " +
-                                savedOrder.number +
-                                " با موفقیت ثبت شد."
-                            ),
-
-                        "success"
-                    );
-
-                })
-
-                .catch(function (error) {
-
-                    console.error(
-                        "Create / update order error:",
-                        error
-                    );
-
-                    showFormErrorF(
-                        error.message ||
-                        "ذخیره سفارش انجام نشد."
-                    );
-
-                })
-
-                // =========================
-                // Finally
-                // =========================
-
-                .finally(function () {
-
-                    if (submitBtn) {
-
-                        submitBtn.disabled =
-                            false;
-
-                        submitBtn.textContent =
-                            originalLabel;
-                    }
-
-                });
-
-        }
+    });
+}
+
+
+function printOrderInvoice() {
+
+    const content = document.querySelector("#orderModalBody .admin-invoice-f");
+
+    if (!content) {
+        return;
+    }
+
+    const printContent = content.cloneNode(true);
+    printContent.style.transform = "none";
+
+    const fonts = window.SANAA_FONTS_F || {};
+
+    const absoluteUrl = (path) =>
+        path ? window.location.origin + path : "";
+
+    const fontFaces =
+        `@font-face{font-family:'Belleza';src:url('${absoluteUrl(fonts.belleza)}') format('woff2');font-weight:400;font-display:swap;}` +
+        `@font-face{font-family:'Sanaa Persian';src:url('${absoluteUrl(fonts.vazirRegular)}') format('truetype');font-weight:400;font-display:swap;}` +
+        `@font-face{font-family:'Sanaa Persian';src:url('${absoluteUrl(fonts.vazirMedium)}') format('truetype');font-weight:500;font-display:swap;}` +
+        `@font-face{font-family:'Sanaa Persian';src:url('${absoluteUrl(fonts.vazirBold)}') format('truetype');font-weight:700;font-display:swap;}`;
+
+    const printCss =
+        fontFaces +
+        "html,body{margin:0;padding:0;background:#F3EFE8;}" +
+        "body{font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;color:#201B1D;-webkit-print-color-adjust:exact;print-color-adjust:exact;}" +
+        ".admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;overflow:hidden;direction:rtl;}" +
+        ".admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;}" +
+        ".admin-invoice-f__band{min-height:148px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;background:#B8C2B8;text-align:center;}" +
+        ".admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#AE0F7C;letter-spacing:.13em;}" +
+        ".admin-invoice-f__band-sub{margin-top:7px;font-family:'Belleza',Georgia,serif;font-size:16px;line-height:1;color:#AE0F7C;letter-spacing:.25em;}" +
+        ".admin-invoice-f__card{width:calc(100% - 16px);min-height:0;margin:-1px auto 0;background:#fff;padding:0 12px 28px;page-break-inside:avoid;}" +
+        ".admin-invoice-f__meta{min-height:0;padding:14px 0 13px;display:grid;grid-template-columns:1fr 1fr;gap:12px;border-bottom:1px solid #4B4748;font-size:12px;line-height:1.9;}" +
+        ".admin-invoice-f__meta-col{display:flex;flex-direction:column;min-width:0;}" +
+        ".admin-invoice-f__meta-col--left{text-align:left;}" +
+        ".admin-invoice-f__meta-col p{margin:0;white-space:normal;overflow-wrap:anywhere;}" +
+        ".admin-invoice-f__table{width:100%;margin:22px 0 0;border-collapse:collapse;table-layout:fixed;font-size:11px;}" +
+        ".admin-invoice-f__table th{height:48px;padding:6px 3px;background:#AE0F7C;color:#fff;border-left:1px solid #fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}" +
+        ".admin-invoice-f__table th:last-child{border-left:0;}" +
+        ".admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}" +
+        ".admin-invoice-f__table td{min-height:52px;height:52px;padding:7px 3px;border:0;text-align:center;vertical-align:middle;font-size:11px;overflow-wrap:anywhere;word-break:break-word;}" +
+        ".admin-invoice-f__table td.invoice-item-name{text-align:right;}" +
+        ".admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}" +
+        ".admin-invoice-f__summary-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:stretch;}" +
+        ".admin-invoice-f__summary{width:100%;max-width:360px;margin-right:auto;display:flex;flex-direction:column;gap:6px;}" +
+        ".invoice-summary-row-f{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.65;direction:rtl;}" +
+        ".invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;}" +
+        ".invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:15px;font-weight:700;}" +
+        ".admin-invoice-f__footer{padding:22px 16px 24px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;background:#F3EFE8;color:#AE0F7C;}" +
+        ".admin-invoice-f__contact-f{font-family:Arial,Tahoma,sans-serif;font-size:11px;line-height:1.7;text-align:left;}" +
+        ".admin-invoice-f__contact-f p{margin:0;}" +
+        ".admin-invoice-f__thanks-f{margin:0;font-size:17px;font-weight:700;text-align:right;white-space:normal;}" +
+        "@media(min-width:701px){.admin-invoice-f{width:640px;}.admin-invoice-f__band{height:203px;min-height:203px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{font-size:22px;letter-spacing:.34em;}.admin-invoice-f__card{width:630px;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-start;}.admin-invoice-f__summary{width:315px;max-width:none;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;flex-direction:row;justify-content:space-between;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;white-space:nowrap;}}" +
+        "@media(max-width:360px){.admin-invoice-f__meta{grid-template-columns:1fr;gap:5px;}.admin-invoice-f__meta-col--left{text-align:right;}.admin-invoice-f__table,.admin-invoice-f__table td{font-size:10px;}.admin-invoice-f__table th{font-size:10px;padding-left:2px;padding-right:2px;}.invoice-summary-row-f{font-size:11px;}}" +
+        "@page{size:A4 portrait;margin:0;}@media print{html,body{width:100%;background:#F3EFE8!important;}body{margin:0!important;padding:0!important;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:203px!important;min-height:203px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:630px!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-start!important;}.admin-invoice-f__summary{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;flex-direction:row!important;justify-content:space-between!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;white-space:nowrap!important;}}";
+
+    const printWindow = window.open("", "_blank", "width=850,height=1000");
+
+    if (!printWindow) {
+        return;
+    }
+
+    printWindow.document.write(
+        "<!DOCTYPE html>" +
+        '<html lang="fa" dir="rtl"><head><meta charset="UTF-8">' +
+        `<base href="${window.location.origin}/">` +
+        "<title>فاکتور — Sanaa</title>" +
+        `<style>${printCss}</style>` +
+        "</head><body>" + printContent.outerHTML + "</body></html>"
     );
 
+    printWindow.document.close();
+
+    printWindow.addEventListener("load", () => {
+        setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+        }, 250);
+    });
 }
 
 
+function initOrderInvoicePrint() {
 
+    const printBtn = document.getElementById("orderInvoicePrintF");
 
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    /* ============================================================
-     * INIT
-     * ============================================================ */
-
-    function initAdminOrdersF() {
-
-    initToolbarF();
-
-    initDetailsSheetF();
-
-    initGlobalActionsF();
-
-    initNewOrderF();
-
-    initSearchableCustomerSelectF();
-
-    initInvoiceModalsF();
-
-    applyFiltersF();
-
-}
-
-
-    if (
-        document.readyState ===
-        "loading"
-    ) {
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            initAdminOrdersF
-        );
-
-    } else {
-
-        initAdminOrdersF();
-
+    if (!printBtn) {
+        return;
     }
 
-})();
+    printBtn.addEventListener("click", printOrderInvoice);
+}
+
+
+// ========================================
+// Init
+// ========================================
+
+function initCustomerPanel() {
+
+    initCustomerTabs();
+    initProfileForm();
+    initChangePasswordForm();
+    initOrderList();
+    initOrderModal();
+    initOrderInvoicePrint();
+}

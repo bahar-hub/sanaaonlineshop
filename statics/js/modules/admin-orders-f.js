@@ -3301,19 +3301,55 @@
      * (the admin version adds the profit block).
      * ---------------------------------------------------------- */
 
+    function toPersianDigitsF(value) {
+
+        var map = {
+            "0": "۰", "1": "۱", "2": "۲", "3": "۳", "4": "۴",
+            "5": "۵", "6": "۶", "7": "۷", "8": "۸", "9": "۹"
+        };
+
+        return String(value == null ? "" : value).replace(
+            /[0-9]/g,
+            function (digit) {
+                return map[digit];
+            }
+        );
+
+    }
+
+
     function renderInvoiceHtmlF(calc, meta, isAdminF) {
 
         var itemRows = calc.lines.map(function (line) {
+
+            var currencyLabel =
+                EXCHANGE_RATES_F[line.currency]
+                    ? EXCHANGE_RATES_F[line.currency].label
+                    : line.currency;
+
+            var rialCell =
+                "<td class=\"invoice-price\">" +
+                formatNumberF(line.lineRial) + " ریال</td>";
+
+            var foreignCell =
+                isAdminF
+                    ? "<td class=\"invoice-price\">" +
+                      toPersianDigitsF(line.price) + " " + currencyLabel +
+                      "</td>"
+                    : "";
+
             return (
                 "<tr>" +
                 "<td class=\"invoice-item-name\">" + (line.name || "—") + "</td>" +
                 "<td>" + (line.brand || "—") + "</td>" +
                 "<td>" + (line.size || "—") + "</td>" +
-                "<td>" + Number(line.qty || 0).toLocaleString("fa-IR") + "</td>" +
-                "<td class=\"invoice-price\">" + formatNumberF(line.price) + "</td>" +
+                "<td>" + toPersianDigitsF(line.qty || 0) + "</td>" +
+                foreignCell +
+                rialCell +
                 "</tr>"
             );
         }).join("");
+
 
         var profitBlock = "";
         if (isAdminF) {
@@ -3327,8 +3363,47 @@
                 '</div>';
         }
 
+
+        // Rate at the moment the order was placed — admin only,
+        // shown on the right meta column (under payment status).
+        // Uses the first item's currency as the primary one for
+        // mixed-currency orders.
+        var rateLineHtml = "";
+
+        if (isAdminF && calc.lines.length) {
+
+            var primaryLine = calc.lines[0];
+
+            var primaryCurrencyLabel =
+                EXCHANGE_RATES_F[primaryLine.currency]
+                    ? EXCHANGE_RATES_F[primaryLine.currency].label
+                    : primaryLine.currency;
+
+            rateLineHtml =
+                "<p><span>نرخ " + primaryCurrencyLabel +
+                " (لحظه ثبت سفارش) :</span> " +
+                formatNumberF(primaryLine.rate) + " ریال</p>";
+
+        }
+
+
+        var tableHeadHtml =
+            isAdminF
+                ? '<tr><th>کالا</th><th>برند</th><th>سایز</th><th>تعداد</th><th>قیمت واحد (ارز)</th><th>قیمت واحد (ریال)</th></tr>'
+                : '<tr><th>کالا</th><th>برند</th><th>سایز</th><th>تعداد</th><th>قیمت واحد</th></tr>';
+
+
+        var colWidthsCss =
+            isAdminF
+                ? ".admin-invoice-f__table th:nth-child(1){width:22%;}.admin-invoice-f__table th:nth-child(2){width:14%;}.admin-invoice-f__table th:nth-child(3){width:11%;}.admin-invoice-f__table th:nth-child(4){width:11%;}.admin-invoice-f__table th:nth-child(5){width:20%;}.admin-invoice-f__table th:nth-child(6){width:22%;}"
+                : ".admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}";
+
+
         return (
-            "<style id=\"admin-invoice-reference-style-f\">\n.admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;color:#201B1D;direction:rtl;overflow:hidden;font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;}.admin-invoice-f__band{min-height:148px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#B8C2B8;text-align:center;}.admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#AE0F7C;letter-spacing:.13em;font-weight:400;}.admin-invoice-f__band-sub{margin-top:7px;font-family:'Belleza',Georgia,serif;font-size:16px;line-height:1;color:#AE0F7C;letter-spacing:.25em;font-weight:400;}.admin-invoice-f__band-type-f{margin-top:10px;font-size:11px;color:#5C5356;font-weight:700;}.admin-invoice-f__card{width:calc(100% - 16px);min-height:0;margin:-1px auto 0;background:#fff;padding:0 12px 28px;box-shadow:0 0 0 1px rgba(0,0,0,.02);page-break-inside:avoid;}.admin-invoice-f__meta{min-height:0;padding:14px 0 13px;display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:12px;border-bottom:1px solid #4B4748;font-size:12px;line-height:1.9;}.admin-invoice-f__meta-col{display:flex;flex-direction:column;gap:0;min-width:0;}.admin-invoice-f__meta-col--left{text-align:left;}.admin-invoice-f__meta-col p{margin:0;white-space:normal;overflow-wrap:anywhere;}.admin-invoice-f__table{width:100%;margin:22px 0 0;border-collapse:collapse;table-layout:fixed;font-size:11px;}.admin-invoice-f__table th{height:48px;padding:6px 3px;background:#AE0F7C;color:#fff;border-left:1px solid #fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}.admin-invoice-f__table th:last-child{border-left:0;}.admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}.admin-invoice-f__table td{min-height:52px;height:52px;padding:7px 3px;border:0;text-align:center;vertical-align:middle;font-size:11px;overflow-wrap:anywhere;word-break:break-word;}.admin-invoice-f__table td.invoice-item-name{text-align:right;}.admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}.admin-invoice-f__summary-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:stretch;}.admin-invoice-f__summary{width:100%;max-width:360px;margin-right:auto;display:flex;flex-direction:column;gap:6px;}.invoice-summary-row-f{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.65;direction:rtl;}.invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;}.invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:15px;font-weight:700;}.invoice-summary-total-f strong:first-child{font-weight:800;}.invoice-profit-f{width:100%;max-width:360px;margin:18px 0 0 auto;padding:10px 12px;border:1px dashed #AE0F7C;background:#FBF2F8;}.invoice-profit-title-f{margin-bottom:7px;color:#AE0F7C;font-size:11px;font-weight:700;}.admin-invoice-f__footer{min-height:0;padding:22px 16px 24px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:12px;background:#F3EFE8;color:#AE0F7C;}.admin-invoice-f__contact-f{font-family:Arial,Tahoma,sans-serif;font-size:11px;line-height:1.7;text-align:left;}.admin-invoice-f__contact-f p{margin:0;}.admin-invoice-f__thanks-f{margin:0;font-size:17px;font-weight:700;text-align:right;white-space:normal;}.admin-invoice-f__footer-note{display:none;}@media(min-width:701px){.admin-invoice-f{width:640px;min-height:980px;}.admin-invoice-f__band{height:203px;min-height:203px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{margin-top:9px;font-size:22px;letter-spacing:.34em;}.admin-invoice-f__band-type-f{margin-top:12px;font-size:12px;}.admin-invoice-f__card{width:630px;min-height:720px;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-start;}.admin-invoice-f__summary,.invoice-profit-f{width:315px;max-width:none;}.admin-invoice-f__summary{margin-right:0;}.invoice-profit-f{margin-top:22px;}.invoice-summary-row-f{font-size:15px;}.invoice-summary-total-f{font-size:18px;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;flex-direction:row;align-items:flex-start;justify-content:space-between;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;white-space:nowrap;}}@media(max-width:360px){.admin-invoice-f__card{width:calc(100% - 10px);padding-left:8px;padding-right:8px;}.admin-invoice-f__meta{grid-template-columns:1fr;gap:5px;}.admin-invoice-f__meta-col--left{text-align:right;}.admin-invoice-f__table{font-size:10px;}.admin-invoice-f__table th{font-size:10px;padding-left:2px;padding-right:2px;}.admin-invoice-f__table td{font-size:10px;padding-left:2px;padding-right:2px;}.invoice-summary-row-f{font-size:11px;}.invoice-summary-total-f{font-size:14px;}}@media print{@page{size:A4 portrait;margin:0;}html,body{margin:0!important;padding:0!important;background:#F3EFE8!important;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:203px!important;min-height:203px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:630px!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-start!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;flex-direction:row!important;justify-content:space-between!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;white-space:nowrap!important;}}</style>" +
+            "<style id=\"admin-invoice-reference-style-f\">\n.invoice-scale-wrap-f{width:100%;overflow:hidden;display:flex;justify-content:center;align-items:flex-start;}\n.admin-invoice-f{flex:0 0 auto;transform-origin:top center;width:640px;min-height:980px;margin:0 auto;background:#F3EFE8;color:#201B1D;direction:rtl;overflow:hidden;font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}\n.admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;font-variant-numeric:tabular-nums;}\n.admin-invoice-f__band{height:200px;min-height:200px;padding:26px 24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#B9C3B9;text-align:center;}\n.admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:56px;line-height:1;color:#A61579;letter-spacing:.16em;font-weight:400;}\n.admin-invoice-f__band-sub{margin-top:8px;font-family:'Belleza',Georgia,serif;font-size:19px;line-height:1;color:#A61579;letter-spacing:.34em;font-weight:400;}\n.admin-invoice-f__band-type-f{margin-top:10px;font-size:12px;color:#5C5356;font-weight:700;}\n.admin-invoice-f__card{width:90%;min-height:720px;margin:-50px auto 0;background:#fff;padding:0 18px 36px;box-shadow:0 0 0 1px rgba(0,0,0,.02);page-break-inside:avoid;}\n.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;align-items:start;gap:30px;border-bottom:1px solid #4B4748;font-size:15px;line-height:1.8;}\n.admin-invoice-f__meta-col{display:flex;flex-direction:column;gap:0;min-width:0;}\n.admin-invoice-f__meta-col--left{text-align:left;}\n.admin-invoice-f__meta-col p{margin:0;white-space:nowrap;overflow-wrap:anywhere;}\n.admin-invoice-f__table{width:100%;margin:30px 0 0;border-collapse:collapse;table-layout:fixed;font-size:14px;}\n.admin-invoice-f__table th{height:44px;padding:6px 7px;background:#A61579;color:#fff;border-left:2px solid #fff;font-size:13px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;line-height:1.2;}\n" +
+            colWidthsCss +
+            "\n.admin-invoice-f__table th:last-child{border-left:0;}\n.admin-invoice-f__table td{min-height:62px;height:62px;padding:8px 7px;border:0;text-align:center;vertical-align:middle;font-size:14px;overflow-wrap:anywhere;word-break:break-word;}\n.admin-invoice-f__table td.invoice-item-name{text-align:right;}\n.admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}\n.admin-invoice-f__summary-wrap{margin-top:42px;display:flex;flex-direction:column;align-items:flex-end;}\n.admin-invoice-f__summary{width:315px;max-width:none;margin-right:0;display:flex;flex-direction:column;gap:6px;}\n.invoice-summary-row-f{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:15px;line-height:1.65;direction:rtl;}\n.invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;text-align:left;}\n.invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:18px;font-weight:700;}\n.invoice-summary-total-f strong:first-child{font-weight:800;}\n.invoice-profit-f{width:315px;max-width:none;margin:22px auto 0 0;padding:10px 12px;border:1px dashed #A61579;background:#FBF2F8;}\n.invoice-profit-title-f{margin-bottom:7px;color:#A61579;font-size:11px;font-weight:700;}\n.admin-invoice-f__footer{width:90%;margin:0 auto;min-height:120px;padding:28px 0 0;display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;flex-wrap:nowrap;gap:30px;background:#F3EFE8;color:#A61579;}\n.admin-invoice-f__contact-f{flex:0 1 auto;min-width:0;font-family:Arial,Tahoma,sans-serif;font-size:14px;line-height:1.7;text-align:left;}\n.admin-invoice-f__contact-f p{margin:0;overflow-wrap:anywhere;}\n.admin-invoice-f__thanks-f{flex:0 1 auto;min-width:0;margin:0;font-size:22px;font-weight:700;text-align:right;white-space:normal;overflow-wrap:anywhere;}\n.admin-invoice-f__footer-note{display:none;}\n</style>" +
+            '<div class="invoice-scale-wrap-f">' +
             '<div class="admin-invoice-f" dir="rtl">' +
                 '<div class="admin-invoice-f__band">' +
                     '<span class="admin-invoice-f__band-logo" dir="ltr">SANAA</span>' +
@@ -3338,16 +3413,17 @@
                 '<div class="admin-invoice-f__card">' +
                     '<div class="admin-invoice-f__meta">' +
                         '<div class="admin-invoice-f__meta-col">' +
-                            '<p><span>مشتری :</span> ' + (meta.customerName || "—") + '</p>' +
+                            '<p><span>مشتری :</span> ' + toPersianDigitsF(meta.customerName || "—") + '</p>' +
                             '<p><span>وضعیت پرداخت :</span> ' + (meta.paymentLabel || "—") + '</p>' +
+                            rateLineHtml +
                         '</div>' +
                         '<div class="admin-invoice-f__meta-col admin-invoice-f__meta-col--left">' +
-                            '<p><span>شماره سفارش :</span> ' + (meta.orderNumber || "—") + '</p>' +
-                            '<p><span>تاریخ صدور :</span> ' + (meta.date || "—") + '</p>' +
+                            '<p><span>شماره سفارش :</span> ' + toPersianDigitsF(meta.orderNumber || "—") + '</p>' +
+                            '<p><span>تاریخ صدور :</span> ' + toPersianDigitsF(meta.date || "—") + '</p>' +
                         '</div>' +
                     '</div>' +
                     '<table class="admin-invoice-f__table">' +
-                        '<thead><tr><th>کالا</th><th>برند</th><th>سایز</th><th>تعداد</th><th>قیمت واحد</th></tr></thead>' +
+                        '<thead>' + tableHeadHtml + '</thead>' +
                         '<tbody>' + itemRows + '</tbody>' +
                     '</table>' +
                     '<div class="admin-invoice-f__summary-wrap">' +
@@ -3361,13 +3437,14 @@
                     '</div>' +
                 '</div>' +
                 '<div class="admin-invoice-f__footer">' +
+                '<p class="admin-invoice-f__thanks-f">با تشکر از خرید شما</p>' +
                     '<div class="admin-invoice-f__contact-f" dir="ltr">' +
                         '<p>instagram : sanaa.onlineshop</p>' +
                         '<p>phone: +98 915 579 3189</p>' +
                         '<p>website : sanaaonlineshop.com</p>' +
                     '</div>' +
-                    '<p class="admin-invoice-f__thanks-f">با تشکر از خرید شما</p>' +
                 '</div>' +
+            '</div>' +
             '</div>'
         );
     }
@@ -3377,12 +3454,67 @@
      * Invoice modals — open/close/navigate/print
      * ---------------------------------------------------------- */
 
+    function fitInvoiceWrapF(wrap) {
+
+        var invoice = wrap.querySelector(".admin-invoice-f");
+
+        if (!invoice) {
+            return;
+        }
+
+        invoice.style.transform = "none";
+
+        var naturalWidth = invoice.offsetWidth;
+        var naturalHeight = invoice.offsetHeight;
+        var availableWidth = wrap.clientWidth;
+
+        var scale =
+            availableWidth > 0 && naturalWidth > 0
+                ? Math.min(1, availableWidth / naturalWidth)
+                : 1;
+
+        invoice.style.transform = "scale(" + scale + ")";
+        wrap.style.height = (naturalHeight * scale) + "px";
+
+    }
+
+
+    function fitInvoicesInModalF(modal) {
+
+        if (!modal) {
+            return;
+        }
+
+        modal.querySelectorAll(".invoice-scale-wrap-f").forEach(fitInvoiceWrapF);
+
+    }
+
+
+    window.addEventListener("resize", function () {
+
+        document.querySelectorAll(".invoice-scale-wrap-f").forEach(function (wrap) {
+
+            if (wrap.offsetParent !== null) {
+                fitInvoiceWrapF(wrap);
+            }
+
+        });
+
+    });
+
+
     function openInvoiceModalF(id) {
 
         var modal = document.getElementById(id);
 
         if (modal) {
+
             modal.hidden = false;
+
+            requestAnimationFrame(function () {
+                fitInvoicesInModalF(modal);
+            });
+
         }
 
     }
@@ -3413,6 +3545,18 @@
             return;
         }
 
+        var printContent = content.cloneNode(true);
+
+        var scaledInvoice = printContent.querySelector(".admin-invoice-f");
+        if (scaledInvoice) {
+            scaledInvoice.style.transform = "none";
+        }
+
+        var scaleWrap = printContent.querySelector(".invoice-scale-wrap-f");
+        if (scaleWrap) {
+            scaleWrap.style.height = "auto";
+        }
+
         var fonts = window.SANAA_FONTS_F || {};
         function absoluteUrlF(path) {
             return path ? window.location.origin + path : "";
@@ -3425,21 +3569,21 @@
             "@font-face{font-family:'Sanaa Persian';src:url('" + absoluteUrlF(fonts.vazirBold) + "') format('truetype');font-weight:700;font-display:block;}";
 
         var printCss = fontFaces +
-            "html,body{margin:0;padding:0;background:#F3EFE8;}" +
+            "html,body{margin:0;padding:0;background:#ffffff;}" +
             "body{font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;color:#201B1D;-webkit-print-color-adjust:exact;print-color-adjust:exact;}" +
             ".admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;overflow:hidden;direction:rtl;}" +
             ".admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;}" +
-            ".admin-invoice-f__band{min-height:148px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;background:#B8C2B8;text-align:center;}" +
-            ".admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#AE0F7C;letter-spacing:.13em;}" +
-            ".admin-invoice-f__band-sub{margin-top:7px;font-family:'Belleza',Georgia,serif;font-size:16px;line-height:1;color:#AE0F7C;letter-spacing:.25em;}" +
+            ".admin-invoice-f__band{min-height:200px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;background:#B9C3B9;text-align:center;}" +//header
+            ".admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#A61579;letter-spacing:.13em;}" +
+            ".admin-invoice-f__band-sub{margin-top:7px;font-family:'Belleza',Georgia,serif;font-size:16px;line-height:1;color:#A61579;letter-spacing:.25em;}" +
             ".admin-invoice-f__band-type-f{margin-top:10px;font-size:11px;color:#5C5356;font-weight:700;}" +
-            ".admin-invoice-f__card{width:calc(100% - 16px);min-height:0;margin:-1px auto 0;background:#fff;padding:0 12px 28px;page-break-inside:avoid;}" +
+            ".admin-invoice-f__card{width:90%;min-height:0;margin:-50px auto 0;background:#fff;padding:0 12px 28px;page-break-inside:avoid;}" +
             ".admin-invoice-f__meta{min-height:0;padding:14px 0 13px;display:grid;grid-template-columns:1fr 1fr;gap:12px;border-bottom:1px solid #4B4748;font-size:12px;line-height:1.9;}" +
             ".admin-invoice-f__meta-col{display:flex;flex-direction:column;min-width:0;}" +
             ".admin-invoice-f__meta-col--left{text-align:left;}" +
             ".admin-invoice-f__meta-col p{margin:0;white-space:normal;overflow-wrap:anywhere;}" +
             ".admin-invoice-f__table{width:100%;margin:22px 0 0;border-collapse:collapse;table-layout:fixed;font-size:11px;}" +
-            ".admin-invoice-f__table th{height:48px;padding:6px 3px;background:#AE0F7C;color:#fff;border-left:1px solid #fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}" +
+            ".admin-invoice-f__table th{height:48px;padding:6px 3px;background:#A61579;color:#fff;border-left:1px solid #fff;font-size:11px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}" +
             ".admin-invoice-f__table th:last-child{border-left:0;}" +
             ".admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}" +
             ".admin-invoice-f__table td{min-height:52px;height:52px;padding:7px 3px;border:0;text-align:center;vertical-align:middle;font-size:11px;overflow-wrap:anywhere;word-break:break-word;}" +
@@ -3450,15 +3594,15 @@
             ".invoice-summary-row-f{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.65;direction:rtl;}" +
             ".invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;}" +
             ".invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:15px;font-weight:700;}" +
-            ".invoice-profit-f{width:100%;max-width:360px;margin:18px 0 0 auto;padding:10px 12px;border:1px dashed #AE0F7C;background:#FBF2F8;}" +
-            ".invoice-profit-title-f{margin-bottom:7px;color:#AE0F7C;font-size:11px;font-weight:700;}" +
-            ".admin-invoice-f__footer{padding:22px 16px 24px;display:flex;flex-direction:column;gap:12px;background:#F3EFE8;color:#AE0F7C;}" +
+            ".invoice-profit-f{width:100%;max-width:360px;margin:18px auto 0 0;padding:10px 12px;border:1px dashed #A61579;background:#FBF2F8;}" +
+            ".invoice-profit-title-f{margin-bottom:7px;color:#A61579;font-size:11px;font-weight:700;}" +
+            ".admin-invoice-f__footer{width:90%;margin:0 auto;padding:22px 16px 24px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;background:#F3EFE8;color:#A61579;}" +
             ".admin-invoice-f__contact-f{font-family:Arial,Tahoma,sans-serif;font-size:11px;line-height:1.7;text-align:left;}" +
             ".admin-invoice-f__contact-f p{margin:0;}" +
             ".admin-invoice-f__thanks-f{margin:0;font-size:17px;font-weight:700;text-align:right;white-space:normal;}" +
-            "@media(min-width:701px){.admin-invoice-f{width:640px;}.admin-invoice-f__band{height:203px;min-height:203px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{font-size:22px;letter-spacing:.34em;}.admin-invoice-f__card{width:630px;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-start;}.admin-invoice-f__summary,.invoice-profit-f{width:315px;max-width:none;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;flex-direction:row;justify-content:space-between;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;white-space:nowrap;}}" +
+            "@media(min-width:701px){.admin-invoice-f{width:640px;}.admin-invoice-f__band{height:200px;min-height:200px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{font-size:22px;letter-spacing:.34em;}.admin-invoice-f__card{width:90%;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-end;}.admin-invoice-f__summary,.invoice-profit-f{width:315px;max-width:none;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;}}" +
             "@media(max-width:360px){.admin-invoice-f__meta{grid-template-columns:1fr;gap:5px;}.admin-invoice-f__meta-col--left{text-align:right;}.admin-invoice-f__table,.admin-invoice-f__table td{font-size:10px;}.admin-invoice-f__table th{font-size:10px;padding-left:2px;padding-right:2px;}.invoice-summary-row-f{font-size:11px;}}" +
-            "@page{size:A4 portrait;margin:0;}@media print{html,body{width:100%;background:#F3EFE8!important;}body{margin:0!important;padding:0!important;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:203px!important;min-height:203px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:630px!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-start!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;flex-direction:row!important;justify-content:space-between!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;white-space:nowrap!important;}}";
+            "@page{size:A4 portrait;margin:0;}@media print{html,body{width:100%;background:#F3EFE8!important;}body{margin:0!important;padding:0!important;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:200px!important;min-height:200px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:90%!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-end!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;}}";
 
         var printWindow = window.open("", "_blank", "width=850,height=1050");
         if (!printWindow) {
@@ -3471,7 +3615,7 @@
             "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
             "<base href=\"" + window.location.origin + "/\"><title>فاکتور — SANAA</title>" +
             "<style>" + printCss + "</style></head><body>" +
-            content.outerHTML +
+            printContent.outerHTML +
             "</body></html>"
         );
         printWindow.document.close();
