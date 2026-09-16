@@ -4,7 +4,6 @@
  * Vanilla JS only
  * Orders are loaded from Django / database
  * ============================================================ */
-
 (function () {
 
     "use strict";
@@ -215,74 +214,17 @@
      * ============================================================ */
 
     var ORDER_STATUS_F = {
-
-        registered: {
-            label: "ثبت‌شده",
-            color: "neutral"
-        },
-
-        confirmed: {
-            label: "تأییدشده",
-            color: "info"
-        },
-
-        preparing: {
-            label: "در حال آماده‌سازی",
-            color: "warning"
-        },
-
-        shipped: {
-            label: "ارسال‌شده",
-            color: "primary"
-        },
-
-        delivered: {
-            label: "تحویل داده‌شده",
-            color: "success"
-        },
-
-        cancelled: {
-            label: "لغوشده",
-            color: "danger"
-        },
-
-        returned: {
-            label: "مرجوع‌شده",
-            color: "danger"
-        }
-
+        registered: "ثبت شده",
+        preparing: "در حال آماده سازی",
+        shipped: "ارسال شده"
     };
 
 
     var PAYMENT_STATUS_F = {
-
-        paid: {
-            label: "پرداخت‌شده",
-            color: "success"
-        },
-
-        pending: {
-            label: "در انتظار پرداخت",
-            color: "warning"
-        },
-
-        failed: {
-            label: "پرداخت ناموفق",
-            color: "danger"
-        },
-
-        partial: {
-            label: "پرداخت ناقص",
-            color: "warning"
-        },
-
-        cancelled: {
-            label: "لغوشده",
-            color: "danger"
-        }
-
+        pending: "در انتظار پرداخت",
+        partial: "پرداخت ناقص",
+        paid: "پرداخت شده"
     };
-
 
     var INVOICE_STATUS_F = {
 
@@ -577,124 +519,50 @@
 
 
     function actionButtonsHtmlF(orderNumber) {
+        return "" +
 
-        return (
+            /* مشاهده جزئیات */
+            "<button type=\"button\" class=\"admin-icon-btn-f\" " +
+            "data-view-order-f=\"" + orderNumber + "\" " +
+            "aria-label=\"مشاهده جزئیات سفارش " + orderNumber + "\" " +
+            "title=\"مشاهده جزئیات\">" +
 
-            '<button type="button" class="admin-icon-btn-f" ' +
-            'data-view-order-f="' +
-            orderNumber +
-            '" ' +
-            'aria-label="مشاهده جزئیات سفارش ' +
-            orderNumber +
-            '" ' +
-            'title="مشاهده جزئیات">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-
-            '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke-linecap="round" stroke-linejoin="round"/>' +
-
-            '<circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>' +
-
+            "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\">" +
+            "<path d=\"M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
+            "<circle cx=\"12\" cy=\"12\" r=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
             "</svg>" +
 
             "</button>" +
 
 
-            '<button type="button" class="admin-icon-btn-f admin-icon-btn-f--download-f" ' +
-            'data-download-order-f="' +
-            orderNumber +
-            '" ' +
-            'aria-label="دانلود PDF سفارش ' +
-            orderNumber +
-            '" ' +
-            'title="دانلود PDF">' +
+            /* دانلود PDF */
+            "<button type=\"button\" class=\"admin-icon-btn-f admin-icon-btn-f--download-f\" " +
+            "data-download-order-f=\"" + orderNumber + "\" " +
+            "aria-label=\"دانلود PDF سفارش " + orderNumber + "\" " +
+            "title=\"دانلود PDF\">" +
 
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-
-            '<path d="M12 3v12m0 0-4-4m4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>' +
-
-            '<path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17" stroke-linecap="round" stroke-linejoin="round"/>' +
-
+            "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\">" +
+            "<path d=\"M12 3v12m0 0-4-4m4 4 4-4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
+            "<path d=\"M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
             "</svg>" +
 
             "</button>" +
 
 
-            '<div class="admin-menu-f">' +
+            /* حذف سفارش */
+            "<button type=\"button\" class=\"admin-icon-btn-f admin-icon-btn-f--delete-f\" " +
+            "data-delete-order-f=\"" + orderNumber + "\" " +
+            "aria-label=\"حذف سفارش " + orderNumber + "\" " +
+            "title=\"حذف سفارش\">" +
 
-            '<button type="button" class="admin-icon-btn-f" ' +
-            'data-more-menu-btn-f="' +
-            orderNumber +
-            '" ' +
-            'aria-haspopup="true" ' +
-            'aria-expanded="false" ' +
-            'title="بیشتر">' +
-
-            '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
-            '<circle cx="5" cy="12" r="1.6"/>' +
-            '<circle cx="12" cy="12" r="1.6"/>' +
-            '<circle cx="19" cy="12" r="1.6"/>' +
+            "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\">" +
+            "<path d=\"M4 7h16\" stroke-linecap=\"round\"/>" +
+            "<path d=\"M9 7V4h6v3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
+            "<path d=\"M6 7l1 13h10l1-13\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
+            "<path d=\"M10 11v5M14 11v5\" stroke-linecap=\"round\"/>" +
             "</svg>" +
 
-            "</button>" +
-
-
-            '<div class="admin-menu-f__panel" ' +
-            'data-more-menu-panel-f="' +
-            orderNumber +
-            '" hidden>' +
-
-
-            '<button type="button" class="admin-menu-f__item" ' +
-            'data-edit-order-f="' +
-            orderNumber +
-            '">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<path d="M4 20h4l11-11-4-4L4 16v4Z" stroke-linecap="round" stroke-linejoin="round"/>' +
-            "</svg>" +
-
-            "ویرایش سفارش" +
-
-            "</button>" +
-
-
-            '<button type="button" class="admin-menu-f__item" ' +
-            'data-resend-invoice-f="' +
-            orderNumber +
-            '">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<path d="M4 4v6h6M20 20v-6h-6" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '<path d="M5 15a7 7 0 0 0 12 3l3-3M19 9A7 7 0 0 0 7 6L4 9" stroke-linecap="round" stroke-linejoin="round"/>' +
-            "</svg>" +
-
-            "ارسال مجدد فاکتور" +
-
-            "</button>" +
-
-
-            '<button type="button" class="admin-menu-f__item admin-menu-f__item--danger-f" ' +
-            'data-delete-order-f="' +
-            orderNumber +
-            '">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<circle cx="12" cy="12" r="9" stroke-linecap="round"/>' +
-            '<path d="m9 9 6 6m0-6-6 6" stroke-linecap="round"/>' +
-            "</svg>" +
-
-            "حذف سفارش" +
-
-            "</button>" +
-
-
-            "</div>" +
-
-            "</div>"
-
-        );
-
+            "</button>";
     }
 
 
@@ -719,11 +587,6 @@
 
             "<td>" +
             order.number +
-            "</td>" +
-
-
-            '<td class="admin-orders-f__table-product">' +
-            productSummaryF(order) +
             "</td>" +
 
 
@@ -832,23 +695,7 @@
 
             '<div class="admin-orders-f__card-body">' +
 
-            '<span class="admin-orders-f__card-customer">' +
-            order.customer.name +
-            "</span>" +
-
-
-            '<span class="admin-orders-f__card-product">' +
-            order.products[0].name +
-            (
-                order.products.length > 1
-                    ? " (+ " +
-                    formatNumberF(
-                        order.products.length - 1
-                    ) +
-                    " محصول دیگر)"
-                    : ""
-            ) +
-            "</span>" +
+            "<span class=\"admin-orders-f__card-customer\">TEST CUSTOMER</span>" +
 
 
             '<span class="admin-orders-f__card-date">' +
@@ -1641,7 +1488,6 @@
                 )
             );
 
-
         document.getElementById(
             "adminSheetCustomerF"
         ).innerHTML =
@@ -1684,7 +1530,6 @@
         document.getElementById(
             "adminSheetProductsF"
         ).innerHTML =
-
             order.products
                 .map(
                     function (product) {
@@ -1692,9 +1537,7 @@
                         var price =
                             unitPriceF(product);
 
-
                         return (
-
                             '<div class="admin-orders-f__sheet-product">' +
 
                             "<div>" +
@@ -1703,42 +1546,48 @@
                             product.name +
                             "</p>" +
 
-                            '<span class="admin-orders-f__sheet-product-qty">' +
+                                                                                    '<p class="admin-orders-f__sheet-product-meta">' +
+                            "برند: " +
+                            (product.brand || "—") +
+                            "</p>" +
 
+                            '<p class="admin-orders-f__sheet-product-meta">' +
+                            "سایز: " +
+                            (product.size || "—") +
+                            "</p>" +
+
+                            '<p class="admin-orders-f__sheet-product-meta">' +
                             "تعداد: " +
                             formatNumberF(
                                 product.qty
                             ) +
+                            "</p>" +
 
-                            " · قیمت واحد: " +
-
+                            '<p class="admin-orders-f__sheet-product-meta">' +
+                            "قیمت واحد: " +
                             formatNumberF(
                                 price
                             ) +
-
                             " " +
-
                             currencyLabel +
+                            "</p>" +
 
-                            "</span>" +
-
+                            '<p class="admin-orders-f__sheet-product-meta">' +
+                            "توضیحات: " +
+                            (product.description || "—") +
+                            "</p>" +
                             "</div>" +
 
-
                             "<span>" +
-
                             formatNumberF(
                                 price *
                                 product.qty *
                                 totals.rate
                             ) +
-
                             " ریال</span>" +
 
                             "</div>"
-
                         );
-
                     }
                 )
                 .join("")
@@ -1763,31 +1612,7 @@
 
             '<div class="admin-orders-f__sheet-row">' +
 
-            "<span>تخفیف</span>" +
-
-            "<span>" +
-
-            (
-                order.discountRial
-                    ?
-                    "-" +
-                    formatNumberF(
-                        order.discountRial
-                    ) +
-                    " ریال"
-                    :
-                    "ندارد"
-            ) +
-
-            "</span>" +
-
-            "</div>"
-
-            +
-
-            '<div class="admin-orders-f__sheet-row">' +
-
-            "<span>هزینه ارسال</span>" +
+            "<span>هزینه باربری</span>" +
 
             "<span>" +
 
@@ -1804,12 +1629,34 @@
 
             "</span>" +
 
+            "</div>"
+
+            +
+
+            '<div class="admin-orders-f__sheet-row">' +
+
+            "<span>هزینه خدمات</span>" +
+
+            "<span>" +
+
+            (
+                order.serviceRial
+                    ?
+                    formatNumberF(
+                        order.serviceRial
+                    ) +
+                    " ریال"
+                    :
+                    "رایگان"
+            ) +
+
+            "</span>" +
+
             "</div>";
 
-
-        document.getElementById(
-            "adminSheetFinancialF"
-        ).innerHTML =
+            document.getElementById(
+                "adminSheetFinancialF"
+            ).innerHTML =
 
             sheetRowF(
                 "مبلغ به ارز مبنا",

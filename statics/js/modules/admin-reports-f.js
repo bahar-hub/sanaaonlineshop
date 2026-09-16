@@ -394,6 +394,26 @@
         return jalali[0] === jy && jalali[1] === jm;
     }).length;
 }
+
+    function countNewCustomersYearF(jy) {
+    var dates = window.adminCustomerJoinDates || [];
+
+    return dates.filter(function (dateString) {
+        var date = new Date(dateString);
+
+        if (isNaN(date.getTime())) {
+            return false;
+        }
+
+        var jalali = toJalaliF(
+            date.getFullYear(),
+            date.getMonth() + 1,
+            date.getDate()
+        );
+
+        return jalali[0] === jy;
+    }).length;
+}
     
 
     function renderMonthlyViewF(jy, jm) {
@@ -431,9 +451,6 @@
         formatNumberF(totalSales);
 
     document.getElementById("monthlyOrdersValueF").textContent =
-        formatNumberF(orderCount);
-
-    document.getElementById("monthlyInvoicesValueF").textContent =
         formatNumberF(orderCount);
 
     document.getElementById("monthlyNewCustomersValueF").textContent =
@@ -519,6 +536,7 @@ for (var day = 1; day <= dayCount; day += 1) {
     }, 0);
 
     var orderCount = yearlyOrders.length;
+    var newCustomers = countNewCustomersYearF(jy);
 
     document.getElementById("yearlySalesValueF").textContent =
         formatNumberF(totalSales);
@@ -526,8 +544,8 @@ for (var day = 1; day <= dayCount; day += 1) {
     document.getElementById("yearlyOrdersValueF").textContent =
         formatNumberF(orderCount);
 
-    document.getElementById("yearlyInvoicesValueF").textContent =
-        formatNumberF(orderCount);
+    document.getElementById("yearlyNewCustomersValueF").textContent =
+        formatNumberF(newCustomers);
 
     document.getElementById("adminYearlyChartTotalF").textContent =
         formatNumberF(totalSales);
