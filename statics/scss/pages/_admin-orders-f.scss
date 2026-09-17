@@ -16,6 +16,7 @@
 // 11 columns of data.
 // ============================================================
 
+
 .admin-orders-f {
     padding: $spacing-md $spacing-md $spacing-2xl;
 }
@@ -64,22 +65,110 @@
 
 .admin-orders-f__toolbar-actions {
     display: flex;
-    flex-direction: column;
-    gap: $spacing-sm;
+    flex-direction: row; /* دکمه‌ها همیشه در یک ردیف و کنار هم قرار می‌گیرند */
+    align-items: center;
+    gap: $spacing-xs;
 }
+
+// استایل دکمه‌های آیکونی مربعی (همیشه وسط‌چین و مستقل از مدیاکوئری‌ها)
+.admin-btn-f.admin-btn-f--icon-only {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+
+    svg {
+        display: block;
+        width: 20px;
+        height: 20px;
+        margin: auto;
+        flex-shrink: 0;
+    }
+}
+
+
 
 .admin-orders-f__toolbar-actions .admin-btn-f {
     justify-content: center;
 }
 
-// Mobile: filters collapse behind a toggle button
+// دکمه‌ی «فیلترها» — در تمام سایزهای صفحه (موبایل، تبلت،
+// دسکتاپ) یکسان کنار جستجو نمایش داده می‌شود.
 .admin-orders-f__filters-toggle {
     display: inline-flex;
     align-self: flex-start;
 }
 
-.admin-orders-f__filters-panel[hidden] {
+// دکمه‌ی «فیلترها» وقتی پنل باز است حالت فعال می‌گیرد
+.admin-orders-f__filters-toggle.is-active-f {
+    color: $color-surface;
+
+    background-color: $color-primary;
+    border-color: $color-primary;
+}
+
+
+// ----------------------------------------
+// Filters collapsible panel — انیمیشن نرم با
+// grid-template-rows (بدون نیاز به اندازه‌گیری
+// ارتفاع در JS). در تمام سایزهای صفحه یکسان
+// رفتار می‌کند: به‌صورت پیش‌فرض بسته و فقط با
+// کلیک روی دکمه‌ی «فیلترها» باز می‌شود.
+// ----------------------------------------
+
+.admin-orders-f__filters-panel-f {
+    display: grid;
+    grid-template-rows: 0fr;
+
+    transition: grid-template-rows $transition-fast;
+}
+
+.admin-orders-f__filters-panel-f.is-open-f {
+    grid-template-rows: 1fr;
+}
+
+.admin-orders-f__filters-panel-inner-f {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.admin-orders-f__filters-panel-inner-f .admin-orders-f__toolbar-row {
+    padding-top: $spacing-sm;
+
+    opacity: 0;
+    transform: translateY(-6px);
+
+    transition: opacity $transition-fast, transform $transition-fast;
+}
+
+.admin-orders-f__filters-panel-f.is-open-f
+    .admin-orders-f__filters-panel-inner-f
+    .admin-orders-f__toolbar-row {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+// دکمه‌ی کوچک پاک‌کردن فیلترها — از عرض‌های خیلی کوچک
+// (کمتر از breakpoint sm) به‌صورت کامل مخفی است تا هرگز
+// باعث شکستن ردیف و افتادن به خط بعدی نشود؛ از sm به بالا
+// همیشه کنار سه select نمایش داده می‌شود.
+.admin-orders-f__filters-reset-f {
     display: none;
+
+    align-self: center;
+    flex-shrink: 0;
+}
+
+@include respond-to(sm) {
+    .admin-orders-f__filters-reset-f {
+        display: inline-flex;
+    }
 }
 
 
@@ -164,9 +253,7 @@
     gap: 4px;
 }
 
-// Tablet: hide lower-priority columns (base currency tag,
-// invoice status) — full detail is still one tap away in the
-// details popup.
+// Tablet: hide lower-priority columns
 .admin-orders-f__col--secondary-f {
     display: none;
 }
@@ -192,7 +279,6 @@
 
     cursor: pointer;
 
-    // a little breathing room + a subtle press feedback area
     transition: border-color $transition-fast, box-shadow $transition-fast, transform $transition-fast;
 }
 
@@ -278,9 +364,6 @@
     margin-inline-start: auto;
 }
 
-// Bigger, easier-to-tap touch targets specifically for the
-// mobile card actions (44px, per standard touch-target
-// guidance) — the desktop table keeps the smaller 32px version.
 .admin-orders-f__card-actions .admin-icon-btn-f {
     width: 40px;
     height: 40px;
@@ -291,8 +374,6 @@
     height: 17px;
 }
 
-// On very narrow phones, let the menu panel open from the left
-// edge of the button instead of overflowing past the screen edge.
 .admin-orders-f__card-actions .admin-menu-f__panel {
     left: auto;
     right: 0;
@@ -361,9 +442,6 @@
 
 // ----------------------------------------
 // Order-details bottom sheet / modal
-// Sticky header + scrollable body, per spec.
-// Reuses .modal for the backdrop/panel shell;
-// everything inside is page-specific.
 // ----------------------------------------
 
 #adminOrderDetailsModalF .modal__panel {
@@ -446,61 +524,59 @@
     text-align: left;
 }
 
+// ----------------------------------------------------
+// لیست محصولات داخل مدال (اصلاح‌شده، راست‌چین و تفکیک رنگ)
+// ----------------------------------------------------
+
 .admin-orders-f__sheet-products {
     display: flex;
     flex-direction: column;
-    gap: $spacing-sm;
+    gap: 12px;
 }
 
 .admin-orders-f__sheet-product {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $spacing-sm;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
 
-    padding-bottom: $spacing-sm;
+    padding-bottom: 12px;
     border-bottom: 1px solid $color-hairline;
+    text-align: right;
+    width: 100%;
 
-    font-size: 0.78rem;
+    &:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+    }
 }
 
-.admin-orders-f__sheet-product:last-child {
-    border-bottom: 0;
-    padding-bottom: 0;
+// نام محصول: تیره و خوانا
+.admin-orders-f__sheet-product-name,
+.admin-orders-f__sheet-product strong {
+    color: #1a1a1a !important;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-align: right;
 }
 
-.admin-orders-f__sheet-product-name {
-    color: $color-text;
-    font-weight: 600;
-}
-.admin-orders-f__sheet-product-meta {
-    margin-top: 3px;
-
-    color: $color-text;
-
-    font-size: 0.72rem;
-    line-height: 1.7;
-}
-
-.admin-orders-f__sheet-product-meta {
-    margin-top: 4px;
-
-    color: $color-text-muted;
-
-    font-size: 0.72rem;
-    line-height: 1.7;
-
-    overflow-wrap: anywhere;
-}
-
+// تمام مشخصات محصول (برند، سایز، تعداد، قیمت): خاکستری و چسبیده به راست
+.admin-orders-f__sheet-product-meta,
 .admin-orders-f__sheet-product-qty {
+    margin-top: 3px;
+    font-size: 0.72rem;
+    line-height: 1.8;
+    color: #757575 !important;
+    text-align: right !important;
+    width: 100%;
     display: block;
 
-    margin-top: 2px;
-
-    color: $color-text-muted;
-
-    font-size: 0.7rem;
+    // اعمال روی هر تگ داخلی span، متن یا p
+    &, span, div, small, p {
+        color: #757575 !important;
+        font-weight: 400 !important;
+        text-align: right !important;
+    }
 }
 
 .admin-orders-f__sheet-footer {
@@ -529,22 +605,6 @@
 // Responsive
 // ----------------------------------------
 
-@include respond-to(sm) {
-    .admin-orders-f__toolbar-row .admin-select-f {
-        flex: none;
-        width: 160px;
-    }
-
-    .admin-orders-f__toolbar-actions {
-        flex-direction: row;
-        flex-wrap: wrap;
-    }
-
-    .admin-orders-f__toolbar-actions .admin-btn-f {
-        justify-content: flex-start;
-    }
-}
-
 @include respond-to(md) {
     .admin-orders-f {
         padding: $spacing-lg $spacing-lg $spacing-3xl;
@@ -557,18 +617,17 @@
     .admin-orders-f__table-wrap {
         display: block;
     }
-
-    .admin-orders-f__filters-toggle {
-        display: none;
-    }
-
-    .admin-orders-f__filters-panel[hidden] {
-        display: flex;
-    }
 }
 
 @include respond-to(lg) {
     .admin-orders-f__col--secondary-f {
         display: table-cell;
+    }
+}
+
+
+@media (max-width: 800px) {
+    .admin-orders-f .admin-btn-f.admin-orders-f__filters-reset-f {
+        display: none !important;
     }
 }

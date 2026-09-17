@@ -1256,12 +1256,6 @@
             );
 
 
-        var clearBtn =
-            document.getElementById(
-                "adminClearFiltersF"
-            );
-
-
         var exportBtn =
             document.getElementById(
                 "adminExportOrdersF"
@@ -1365,62 +1359,7 @@
         }
 
 
-        if (clearBtn) {
-
-            clearBtn.addEventListener(
-                "click",
-                function () {
-
-                    filtersF = {
-
-                        search: "",
-                        orderStatus: "all",
-                        paymentStatus: "all",
-                        invoiceStatus: "all",
-                        sort: "newest"
-
-                    };
-
-
-                    if (searchInput) {
-                        searchInput.value = "";
-                    }
-
-
-                    if (orderStatusSelect) {
-                        orderStatusSelect.value = "all";
-                    }
-
-
-                    if (paymentStatusSelect) {
-                        paymentStatusSelect.value = "all";
-                    }
-
-
-                    if (invoiceStatusSelect) {
-                        invoiceStatusSelect.value = "all";
-                    }
-
-
-                    if (sortSelect) {
-                        sortSelect.value = "newest";
-                    }
-
-
-                    applyFiltersF();
-
-
-                    showToastF(
-                        "فیلترها پاک شد.",
-                        "success"
-                    );
-
-                }
-            );
-
-        }
-
-
+        
         if (exportBtn) {
 
             exportBtn.addEventListener(
@@ -1431,7 +1370,7 @@
         }
 
 
-        if (
+                if (
             filtersToggle &&
             filtersPanel
         ) {
@@ -1440,37 +1379,35 @@
                 "click",
                 function () {
 
-                    var isHidden =
-                        filtersPanel.hasAttribute(
-                            "hidden"
+                    var willOpen =
+                        !filtersPanel.classList.contains(
+                            "is-open-f"
                         );
 
 
-                    if (isHidden) {
+                    filtersPanel.classList.toggle(
+                        "is-open-f",
+                        willOpen
+                    );
 
-                        filtersPanel.removeAttribute(
-                            "hidden"
-                        );
 
-                    } else {
-
-                        filtersPanel.setAttribute(
-                            "hidden",
-                            ""
-                        );
-
-                    }
+                    filtersToggle.classList.toggle(
+                        "is-active-f",
+                        willOpen
+                    );
 
 
                     filtersToggle.setAttribute(
                         "aria-expanded",
-                        String(isHidden)
+                        String(willOpen)
                     );
 
                 }
             );
 
         }
+
+        
 
     }
 
@@ -1730,6 +1667,15 @@
                             '<p class="admin-orders-f__sheet-product-name">' +
                             product.name +
                             "</p>" +
+                            '<p class="admin-orders-f__sheet-product-meta">' +
+                            "برند: " +
+                            (product.brand || "—") +
+                            "</p>" +
+
+                            '<p class="admin-orders-f__sheet-product-meta">' +
+                            "سایز: " +
+                            (product.size || "—") +
+                            "</p>" +
 
                             '<span class="admin-orders-f__sheet-product-qty">' +
 
@@ -1747,11 +1693,16 @@
                             " " +
 
                             currencyLabel +
+                            '<p class="admin-orders-f__sheet-product-meta">' +
+                            "توضیحات: " +
+                            (product.description || "—") +
+                            "</p>" +
 
+                            '<p class="admin-orders-f__sheet-product-meta">' +
+                            "قیمت کل: " +
                             "</span>" +
 
                             "</div>" +
-
 
                             "<span>" +
 
@@ -1760,8 +1711,10 @@
                                 product.qty *
                                 totals.rate
                             ) +
+                            " ریال" +
+                            "</p>" +
 
-                            " ریال</span>" +
+                            "</div>" +
 
                             "</div>"
 
@@ -1782,6 +1735,7 @@
             formatNumberF(
                 totals.productsRial
             ) +
+
 
             " ریال</span>" +
 

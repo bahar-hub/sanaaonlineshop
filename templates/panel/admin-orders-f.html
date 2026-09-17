@@ -175,7 +175,7 @@
             <main class="admin-orders-f">
 
 
-                <!-- =================================================
+                                <!-- =================================================
                      PAGE HEADER
                 ================================================== -->
 
@@ -187,17 +187,19 @@
 
                     <div class="admin-orders-f__toolbar-actions">
 
-                        <!-- New order -->
+                        <!-- New order (Icon Button) -->
                         <button
                             type="button"
-                            class="admin-btn-f"
+                            class="admin-btn-f admin-btn-f--icon-only"
                             id="adminNewOrderBtnF"
+                            title="ثبت سفارش جدید"
+                            aria-label="ثبت سفارش جدید"
                         >
                             <svg
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
-                                stroke-width="1.5"
+                                stroke-width="2"
                                 aria-hidden="true"
                             >
                                 <path
@@ -205,33 +207,22 @@
                                     stroke-linecap="round"
                                 />
                             </svg>
-
-                            سفارش جدید
                         </button>
 
 
-                        <!-- Clear filters -->
+                        <!-- Export (Icon Button) -->
                         <button
                             type="button"
-                            class="admin-btn-f admin-btn-f--secondary-f"
-                            id="adminClearFiltersF"
-                        >
-                            پاک‌کردن فیلترها
-                        </button>
-
-
-                        <!-- Export -->
-                        <button
-                            type="button"
-                            class="admin-btn-f admin-btn-f--secondary-f"
+                            class="admin-btn-f admin-btn-f--secondary-f admin-btn-f--icon-only"
                             id="adminExportOrdersF"
+                            title="خروجی سفارش‌ها"
+                            aria-label="خروجی سفارش‌ها"
                         >
-
                             <svg
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
-                                stroke-width="1.5"
+                                stroke-width="1.8"
                                 aria-hidden="true"
                             >
                                 <path
@@ -239,16 +230,12 @@
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                 />
-
                                 <path
                                     d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17"
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                 />
                             </svg>
-
-                            خروجی سفارش‌ها
-
                         </button>
 
                     </div>
@@ -299,7 +286,7 @@
                         </div>
 
 
-                        <button
+                                                <button
                             type="button"
                             class="admin-btn-f admin-btn-f--secondary-f admin-orders-f__filters-toggle"
                             id="adminFiltersToggleF"
@@ -329,137 +316,107 @@
 
 
                     <div
-                        class="admin-orders-f__toolbar-row"
+                        class="admin-orders-f__filters-panel-f"
                         id="adminFiltersPanelF"
-                        hidden
                     >
 
-                        <!-- Order status -->
+                        <div class="admin-orders-f__filters-panel-inner-f">
 
-                        <select
-                            class="admin-select-f"
-                            id="adminOrderStatusFilterF"
-                            aria-label="فیلتر وضعیت سفارش"
-                        >
+                            <div class="admin-orders-f__toolbar-row">
 
-                            <option value="all">
-                                همه وضعیت‌های سفارش
-                            </option>
+                                <!-- Order status -->
 
-                            <option value="registered">
-                                ثبت‌شده
-                            </option>
+                                <select
+                                    class="admin-select-f"
+                                    id="adminOrderStatusFilterF"
+                                    aria-label="فیلتر وضعیت سفارش"
+                                >
+                                    <option value="all">
+                                        همه وضعیت‌های سفارش
+                                    </option>
 
-                            <option value="shipped">
-                                ارسال‌شده
-                            </option>
+                                    <option value="registered">
+                                        ثبت‌شده
+                                    </option>
 
-                            <option value="delivered">
-                                تحویل داده‌شده
-                            </option>
+                                    <option value="preparing">
+                                        در حال آماده‌سازی
+                                    </option>
 
-                            <option value="cancelled">
-                                لغوشده
-                            </option>
-
-                        </select>
+                                    <option value="shipped">
+                                        ارسال‌شده
+                                    </option>
+                                </select>
 
 
-                        <!-- Payment status -->
-
-                        <select
-                            class="admin-select-f"
-                            id="adminPaymentStatusFilterF"
-                            aria-label="فیلتر وضعیت پرداخت"
-                        >
-
-                            <option value="all">
-                                همه وضعیت‌های پرداخت
-                            </option>
-
-                            <option value="paid">
-                                پرداخت‌شده
-                            </option>
-
-                            <option value="pending">
-                                در انتظار پرداخت
-                            </option>
-
-                            <option value="partial">
-                                پرداخت ناقص
-                            </option>
-
-                            <option value="failed">
-                                پرداخت ناموفق
-                            </option>
-
-                            <option value="cancelled">
-                                لغوشده
-                            </option>
-
-                        </select>
+                                </select>
 
 
-                        <!-- Invoice status -->
+                                <!-- Payment status -->
 
-                        <select
-                            class="admin-select-f"
-                            id="adminInvoiceStatusFilterF"
-                            aria-label="فیلتر وضعیت فاکتور"
-                        >
+                                <select
+                                    class="admin-select-f"
+                                    id="adminPaymentStatusFilterF"
+                                    aria-label="فیلتر وضعیت پرداخت"
+                                >
 
-                            <option value="all">
-                                همه وضعیت‌های فاکتور
-                            </option>
+                                    <option value="all">
+                                        همه وضعیت‌های پرداخت
+                                    </option>
 
-                            <option value="issued">
-                                صادرشده
-                            </option>
+                                    <option value="paid">
+                                        پرداخت‌شده
+                                    </option>
 
-                            <option value="sent">
-                                ارسال‌شده
-                            </option>
+                                    <option value="pending">
+                                        در انتظار پرداخت
+                                    </option>
 
-                            <option value="waiting">
-                                در انتظار صدور
-                            </option>
+                                    <option value="partial">
+                                        پرداخت ناقص
+                                    </option>
 
-                            <option value="error">
-                                خطا در تولید فاکتور
-                            </option>
-
-                        </select>
+                                </select>
 
 
-                        <!-- Sort -->
+                                <!-- Sort -->
 
-                        <select
-                            class="admin-select-f"
-                            id="adminOrderSortF"
-                            aria-label="مرتب‌سازی سفارش‌ها"
-                        >
+                                <select
+                                    class="admin-select-f"
+                                    id="adminOrderSortF"
+                                    aria-label="مرتب‌سازی سفارش‌ها"
+                                >
 
-                            <option value="newest">
-                                جدیدترین
-                            </option>
+                                    <option value="newest">
+                                        جدیدترین
+                                    </option>
 
-                            <option value="oldest">
-                                قدیمی‌ترین
-                            </option>
+                                    <option value="oldest">
+                                        قدیمی‌ترین
+                                    </option>
 
-                            <option value="amount-desc">
-                                بیشترین مبلغ
-                            </option>
+                                    <option value="amount-desc">
+                                        بیشترین مبلغ
+                                    </option>
 
-                            <option value="amount-asc">
-                                کمترین مبلغ
-                            </option>
+                                    <option value="amount-asc">
+                                        کمترین مبلغ
+                                    </option>
 
-                            <option value="last-changed">
-                                آخرین تغییر
-                            </option>
+                                    <option value="last-changed">
+                                        آخرین تغییر
+                                    </option>
 
-                        </select>
+                                </select>
+
+
+                                <!-- Reset filters (icon only) -->
+
+                                
+
+                            </div>
+
+                        </div>
 
                     </div>
 
