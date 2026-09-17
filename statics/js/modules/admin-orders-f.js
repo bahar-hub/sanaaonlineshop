@@ -4,6 +4,7 @@
  * Vanilla JS only
  * Orders are loaded from Django / database
  * ============================================================ */
+
 (function () {
 
     "use strict";
@@ -46,6 +47,17 @@
             rate: 165000
         }
 
+    };
+
+
+    // Default increase percentage by currency. The value is copied into
+    // each order item and remains editable, so old invoices keep their snapshot.
+    var DEFAULT_MARKUP_F = {
+        USD: 42,   // آمریکا / کانادا
+        EUR: 25,   // آلمان / اسپانیا / ایتالیا
+        TRY: 20,   // ترکیه
+        AED: 25,   // دبی / عمان
+        GBP: 0
     };
 
 
@@ -214,17 +226,60 @@
      * ============================================================ */
 
     var ORDER_STATUS_F = {
-        registered: "ثبت شده",
-        preparing: "در حال آماده سازی",
-        shipped: "ارسال شده"
+
+        registered: {
+            label: "ثبت‌شده",
+            color: "neutral"
+        },
+
+        shipped: {
+            label: "ارسال‌شده",
+            color: "primary"
+        },
+
+        delivered: {
+            label: "تحویل داده‌شده",
+            color: "success"
+        },
+
+        cancelled: {
+            label: "لغوشده",
+            color: "danger"
+        },
+
+
     };
 
 
     var PAYMENT_STATUS_F = {
-        pending: "در انتظار پرداخت",
-        partial: "پرداخت ناقص",
-        paid: "پرداخت شده"
+
+        paid: {
+            label: "پرداخت‌شده",
+            color: "success"
+        },
+
+        pending: {
+            label: "در انتظار پرداخت",
+            color: "warning"
+        },
+
+        failed: {
+            label: "پرداخت ناموفق",
+            color: "danger"
+        },
+
+        partial: {
+            label: "پرداخت ناقص",
+            color: "warning"
+        },
+
+        cancelled: {
+            label: "لغوشده",
+            color: "danger"
+        }
+
     };
+
 
     var INVOICE_STATUS_F = {
 
@@ -257,7 +312,23 @@
 
     function formatNumberF(value) {
 
-        return Math.round(value).toLocaleString("fa-IR");
+        return Math.round(Number(value) || 0).toLocaleString("fa-IR");
+
+    }
+
+
+    function moneyHtmlF(value, currencyLabel) {
+
+        var label = currencyLabel || "ریال";
+
+        return (
+            '<span class="invoice-money-f" dir="rtl">' +
+                '<bdi class="invoice-money-f__number" dir="ltr">' +
+                    formatNumberF(value) +
+                '</bdi>' +
+                '<span class="invoice-money-f__label"> ' + label + '</span>' +
+            '</span>'
+        );
 
     }
 
@@ -286,7 +357,11 @@
     }
 
 
-    function unitPriceF(product) {
+    function baseUnitPriceF(product) {
+
+        if (typeof product.basePrice === "number") {
+            return product.basePrice;
+        }
 
         if (typeof product.unitPriceUsd === "number") {
             return product.unitPriceUsd;
@@ -310,6 +385,17 @@
 
         return 0;
 
+    }
+
+
+    function unitPriceF(product) {
+        if (typeof product.finalUnitPrice === "number") {
+            return product.finalUnitPrice;
+        }
+
+        var base = baseUnitPriceF(product);
+        var markup = Number(product.markupPercent) || 0;
+        return base * (1 + markup / 100);
     }
 
 
@@ -519,50 +605,124 @@
 
 
     function actionButtonsHtmlF(orderNumber) {
-        return "" +
 
-            /* مشاهده جزئیات */
-            "<button type=\"button\" class=\"admin-icon-btn-f\" " +
-            "data-view-order-f=\"" + orderNumber + "\" " +
-            "aria-label=\"مشاهده جزئیات سفارش " + orderNumber + "\" " +
-            "title=\"مشاهده جزئیات\">" +
+        return (
 
-            "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\">" +
-            "<path d=\"M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
-            "<circle cx=\"12\" cy=\"12\" r=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
+            '<button type="button" class="admin-icon-btn-f" ' +
+            'data-view-order-f="' +
+            orderNumber +
+            '" ' +
+            'aria-label="مشاهده جزئیات سفارش ' +
+            orderNumber +
+            '" ' +
+            'title="مشاهده جزئیات">' +
+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
+
+            '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke-linecap="round" stroke-linejoin="round"/>' +
+
+            '<circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>' +
+
             "</svg>" +
 
             "</button>" +
 
 
-            /* دانلود PDF */
-            "<button type=\"button\" class=\"admin-icon-btn-f admin-icon-btn-f--download-f\" " +
-            "data-download-order-f=\"" + orderNumber + "\" " +
-            "aria-label=\"دانلود PDF سفارش " + orderNumber + "\" " +
-            "title=\"دانلود PDF\">" +
+            '<button type="button" class="admin-icon-btn-f admin-icon-btn-f--download-f" ' +
+            'data-download-order-f="' +
+            orderNumber +
+            '" ' +
+            'aria-label="دانلود PDF سفارش ' +
+            orderNumber +
+            '" ' +
+            'title="دانلود PDF">' +
 
-            "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\">" +
-            "<path d=\"M12 3v12m0 0-4-4m4 4 4-4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
-            "<path d=\"M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
+
+            '<path d="M12 3v12m0 0-4-4m4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>' +
+
+            '<path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17" stroke-linecap="round" stroke-linejoin="round"/>' +
+
             "</svg>" +
 
             "</button>" +
 
 
-            /* حذف سفارش */
-            "<button type=\"button\" class=\"admin-icon-btn-f admin-icon-btn-f--delete-f\" " +
-            "data-delete-order-f=\"" + orderNumber + "\" " +
-            "aria-label=\"حذف سفارش " + orderNumber + "\" " +
-            "title=\"حذف سفارش\">" +
+            '<div class="admin-menu-f">' +
 
-            "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\">" +
-            "<path d=\"M4 7h16\" stroke-linecap=\"round\"/>" +
-            "<path d=\"M9 7V4h6v3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
-            "<path d=\"M6 7l1 13h10l1-13\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
-            "<path d=\"M10 11v5M14 11v5\" stroke-linecap=\"round\"/>" +
+            '<button type="button" class="admin-icon-btn-f" ' +
+            'data-more-menu-btn-f="' +
+            orderNumber +
+            '" ' +
+            'aria-haspopup="true" ' +
+            'aria-expanded="false" ' +
+            'title="بیشتر">' +
+
+            '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
+            '<circle cx="5" cy="12" r="1.6"/>' +
+            '<circle cx="12" cy="12" r="1.6"/>' +
+            '<circle cx="19" cy="12" r="1.6"/>' +
             "</svg>" +
 
-            "</button>";
+            "</button>" +
+
+
+            '<div class="admin-menu-f__panel" ' +
+            'data-more-menu-panel-f="' +
+            orderNumber +
+            '" hidden>' +
+
+
+            '<button type="button" class="admin-menu-f__item" ' +
+            'data-edit-order-f="' +
+            orderNumber +
+            '">' +
+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
+            '<path d="M4 20h4l11-11-4-4L4 16v4Z" stroke-linecap="round" stroke-linejoin="round"/>' +
+            "</svg>" +
+
+            "ویرایش سفارش" +
+
+            "</button>" +
+
+
+            '<button type="button" class="admin-menu-f__item" ' +
+            'data-resend-invoice-f="' +
+            orderNumber +
+            '">' +
+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
+            '<path d="M4 4v6h6M20 20v-6h-6" stroke-linecap="round" stroke-linejoin="round"/>' +
+            '<path d="M5 15a7 7 0 0 0 12 3l3-3M19 9A7 7 0 0 0 7 6L4 9" stroke-linecap="round" stroke-linejoin="round"/>' +
+            "</svg>" +
+
+            "ارسال مجدد فاکتور" +
+
+            "</button>" +
+
+
+            '<button type="button" class="admin-menu-f__item admin-menu-f__item--danger-f" ' +
+            'data-delete-order-f="' +
+            orderNumber +
+            '">' +
+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
+            '<circle cx="12" cy="12" r="9" stroke-linecap="round"/>' +
+            '<path d="m9 9 6 6m0-6-6 6" stroke-linecap="round"/>' +
+            "</svg>" +
+
+            "حذف سفارش" +
+
+            "</button>" +
+
+
+            "</div>" +
+
+            "</div>"
+
+        );
+
     }
 
 
@@ -587,6 +747,11 @@
 
             "<td>" +
             order.number +
+            "</td>" +
+
+
+            '<td class="admin-orders-f__table-product">' +
+            productSummaryF(order) +
             "</td>" +
 
 
@@ -695,7 +860,23 @@
 
             '<div class="admin-orders-f__card-body">' +
 
-            "<span class=\"admin-orders-f__card-customer\">TEST CUSTOMER</span>" +
+            '<span class="admin-orders-f__card-customer">' +
+            order.customer.name +
+            "</span>" +
+
+
+            '<span class="admin-orders-f__card-product">' +
+            order.products[0].name +
+            (
+                order.products.length > 1
+                    ? " (+ " +
+                    formatNumberF(
+                        order.products.length - 1
+                    ) +
+                    " محصول دیگر)"
+                    : ""
+            ) +
+            "</span>" +
 
 
             '<span class="admin-orders-f__card-date">' +
@@ -1488,6 +1669,7 @@
                 )
             );
 
+
         document.getElementById(
             "adminSheetCustomerF"
         ).innerHTML =
@@ -1530,6 +1712,7 @@
         document.getElementById(
             "adminSheetProductsF"
         ).innerHTML =
+
             order.products
                 .map(
                     function (product) {
@@ -1537,7 +1720,9 @@
                         var price =
                             unitPriceF(product);
 
+
                         return (
+
                             '<div class="admin-orders-f__sheet-product">' +
 
                             "<div>" +
@@ -1546,48 +1731,42 @@
                             product.name +
                             "</p>" +
 
-                                                                                    '<p class="admin-orders-f__sheet-product-meta">' +
-                            "برند: " +
-                            (product.brand || "—") +
-                            "</p>" +
+                            '<span class="admin-orders-f__sheet-product-qty">' +
 
-                            '<p class="admin-orders-f__sheet-product-meta">' +
-                            "سایز: " +
-                            (product.size || "—") +
-                            "</p>" +
-
-                            '<p class="admin-orders-f__sheet-product-meta">' +
                             "تعداد: " +
                             formatNumberF(
                                 product.qty
                             ) +
-                            "</p>" +
 
-                            '<p class="admin-orders-f__sheet-product-meta">' +
-                            "قیمت واحد: " +
+                            " · قیمت واحد: " +
+
                             formatNumberF(
                                 price
                             ) +
-                            " " +
-                            currencyLabel +
-                            "</p>" +
 
-                            '<p class="admin-orders-f__sheet-product-meta">' +
-                            "توضیحات: " +
-                            (product.description || "—") +
-                            "</p>" +
+                            " " +
+
+                            currencyLabel +
+
+                            "</span>" +
+
                             "</div>" +
 
+
                             "<span>" +
+
                             formatNumberF(
                                 price *
                                 product.qty *
                                 totals.rate
                             ) +
+
                             " ریال</span>" +
 
                             "</div>"
+
                         );
+
                     }
                 )
                 .join("")
@@ -1612,7 +1791,31 @@
 
             '<div class="admin-orders-f__sheet-row">' +
 
-            "<span>هزینه باربری</span>" +
+            "<span>تخفیف</span>" +
+
+            "<span>" +
+
+            (
+                order.discountRial
+                    ?
+                    "-" +
+                    formatNumberF(
+                        order.discountRial
+                    ) +
+                    " ریال"
+                    :
+                    "ندارد"
+            ) +
+
+            "</span>" +
+
+            "</div>"
+
+            +
+
+            '<div class="admin-orders-f__sheet-row">' +
+
+            "<span>هزینه ارسال</span>" +
 
             "<span>" +
 
@@ -1629,34 +1832,12 @@
 
             "</span>" +
 
-            "</div>"
-
-            +
-
-            '<div class="admin-orders-f__sheet-row">' +
-
-            "<span>هزینه خدمات</span>" +
-
-            "<span>" +
-
-            (
-                order.serviceRial
-                    ?
-                    formatNumberF(
-                        order.serviceRial
-                    ) +
-                    " ریال"
-                    :
-                    "رایگان"
-            ) +
-
-            "</span>" +
-
             "</div>";
 
-            document.getElementById(
-                "adminSheetFinancialF"
-            ).innerHTML =
+
+        document.getElementById(
+            "adminSheetFinancialF"
+        ).innerHTML =
 
             sheetRowF(
                 "مبلغ به ارز مبنا",
@@ -1804,75 +1985,190 @@
     function fetchInvoicePdfBlobF(
         orderNumber
     ) {
-        return fetch(invoiceApiEndpointF(orderNumber), {
-            method: "GET",
-            credentials: "same-origin",
-            headers: { "Accept": "application/pdf" }
-        }).then(function (response) {
-            if (!response.ok) {
-                throw new Error("invoice_backend_not_connected");
+
+        return new Promise(
+            function (resolve, reject) {
+
+                window.setTimeout(
+                    function () {
+
+                        reject(
+                            new Error(
+                                "invoice_backend_not_connected"
+                            )
+                        );
+
+                    },
+                    700
+                );
+
             }
-            var contentType = response.headers.get("content-type") || "";
-            if (contentType.indexOf("application/pdf") === -1) {
-                throw new Error("invoice_backend_invalid_pdf");
-            }
-            return response.blob();
+        );
+
+    }
+
+
+    function buildInvoiceCalcFromOrderF(order) {
+
+        var products =
+            Array.isArray(order.products)
+                ? order.products
+                : [];
+
+        var items = products.map(function (product) {
+
+            return {
+                name: product.name || "",
+                brand: product.brand || "",
+                size: product.size || "",
+                description: product.description || "",
+                image: product.image || "",
+                qty: Number(product.qty) || 1,
+                currency: product.currency || order.currency || "USD",
+                price: baseUnitPriceF(product),
+                markup: Number(product.markupPercent) || 0,
+                exchangeRate:
+                    Number(product.exchangeRate) ||
+                    (
+                        EXCHANGE_RATES_F[product.currency]
+                            ? EXCHANGE_RATES_F[product.currency].rate
+                            : 0
+                    )
+            };
+
         });
+
+        return buildInvoiceCalcF(
+            items,
+            EXCHANGE_RATES_F,
+            Number(order.shippingRial) || 0,
+            Number(order.serviceRial) || 0
+        );
+    }
+
+
+    function renderCustomerInvoiceForOrderF(order) {
+
+        var invoice =
+            document.getElementById(
+                "adminCustomerInvoiceF"
+            );
+
+        if (!invoice) {
+            return false;
+        }
+
+        var calc =
+            buildInvoiceCalcFromOrderF(order);
+
+        var paymentEntry =
+            PAYMENT_STATUS_F[
+                order.paymentStatus
+            ];
+
+        var meta = {
+            orderNumber: order.number,
+            date: order.date || currentJalaliDateF(),
+            customerName:
+                order.customer && order.customer.name
+                    ? order.customer.name
+                    : "—",
+            paymentLabel:
+                paymentEntry
+                    ? paymentEntry.label
+                    : (order.paymentStatus || "—")
+        };
+
+        invoice.innerHTML =
+            renderInvoiceHtmlF(
+                calc,
+                meta,
+                false
+            );
+
+        return true;
     }
 
 
     function downloadOrderF(
         orderNumber
     ) {
-        var order = findOrderByNumberF(orderNumber);
+
+        var order =
+            findOrderByNumberF(
+                orderNumber
+            );
 
         if (!order) {
-            showToastF("سفارش پیدا نشد.", "error");
+            showToastF(
+                "سفارش پیدا نشد.",
+                "error"
+            );
             return;
         }
 
-        var triggers = document.querySelectorAll(
-            '[data-download-order-f="' + orderNumber + '"]'
+        var triggers =
+            document.querySelectorAll(
+                '[data-download-order-f="' +
+                orderNumber +
+                '"]'
+            );
+
+        triggers.forEach(
+            function (button) {
+                button.setAttribute(
+                    "aria-busy",
+                    "true"
+                );
+                button.disabled = true;
+            }
         );
 
-        triggers.forEach(function (button) {
-            button.setAttribute("aria-busy", "true");
-            button.disabled = true;
-        });
+        try {
 
-        showToastF("در حال آماده‌سازی PDF سفارش " + orderNumber + "…", null);
+            var rendered =
+                renderCustomerInvoiceForOrderF(
+                    order
+                );
 
-        fetchInvoicePdfBlobF(orderNumber)
-            .then(function (blob) {
-                var url = URL.createObjectURL(blob);
-                var link = document.createElement("a");
-                link.href = url;
-                link.download = "invoice-" + orderNumber + ".pdf";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                showToastF("فایل PDF سفارش " + orderNumber + " دانلود شد.", "success");
-            })
-            .catch(function () {
-                // The browser print engine is the fallback when the Django
-                // PDF endpoint is not ready. It prints the exact same DOM
-                // and styling that is visible in the invoice modal.
-                var invoice = document.getElementById("adminCustomerInvoiceF");
-                if (!invoice) {
-                    showToastF("نمایش فاکتور پیدا نشد.", "error");
-                    return;
-                }
-                printInvoiceF("adminCustomerInvoiceF", true);
-            })
-            .finally(function () {
-                triggers.forEach(function (button) {
-                    button.removeAttribute("aria-busy");
+            if (!rendered) {
+                throw new Error(
+                    "نمایش فاکتور مشتری پیدا نشد."
+                );
+            }
+
+            // PDF مشتری دقیقاً از همان DOM و طراحی مرجع ساخته می‌شود.
+            // به endpoint قدیمی PDF بک‌اند وابسته نیست.
+            printInvoiceF(
+                "adminCustomerInvoiceF",
+                true
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Customer invoice PDF error:",
+                error
+            );
+
+            showToastF(
+                error.message ||
+                "ساخت فاکتور مشتری انجام نشد.",
+                "error"
+            );
+
+        } finally {
+
+            triggers.forEach(
+                function (button) {
+                    button.removeAttribute(
+                        "aria-busy"
+                    );
                     button.disabled = false;
-                });
-            });
+                }
+            );
+        }
     }
-
 
     /* ============================================================
      * DETAILS MODAL INIT
@@ -2096,14 +2392,73 @@
                 "click",
                 function () {
 
-                    if (!activeOrderNumber) {
+                    if (!activeOrderNumber || !statusSelect) {
                         return;
                     }
 
-                    showToastF(
-                        "تغییر وضعیت سفارش هنوز به بک‌اند متصل نشده است.",
-                        "error"
-                    );
+                    var order =
+                        findOrderByNumberF(activeOrderNumber);
+
+                    if (!order) {
+                        showToastF("سفارش پیدا نشد.", "error");
+                        return;
+                    }
+
+                    var form =
+                        document.getElementById("adminNewOrderFormF");
+
+                    var urlTemplate =
+                        form && form.dataset
+                            ? form.dataset.statusUrlTemplate
+                            : "";
+
+                    var requestUrl =
+                        buildOrderUrlF(urlTemplate, order.id);
+
+                    if (!requestUrl) {
+                        showToastF("آدرس بروزرسانی وضعیت پیدا نشد.", "error");
+                        return;
+                    }
+
+                    var formData = new FormData();
+                    formData.append("status", statusSelect.value);
+                    formData.append("csrfmiddlewaretoken", getCsrfTokenF());
+
+                    statusBtn.disabled = true;
+
+                    fetchJsonF(
+                        requestUrl,
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    )
+                    .then(function (data) {
+
+                        if (!data || !data.order) {
+                            throw new Error("پاسخ سرور معتبر نیست.");
+                        }
+
+                        replaceOrderF(data.order);
+                        activeOrderNumber = data.order.number;
+
+                        renderDetailsSheetF(data.order);
+                        applyFiltersF();
+
+                        showToastF(
+                            "وضعیت سفارش بروزرسانی شد.",
+                            "success"
+                        );
+                    })
+                    .catch(function (error) {
+                        showToastF(
+                            error.message || "بروزرسانی وضعیت انجام نشد.",
+                            "error"
+                        );
+                    })
+                    .finally(function () {
+                        statusBtn.disabled = false;
+                    });
 
                 }
             );
@@ -2580,6 +2935,31 @@
                 ".admin-order-item-f__currency"
             );
 
+        var markupInput =
+            row.querySelector(
+                ".admin-order-item-f__markup"
+            );
+
+        var exchangeRateInput =
+            row.querySelector(
+                ".admin-order-item-f__exchange-rate"
+            );
+
+        var afterMarkupOutput =
+            row.querySelector(
+                ".admin-order-item-f__after-markup"
+            );
+
+        var baseRialOutput =
+            row.querySelector(
+                ".admin-order-item-f__base-rial"
+            );
+
+        var unitRialOutput =
+            row.querySelector(
+                ".admin-order-item-f__unit-rial"
+            );
+
 
         var brandInput =
             row.querySelector(
@@ -2612,6 +2992,7 @@
                 function () {
 
                     row.remove();
+                    updateOrderGrandTotalPreviewF();
 
                 }
             );
@@ -2718,7 +3099,7 @@
             if (priceInput) {
 
                 priceInput.value =
-                    unitPriceF(
+                    baseUnitPriceF(
                         product
                     );
             }
@@ -2729,6 +3110,24 @@
                 currencyInput.value =
                     product.currency ||
                     "USD";
+            }
+
+            if (markupInput) {
+                var savedMarkup = Number(product.markupPercent);
+                markupInput.value =
+                    Number.isFinite(savedMarkup)
+                        ? savedMarkup
+                        : (DEFAULT_MARKUP_F[product.currency || "USD"] || 0);
+            }
+
+            if (exchangeRateInput) {
+                var savedExchangeRate = Number(product.exchangeRate);
+                exchangeRateInput.value =
+                    savedExchangeRate > 0
+                        ? savedExchangeRate
+                        : (EXCHANGE_RATES_F[product.currency || "USD"]
+                            ? EXCHANGE_RATES_F[product.currency || "USD"].rate
+                            : 0);
             }
 
 
@@ -2773,10 +3172,105 @@
                 preview.hidden =
                     false;
             }
+        } else {
+            if (currencyInput) {
+                currencyInput.value = "USD";
+            }
+            if (markupInput) {
+                markupInput.value = DEFAULT_MARKUP_F.USD;
+            }
+            if (exchangeRateInput) {
+                exchangeRateInput.value = EXCHANGE_RATES_F.USD.rate;
+            }
         }
 
+        function updatePricingPreviewF() {
+            var foreignPrice = priceInput ? Number(priceInput.value) || 0 : 0;
+            var markup = markupInput ? Number(markupInput.value) || 0 : 0;
+            var baseExchangeRate = exchangeRateInput ? Number(exchangeRateInput.value) || 0 : 0;
+
+            // New pricing rule:
+            // 1) Keep the foreign product price unchanged.
+            // 2) Apply markup to the Rial/Toman exchange rate.
+            // 3) Calculate product price once with the base rate and once with the adjusted rate.
+            var adjustedExchangeRate =
+                baseExchangeRate * (1 + markup / 100);
+
+            var baseProductRial =
+                foreignPrice * baseExchangeRate;
+
+            var finalProductRial =
+                foreignPrice * adjustedExchangeRate;
+
+            if (afterMarkupOutput) {
+                afterMarkupOutput.textContent =
+                    formatNumberF(adjustedExchangeRate) + " تومان";
+            }
+
+            if (baseRialOutput) {
+                baseRialOutput.textContent =
+                    formatNumberF(baseProductRial) + " تومان";
+            }
+
+            if (unitRialOutput) {
+                unitRialOutput.textContent =
+                    formatNumberF(finalProductRial) + " تومان";
+            }
+
+            updateOrderGrandTotalPreviewF();
+        }
+
+        if (currencyInput) {
+            currencyInput.addEventListener("change", function () {
+                var currency = currencyInput.value;
+                if (markupInput) {
+                    markupInput.value = DEFAULT_MARKUP_F[currency] || 0;
+                }
+                if (exchangeRateInput && EXCHANGE_RATES_F[currency]) {
+                    exchangeRateInput.value = EXCHANGE_RATES_F[currency].rate;
+                }
+                updatePricingPreviewF();
+            });
+        }
+
+        [priceInput, markupInput, exchangeRateInput, qtyInput].forEach(function (input) {
+            if (input) {
+                input.addEventListener("input", updatePricingPreviewF);
+                input.addEventListener("change", updatePricingPreviewF);
+            }
+        });
+
+        // Quantity +/- buttons modify the input programmatically, so refresh too.
+        row.querySelectorAll("[data-qty-action]").forEach(function (btn) {
+            btn.addEventListener("click", updatePricingPreviewF);
+        });
+
+        setTimeout(updatePricingPreviewF, 0);
 
         return row;
+    }
+
+
+    function updateOrderGrandTotalPreviewF() {
+        var totalEl = document.getElementById("adminNewOrderGrandTotalF");
+        var container = document.getElementById("adminOrderItemsF");
+        if (!totalEl || !container) {
+            return;
+        }
+
+        var productsTotal = 0;
+        container.querySelectorAll(".admin-order-item-f").forEach(function (row) {
+            var foreignPrice = Number((row.querySelector(".admin-order-item-f__price") || {}).value) || 0;
+            var markup = Number((row.querySelector(".admin-order-item-f__markup") || {}).value) || 0;
+            var baseRate = Number((row.querySelector(".admin-order-item-f__exchange-rate") || {}).value) || 0;
+            var qty = Math.max(1, Number((row.querySelector(".admin-order-item-f__qty") || {}).value) || 1);
+            var adjustedRate = baseRate * (1 + markup / 100);
+            productsTotal += foreignPrice * adjustedRate * qty;
+        });
+
+        var shipping = Number((document.getElementById("adminNewOrderShippingF") || {}).value) || 0;
+        var service = Number((document.getElementById("adminNewOrderServiceF") || {}).value) || 0;
+        totalEl.textContent = formatNumberF(productsTotal + shipping + service) + " ریال";
     }
 
 
@@ -2826,6 +3320,7 @@
 
                 if (row) {
                     container.appendChild(row);
+                    updateOrderGrandTotalPreviewF();
                 }
 
             }
@@ -2891,6 +3386,16 @@
                     ".admin-order-item-f__currency"
                 );
 
+            var markupInput =
+                row.querySelector(
+                    ".admin-order-item-f__markup"
+                );
+
+            var exchangeRateInput =
+                row.querySelector(
+                    ".admin-order-item-f__exchange-rate"
+                );
+
             var brandInput =
                 row.querySelector(
                     ".admin-order-item-f__brand"
@@ -2936,6 +3441,16 @@
                     ? currencyInput.value
                     : "";
 
+            var markup =
+                markupInput
+                    ? Number(markupInput.value)
+                    : 0;
+
+            var exchangeRate =
+                exchangeRateInput
+                    ? Number(exchangeRateInput.value)
+                    : 0;
+
             var brand =
                 brandInput
                     ? brandInput.value.trim()
@@ -2973,12 +3488,15 @@
                 !name ||
                 !price ||
                 price <= 0 ||
+                markup < 0 ||
+                !exchangeRate ||
+                exchangeRate <= 0 ||
                 !qty ||
                 qty < 1
             ) {
 
                 error =
-                    "برای هر آیتم، نام و قیمت معتبر و حداقل ۱ عدد تعداد وارد کنید.";
+                    "برای هر آیتم، نام، قیمت پایه، درصد افزایش، نرخ ارز و تعداد معتبر وارد کنید.";
 
                 return;
             }
@@ -3003,6 +3521,12 @@
 
                 currency:
                     currency,
+
+                markup:
+                    markup,
+
+                exchangeRate:
+                    exchangeRate,
 
                 brand:
                     brand,
@@ -3081,28 +3605,38 @@
 
     function buildInvoiceCalcF(items, rates, shippingRial, serviceRial) {
 
-        // Per-currency subtotal in that currency's own units —
-        // covers orders that mix currencies across items.
+        // The product price in foreign currency never changes.
+        // Markup is applied to the IRR exchange rate, then the product
+        // is converted once with the base rate and once with the adjusted rate.
         var byCurrency = {};
-
+        var baseItemsRial = 0;
         var itemsRial = 0;
+        var markupProfitRial = 0;
 
         var lines = items.map(function (item) {
 
             var rate =
-                rates[item.currency]
-                    ? rates[item.currency].rate
-                    : 0;
+                Number(item.exchangeRate) ||
+                (rates[item.currency] ? rates[item.currency].rate : 0);
 
-            // In the SANAA reference invoice, the stored `price` is the
-            // amount printed in the "قیمت واحد" column and is already the
-            // invoice line amount. Quantity is displayed separately and is
-            // not multiplied into the invoice subtotal.
-            var lineForeign = item.price;
-            var lineRial = lineForeign * rate;
+            var markup = Number(item.markup) || 0;
+            var adjustedRate = rate * (1 + markup / 100);
 
+            var foreignUnitPrice = Number(item.price) || 0;
+            var qty = Number(item.qty) || 0;
+
+            var baseUnitRial = foreignUnitPrice * rate;
+            var finalUnitRial = foreignUnitPrice * adjustedRate;
+            var baseLineRial = baseUnitRial * qty;
+            var lineRial = finalUnitRial * qty;
+            var lineForeign = foreignUnitPrice * qty;
+
+            baseItemsRial += baseLineRial;
             itemsRial += lineRial;
+            markupProfitRial += (lineRial - baseLineRial);
 
+            // Foreign subtotal stays unchanged because markup is not applied
+            // to the foreign product price itself.
             byCurrency[item.currency] =
                 (byCurrency[item.currency] || 0) + lineForeign;
 
@@ -3112,12 +3646,17 @@
                 size: item.size,
                 description: item.description,
                 image: item.image,
-                qty: item.qty,
+                qty: qty,
                 currency: item.currency,
-                price: item.price,
+                price: foreignUnitPrice,
+                markup: markup,
+                rate: rate,
+                adjustedRate: adjustedRate,
+                baseUnitRial: baseUnitRial,
+                finalUnitRial: finalUnitRial,
+                baseLineRial: baseLineRial,
                 lineForeign: lineForeign,
-                lineRial: lineRial,
-                rate: rate
+                lineRial: lineRial
             };
 
         });
@@ -3128,16 +3667,12 @@
         return {
             lines: lines,
             byCurrency: byCurrency,
+            baseItemsRial: baseItemsRial,
             itemsRial: itemsRial,
             shippingRial: shippingRial,
             serviceRial: serviceRial,
             grandTotalRial: grandTotalRial,
-
-            // Admin cost is no longer collected on the frontend —
-            // profit is now the backend's responsibility. Replace
-            // this with the real figure from the create/update
-            // order response once that field exists there.
-            profitRial: 0
+            profitRial: markupProfitRial
         };
 
     }
@@ -3174,48 +3709,64 @@
                     ? EXCHANGE_RATES_F[line.currency].label
                     : line.currency;
 
-            var rialCell =
-                "<td class=\"invoice-price\">" +
-                formatNumberF(line.lineRial) + " ریال</td>";
+            // ظاهر جدول دقیقاً مثل نسخه اولیه حفظ شده است.
+            // برای ادمین، قیمت ریالی قبل و بعد از افزایش داخل همان سلول قبلی نمایش داده می‌شود.
+            var rialCell;
+
+            if (isAdminF) {
+                rialCell =
+                    '<td class="invoice-price">' +
+                        '<div class="invoice-price-stack-f">' +
+                            '<div class="invoice-price-line-f"><span class="invoice-price-label-f">قبل:</span>' + moneyHtmlF(line.baseUnitRial, "ریال") + '</div>' +
+                            '<div class="invoice-price-line-f"><span class="invoice-price-label-f">بعد:</span>' + moneyHtmlF(line.finalUnitRial, "ریال") + '</div>' +
+                        '</div>' +
+                    '</td>';
+            } else {
+                rialCell =
+                    '<td class="invoice-price">' +
+                    moneyHtmlF(line.finalUnitRial, "ریال") + '</td>';
+            }
 
             var foreignCell =
                 isAdminF
-                    ? "<td class=\"invoice-price\">" +
-                      toPersianDigitsF(line.price) + " " + currencyLabel +
-                      "</td>"
-                    : "";
+                    ? '<td class="invoice-price">' +
+                      '<span class="invoice-money-f" dir="rtl"><bdi class="invoice-money-f__number" dir="ltr">' +
+                      formatNumberF(line.price) + '</bdi><span class="invoice-money-f__label"> ' + currencyLabel + '</span></span>' +
+                      '</td>'
+                    : '';
 
             return (
-                "<tr>" +
-                "<td class=\"invoice-item-name\">" + (line.name || "—") + "</td>" +
-                "<td>" + (line.brand || "—") + "</td>" +
-                "<td>" + (line.size || "—") + "</td>" +
-                "<td>" + toPersianDigitsF(line.qty || 0) + "</td>" +
+                '<tr>' +
+                '<td class="invoice-item-name">' + (line.name || '—') + '</td>' +
+                '<td>' + (line.brand || '—') + '</td>' +
+                '<td>' + (line.size || '—') + '</td>' +
+                '<td>' + toPersianDigitsF(line.qty || 0) + '</td>' +
                 foreignCell +
                 rialCell +
-                "</tr>"
+                '</tr>'
             );
-        }).join("");
+        }).join('');
 
 
-        var profitBlock = "";
+        var profitBlock = '';
         if (isAdminF) {
             profitBlock =
                 '<div class="invoice-profit-f">' +
                     '<div class="invoice-profit-title-f">فاکتور داخلی — فقط ادمین</div>' +
                     '<div class="invoice-summary-row-f">' +
-                        '<span>سود ادمین این سفارش</span>' +
+                        '<span>جمع محصولات قبل از افزایش</span>' +
+                        '<strong>' + formatNumberF(calc.baseItemsRial) + ' ریال</strong>' +
+                    '</div>' +
+                    '<div class="invoice-summary-row-f">' +
+                        '<span>مجموع افزایش اعمال‌شده</span>' +
                         '<strong>' + formatNumberF(calc.profitRial) + ' ریال</strong>' +
                     '</div>' +
                 '</div>';
         }
 
 
-        // Rate at the moment the order was placed — admin only,
-        // shown on the right meta column (under payment status).
-        // Uses the first item's currency as the primary one for
-        // mixed-currency orders.
-        var rateLineHtml = "";
+        // نرخ ارز اولیه، درصد و نرخ بعد از افزایش در همان ستون متای طراحی اولیه نمایش داده می‌شوند.
+        var rateLineHtml = '';
 
         if (isAdminF && calc.lines.length) {
 
@@ -3227,9 +3778,16 @@
                     : primaryLine.currency;
 
             rateLineHtml =
-                "<p><span>نرخ " + primaryCurrencyLabel +
-                " (لحظه ثبت سفارش) :</span> " +
-                formatNumberF(primaryLine.rate) + " ریال</p>";
+                '<p><span>نرخ ' + primaryCurrencyLabel + ' اولیه :</span> ' +
+                formatNumberF(primaryLine.rate) + ' ریال</p>' +
+                '<p><span>درصد افزایش :</span> ' +
+                toPersianDigitsF(
+                    Number(primaryLine.markup || 0).toLocaleString('en-US', {
+                        maximumFractionDigits: 2
+                    })
+                ) + '%</p>' +
+                '<p><span>نرخ ' + primaryCurrencyLabel + ' بعد از افزایش :</span> ' +
+                formatNumberF(primaryLine.adjustedRate) + ' ریال</p>';
 
         }
 
@@ -3242,14 +3800,14 @@
 
         var colWidthsCss =
             isAdminF
-                ? ".admin-invoice-f__table th:nth-child(1){width:22%;}.admin-invoice-f__table th:nth-child(2){width:14%;}.admin-invoice-f__table th:nth-child(3){width:11%;}.admin-invoice-f__table th:nth-child(4){width:11%;}.admin-invoice-f__table th:nth-child(5){width:20%;}.admin-invoice-f__table th:nth-child(6){width:22%;}"
-                : ".admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}";
+                ? '.admin-invoice-f__table th:nth-child(1){width:19%;}.admin-invoice-f__table th:nth-child(2){width:12%;}.admin-invoice-f__table th:nth-child(3){width:10%;}.admin-invoice-f__table th:nth-child(4){width:9%;}.admin-invoice-f__table th:nth-child(5){width:18%;}.admin-invoice-f__table th:nth-child(6){width:32%;}'
+                : '.admin-invoice-f__table th:nth-child(1){width:27%;}.admin-invoice-f__table th:nth-child(2){width:17%;}.admin-invoice-f__table th:nth-child(3){width:13%;}.admin-invoice-f__table th:nth-child(4){width:13%;}.admin-invoice-f__table th:nth-child(5){width:30%;}';
 
 
         return (
-            "<style id=\"admin-invoice-reference-style-f\">\n.invoice-scale-wrap-f{width:100%;overflow:hidden;display:flex;justify-content:center;align-items:flex-start;}\n.admin-invoice-f{flex:0 0 auto;transform-origin:top center;width:640px;min-height:980px;margin:0 auto;background:#F3EFE8;color:#201B1D;direction:rtl;overflow:hidden;font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}\n.admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;font-variant-numeric:tabular-nums;}\n.admin-invoice-f__band{height:200px;min-height:200px;padding:26px 24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#B9C3B9;text-align:center;}\n.admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:56px;line-height:1;color:#A61579;letter-spacing:.16em;font-weight:400;}\n.admin-invoice-f__band-sub{margin-top:8px;font-family:'Belleza',Georgia,serif;font-size:19px;line-height:1;color:#A61579;letter-spacing:.34em;font-weight:400;}\n.admin-invoice-f__band-type-f{margin-top:10px;font-size:12px;color:#5C5356;font-weight:700;}\n.admin-invoice-f__card{width:90%;min-height:720px;margin:-50px auto 0;background:#fff;padding:0 18px 36px;box-shadow:0 0 0 1px rgba(0,0,0,.02);page-break-inside:avoid;}\n.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;align-items:start;gap:30px;border-bottom:1px solid #4B4748;font-size:15px;line-height:1.8;}\n.admin-invoice-f__meta-col{display:flex;flex-direction:column;gap:0;min-width:0;}\n.admin-invoice-f__meta-col--left{text-align:left;}\n.admin-invoice-f__meta-col p{margin:0;white-space:nowrap;overflow-wrap:anywhere;}\n.admin-invoice-f__table{width:100%;margin:30px 0 0;border-collapse:collapse;table-layout:fixed;font-size:14px;}\n.admin-invoice-f__table th{height:44px;padding:6px 7px;background:#A61579;color:#fff;border-left:2px solid #fff;font-size:13px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;line-height:1.2;}\n" +
+            '<style id="admin-invoice-reference-style-f">\n.invoice-scale-wrap-f{width:100%;overflow:hidden;display:flex;justify-content:center;align-items:flex-start;}\n.admin-invoice-f{flex:0 0 auto;transform-origin:top center;width:640px;min-height:980px;margin:0 auto;background:#F3EFE8;color:#201B1D;direction:rtl;overflow:hidden;font-family:\'Sanaa Persian\',Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;}\n.admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;font-variant-numeric:tabular-nums;}\n.admin-invoice-f__band{height:200px;min-height:200px;padding:26px 24px 16px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;background:#B9C3B9;text-align:center;}\n.admin-invoice-f__band-logo{font-family:\'Belleza\',Georgia,serif;font-size:56px;line-height:1;color:#A61579;letter-spacing:.16em;font-weight:400;}\n.admin-invoice-f__band-sub{margin-top:8px;font-family:\'Belleza\',Georgia,serif;font-size:19px;line-height:1;color:#A61579;letter-spacing:.34em;font-weight:400;}\n.admin-invoice-f__band-type-f{margin-top:10px;font-size:12px;color:#5C5356;font-weight:700;}\n.admin-invoice-f__card{width:90%;min-height:720px;margin:-50px auto 0;background:#fff;padding:0 18px 36px;box-shadow:0 0 0 1px rgba(0,0,0,.02);page-break-inside:avoid;}\n.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;align-items:start;gap:30px;border-bottom:1px solid #4B4748;font-size:15px;line-height:1.8;}\n.admin-invoice-f__meta-col{display:flex;flex-direction:column;gap:0;min-width:0;}\n.admin-invoice-f__meta-col--left{text-align:left;}\n.admin-invoice-f__meta-col p{margin:0;white-space:nowrap;overflow-wrap:anywhere;}\n.admin-invoice-f__table{width:100%;margin:30px 0 0;border-collapse:collapse;table-layout:fixed;font-size:14px;}\n.admin-invoice-f__table th{height:44px;padding:6px 7px;background:#A61579;color:#fff;border-left:2px solid #fff;font-size:13px;font-weight:700;text-align:center;vertical-align:middle;overflow-wrap:anywhere;line-height:1.2;}\n' +
             colWidthsCss +
-            "\n.admin-invoice-f__table th:last-child{border-left:0;}\n.admin-invoice-f__table td{min-height:62px;height:62px;padding:8px 7px;border:0;text-align:center;vertical-align:middle;font-size:14px;overflow-wrap:anywhere;word-break:break-word;}\n.admin-invoice-f__table td.invoice-item-name{text-align:right;}\n.admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}\n.admin-invoice-f__summary-wrap{margin-top:42px;display:flex;flex-direction:column;align-items:flex-end;}\n.admin-invoice-f__summary{width:315px;max-width:none;margin-right:0;display:flex;flex-direction:column;gap:6px;}\n.invoice-summary-row-f{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:15px;line-height:1.65;direction:rtl;}\n.invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;text-align:left;}\n.invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:18px;font-weight:700;}\n.invoice-summary-total-f strong:first-child{font-weight:800;}\n.invoice-profit-f{width:315px;max-width:none;margin:22px auto 0 0;padding:10px 12px;border:1px dashed #A61579;background:#FBF2F8;}\n.invoice-profit-title-f{margin-bottom:7px;color:#A61579;font-size:11px;font-weight:700;}\n.admin-invoice-f__footer{width:90%;margin:0 auto;min-height:120px;padding:28px 0 0;display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;flex-wrap:nowrap;gap:30px;background:#F3EFE8;color:#A61579;}\n.admin-invoice-f__contact-f{flex:0 1 auto;min-width:0;font-family:Arial,Tahoma,sans-serif;font-size:14px;line-height:1.7;text-align:left;}\n.admin-invoice-f__contact-f p{margin:0;overflow-wrap:anywhere;}\n.admin-invoice-f__thanks-f{flex:0 1 auto;min-width:0;margin:0;font-size:22px;font-weight:700;text-align:right;white-space:normal;overflow-wrap:anywhere;}\n.admin-invoice-f__footer-note{display:none;}\n</style>" +
+            '\n.admin-invoice-f__table th:last-child{border-left:0;}\n.admin-invoice-f__table td{min-height:62px;height:62px;padding:8px 7px;border:0;text-align:center;vertical-align:middle;font-size:14px;overflow-wrap:anywhere;word-break:break-word;}\n.admin-invoice-f__table td.invoice-item-name{text-align:right;}\n.admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}\n.invoice-money-f{display:inline-flex;align-items:baseline;gap:3px;direction:rtl;unicode-bidi:isolate;white-space:nowrap;}\n.invoice-money-f__number{display:inline-block;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;white-space:nowrap;}\n.invoice-money-f__label{display:inline-block;white-space:nowrap;}\n.invoice-price-stack-f{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:5px;direction:rtl;min-width:0;}\n.invoice-price-line-f{width:100%;display:grid;grid-template-columns:34px minmax(0,1fr);align-items:baseline;gap:4px;white-space:normal;min-width:0;}\n.invoice-price-label-f{text-align:right;white-space:nowrap;}\n.invoice-price-line-f .invoice-money-f{min-width:0;max-width:100%;justify-content:flex-start;white-space:normal;flex-wrap:wrap;}\n.invoice-price-line-f .invoice-money-f__number{max-width:100%;white-space:normal;overflow-wrap:anywhere;}\n.admin-invoice-f__summary-wrap{margin-top:42px;display:flex;flex-direction:column;align-items:flex-end;}\n.admin-invoice-f__summary{width:315px;max-width:none;margin-right:0;display:flex;flex-direction:column;gap:6px;}\n.invoice-summary-row-f{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:15px;line-height:1.65;direction:rtl;}\n.invoice-summary-row-f span:last-child,.invoice-summary-row-f strong:last-child{white-space:nowrap;text-align:left;}\n.invoice-summary-total-f{margin-top:10px;padding-top:11px;border-top:2px solid #4B4748;font-size:18px;font-weight:700;}\n.invoice-summary-total-f strong:first-child{font-weight:800;}\n.invoice-profit-f{width:315px;max-width:none;margin:22px auto 0 0;padding:10px 12px;border:1px dashed #A61579;background:#FBF2F8;}\n.invoice-profit-title-f{margin-bottom:7px;color:#A61579;font-size:11px;font-weight:700;}\n.admin-invoice-f__footer{width:90%;margin:0 auto;min-height:120px;padding:28px 0 0;display:flex;flex-direction:row;align-items:flex-start;justify-content:space-between;flex-wrap:nowrap;gap:30px;background:#F3EFE8;color:#A61579;}\n.admin-invoice-f__contact-f{flex:0 1 auto;min-width:0;font-family:Arial,Tahoma,sans-serif;font-size:14px;line-height:1.7;text-align:left;}\n.admin-invoice-f__contact-f p{margin:0;overflow-wrap:anywhere;}\n.admin-invoice-f__thanks-f{flex:0 1 auto;min-width:0;margin:0;font-size:22px;font-weight:700;text-align:right;white-space:normal;overflow-wrap:anywhere;}\n.admin-invoice-f__footer-note{display:none;}\n</style>' +
             '<div class="invoice-scale-wrap-f">' +
             '<div class="admin-invoice-f" dir="rtl">' +
                 '<div class="admin-invoice-f__band">' +
@@ -3260,13 +3818,13 @@
                 '<div class="admin-invoice-f__card">' +
                     '<div class="admin-invoice-f__meta">' +
                         '<div class="admin-invoice-f__meta-col">' +
-                            '<p><span>مشتری :</span> ' + toPersianDigitsF(meta.customerName || "—") + '</p>' +
-                            '<p><span>وضعیت پرداخت :</span> ' + (meta.paymentLabel || "—") + '</p>' +
+                            '<p><span>مشتری :</span> ' + toPersianDigitsF(meta.customerName || '—') + '</p>' +
+                            '<p><span>وضعیت پرداخت :</span> ' + (meta.paymentLabel || '—') + '</p>' +
                             rateLineHtml +
                         '</div>' +
                         '<div class="admin-invoice-f__meta-col admin-invoice-f__meta-col--left">' +
-                            '<p><span>شماره سفارش :</span> ' + toPersianDigitsF(meta.orderNumber || "—") + '</p>' +
-                            '<p><span>تاریخ صدور :</span> ' + toPersianDigitsF(meta.date || "—") + '</p>' +
+                            '<p><span>شماره سفارش :</span> ' + toPersianDigitsF(meta.orderNumber || '—') + '</p>' +
+                            '<p><span>تاریخ صدور :</span> ' + toPersianDigitsF(meta.date || '—') + '</p>' +
                         '</div>' +
                     '</div>' +
                     '<table class="admin-invoice-f__table">' +
@@ -3309,19 +3867,35 @@
             return;
         }
 
+        // Reset before measuring the invoice at its real size.
         invoice.style.transform = "none";
+        wrap.style.height = "auto";
 
         var naturalWidth = invoice.offsetWidth;
         var naturalHeight = invoice.offsetHeight;
         var availableWidth = wrap.clientWidth;
 
-        var scale =
+        // The modal also contains the close button and invoice action buttons.
+        // Reserve enough vertical space for them so the *whole* invoice,
+        // including its footer, remains visible in the modal.
+        var availableHeight = Math.max(360, window.innerHeight - 220);
+
+        var widthScale =
             availableWidth > 0 && naturalWidth > 0
-                ? Math.min(1, availableWidth / naturalWidth)
+                ? availableWidth / naturalWidth
                 : 1;
 
+        var heightScale =
+            availableHeight > 0 && naturalHeight > 0
+                ? availableHeight / naturalHeight
+                : 1;
+
+        var scale = Math.min(1, widthScale, heightScale);
+
+        invoice.style.transformOrigin = "top center";
         invoice.style.transform = "scale(" + scale + ")";
-        wrap.style.height = (naturalHeight * scale) + "px";
+        wrap.style.height = Math.ceil(naturalHeight * scale) + "px";
+        wrap.style.overflow = "hidden";
 
     }
 
@@ -3394,6 +3968,19 @@
 
         var printContent = content.cloneNode(true);
 
+        // The invoice HTML contains its own modal-preview <style> block.
+        // Keeping it inside the print document makes those preview rules load
+        // after printCss and override the A4 layout, which can split one
+        // invoice across multiple sheets. Remove only the cloned preview style;
+        // the on-screen modal remains completely unchanged.
+        var previewStyle = printContent.querySelector(
+            "#admin-invoice-reference-style-f"
+        );
+
+        if (previewStyle) {
+            previewStyle.remove();
+        }
+
         var scaledInvoice = printContent.querySelector(".admin-invoice-f");
         if (scaledInvoice) {
             scaledInvoice.style.transform = "none";
@@ -3418,7 +4005,7 @@
         var printCss = fontFaces +
             "html,body{margin:0;padding:0;background:#ffffff;}" +
             "body{font-family:'Sanaa Persian',Tahoma,Arial,sans-serif;color:#201B1D;-webkit-print-color-adjust:exact;print-color-adjust:exact;}" +
-            ".admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;overflow:hidden;direction:rtl;}" +
+            ".admin-invoice-f{width:100%;max-width:640px;min-height:0;margin:0 auto;background:#F3EFE8;overflow:hidden;direction:rtl;break-inside:avoid;page-break-inside:avoid;}" +
             ".admin-invoice-f,.admin-invoice-f *{box-sizing:border-box;}" +
             ".admin-invoice-f__band{min-height:200px;padding:30px 16px 20px;display:flex;flex-direction:column;align-items:center;background:#B9C3B9;text-align:center;}" +//header
             ".admin-invoice-f__band-logo{font-family:'Belleza',Georgia,serif;font-size:46px;line-height:1;color:#A61579;letter-spacing:.13em;}" +
@@ -3436,6 +4023,14 @@
             ".admin-invoice-f__table td{min-height:52px;height:52px;padding:7px 3px;border:0;text-align:center;vertical-align:middle;font-size:11px;overflow-wrap:anywhere;word-break:break-word;}" +
             ".admin-invoice-f__table td.invoice-item-name{text-align:right;}" +
             ".admin-invoice-f__table td.invoice-price{direction:rtl;white-space:normal;overflow-wrap:anywhere;}" +
+            ".invoice-money-f{display:inline-flex;align-items:baseline;gap:3px;direction:rtl;unicode-bidi:isolate;white-space:nowrap;}" +
+            ".invoice-money-f__number{display:inline-block;direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;white-space:nowrap;}" +
+            ".invoice-money-f__label{display:inline-block;white-space:nowrap;}" +
+            ".invoice-price-stack-f{width:100%;display:flex;flex-direction:column;align-items:stretch;gap:3px;direction:rtl;min-width:0;}" +
+            ".invoice-price-line-f{width:100%;display:grid;grid-template-columns:30px minmax(0,1fr);align-items:baseline;gap:3px;white-space:normal;min-width:0;}" +
+            ".invoice-price-label-f{text-align:right;white-space:nowrap;}" +
+            ".invoice-price-line-f .invoice-money-f{min-width:0;max-width:100%;white-space:normal;flex-wrap:wrap;}" +
+            ".invoice-price-line-f .invoice-money-f__number{max-width:100%;white-space:normal;overflow-wrap:anywhere;}" +
             ".admin-invoice-f__summary-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:stretch;}" +
             ".admin-invoice-f__summary{width:100%;max-width:360px;margin-right:auto;display:flex;flex-direction:column;gap:6px;}" +
             ".invoice-summary-row-f{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;line-height:1.65;direction:rtl;}" +
@@ -3449,7 +4044,7 @@
             ".admin-invoice-f__thanks-f{margin:0;font-size:17px;font-weight:700;text-align:right;white-space:normal;}" +
             "@media(min-width:701px){.admin-invoice-f{width:640px;}.admin-invoice-f__band{height:200px;min-height:200px;padding:42px 24px 26px;}.admin-invoice-f__band-logo{font-size:64px;letter-spacing:.16em;}.admin-invoice-f__band-sub{font-size:22px;letter-spacing:.34em;}.admin-invoice-f__card{width:90%;padding:0 18px 36px;}.admin-invoice-f__meta{min-height:92px;padding:17px 0 15px;display:flex;gap:30px;font-size:15px;line-height:1.8;}.admin-invoice-f__meta-col p{white-space:nowrap;}.admin-invoice-f__table{margin-top:30px;font-size:14px;}.admin-invoice-f__table th{height:64px;padding:8px 7px;font-size:15px;border-left:2px solid #fff;}.admin-invoice-f__table td{height:62px;padding:8px 7px;font-size:14px;}.admin-invoice-f__summary-wrap{margin-top:42px;align-items:flex-end;}.admin-invoice-f__summary,.invoice-profit-f{width:315px;max-width:none;}.admin-invoice-f__footer{min-height:120px;padding:28px 0 0;gap:30px;}.admin-invoice-f__contact-f{font-size:14px;}.admin-invoice-f__thanks-f{font-size:22px;}}" +
             "@media(max-width:360px){.admin-invoice-f__meta{grid-template-columns:1fr;gap:5px;}.admin-invoice-f__meta-col--left{text-align:right;}.admin-invoice-f__table,.admin-invoice-f__table td{font-size:10px;}.admin-invoice-f__table th{font-size:10px;padding-left:2px;padding-right:2px;}.invoice-summary-row-f{font-size:11px;}}" +
-            "@page{size:A4 portrait;margin:0;}@media print{html,body{width:100%;background:#F3EFE8!important;}body{margin:0!important;padding:0!important;}.admin-invoice-f{width:640px!important;max-width:none!important;margin:0 auto!important;}.admin-invoice-f__band{height:200px!important;min-height:200px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:90%!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-end!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;}}";
+            "@page{size:A4 portrait;margin:0;}@media print{html,body{width:100%;height:auto;background:#F3EFE8!important;}body{margin:0!important;padding:0!important;overflow:visible!important;}.invoice-scale-wrap-f{width:100%!important;height:auto!important;overflow:visible!important;display:block!important;}.admin-invoice-f{width:640px!important;max-width:none!important;min-height:0!important;height:auto!important;margin:0 auto!important;transform:none!important;break-inside:avoid!important;page-break-inside:avoid!important;}.admin-invoice-f__band{height:200px!important;min-height:200px!important;padding:42px 24px 26px!important;}.admin-invoice-f__band-logo{font-size:64px!important;}.admin-invoice-f__band-sub{font-size:22px!important;}.admin-invoice-f__card{width:90%!important;padding:0 18px 36px!important;}.admin-invoice-f__meta{display:flex!important;min-height:92px!important;padding:17px 0 15px!important;gap:30px!important;font-size:15px!important;}.admin-invoice-f__meta-col p{white-space:nowrap!important;}.admin-invoice-f__table{margin-top:30px!important;font-size:14px!important;}.admin-invoice-f__table th{height:64px!important;padding:8px 7px!important;font-size:15px!important;}.admin-invoice-f__table td{height:62px!important;padding:8px 7px!important;font-size:14px!important;}.admin-invoice-f__summary-wrap{margin-top:42px!important;align-items:flex-end!important;}.admin-invoice-f__summary,.invoice-profit-f{width:315px!important;max-width:none!important;}.admin-invoice-f__footer{min-height:120px!important;padding:28px 0 0!important;gap:30px!important;}.admin-invoice-f__contact-f{font-size:14px!important;}.admin-invoice-f__thanks-f{font-size:22px!important;}}";
 
         var printWindow = window.open("", "_blank", "width=850,height=1050");
         if (!printWindow) {
@@ -4170,6 +4765,15 @@
 
 
 
+    ["adminNewOrderShippingF", "adminNewOrderServiceF"].forEach(function (id) {
+        var input = document.getElementById(id);
+        if (input) {
+            input.addEventListener("input", updateOrderGrandTotalPreviewF);
+            input.addEventListener("change", updateOrderGrandTotalPreviewF);
+        }
+    });
+
+
     form.addEventListener(
         "submit",
         function (event) {
@@ -4335,11 +4939,12 @@
                         paymentStatus
                     );
 
-                    var usdRate =
-                        rates &&
-                        rates.USD
-                            ? rates.USD.rate
-                            : 0;
+                    var usdItem = items.find(function (item) {
+                        return item.currency === "USD" && Number(item.exchangeRate) > 0;
+                    });
+                    var usdRate = usdItem
+                        ? Number(usdItem.exchangeRate)
+                        : (rates && rates.USD ? rates.USD.rate : 0);
 
                     formData.append(
                         "usd_rate",
@@ -4357,15 +4962,8 @@
                                 index
                             ) {
 
-                                var rateData =
-                                    rates[
-                                        item.currency
-                                    ];
-
                                 var exchangeRate =
-                                    rateData
-                                        ? rateData.rate
-                                        : 0;
+                                    Number(item.exchangeRate) || 0;
 
                                 if (item.file) {
 
@@ -4401,6 +4999,9 @@
 
                                     product_price:
                                         item.price,
+
+                                    markup_percent:
+                                        item.markup,
 
                                     exchange_rate:
                                         exchangeRate

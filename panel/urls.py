@@ -21,6 +21,12 @@ urlpatterns = [
     ),
 
     path(
+        "orders/<int:order_id>/status/",
+        update_order_status_view,
+        name="update_order_status",
+    ),
+
+    path(
         "orders/<int:order_id>/delete/",
         delete_order_view,
         name="delete_order",

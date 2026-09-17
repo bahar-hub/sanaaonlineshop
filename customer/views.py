@@ -118,7 +118,10 @@ def customer_orders_api(request):
             items.append({
                 "name": item.product_name,
                 "qty": item.quantity,
-                "priceUSD": float(item.product_price),
+                "currency": item.currency,
+                # Customer receives only final sale values, not markup details.
+                "unitPriceIRR": float(item.unit_price_irr),
+                "lineTotalIRR": float(item.line_total_irr),
                 "image": item.photo.url if item.photo else "",
             })
 
@@ -161,7 +164,9 @@ def customer_order_detail_api(request, order_id):
             {
                 "name": item.product_name,
                 "qty": item.quantity,
-                "priceUSD": float(item.product_price),
+                "currency": item.currency,
+                "unitPriceIRR": float(item.unit_price_irr),
+                "lineTotalIRR": float(item.line_total_irr),
                 "image": item.photo.url if item.photo else "",
             }
             for item in order.items.all()
