@@ -61,17 +61,6 @@
             "</svg>" +
             "</button>" +
 
-            "<a href=\"admin-invoices-f.html\" class=\"admin-icon-btn-f\" " +
-            "aria-label=\"ثبت فاکتور جدید برای " + customer.name + "\">" +
-            "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" " +
-            "stroke-width=\"1.5\" aria-hidden=\"true\">" +
-            "<path d=\"M7 3h8l4 4v14H5V3Z\" " +
-            "stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
-            "<path d=\"M9 13h6M12 10v6\" " +
-            "stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
-            "</svg>" +
-            "</a>" +
-
             "</div>" +
             "</div>" +
 
