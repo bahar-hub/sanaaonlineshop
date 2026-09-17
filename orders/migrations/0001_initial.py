@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('registered_at', models.DateTimeField(auto_now_add=True)),
-                ('status', models.CharField(choices=[('registered', 'ثبت شده'), ('confirmed', 'تأیید شده'), ('preparing', 'در حال آماده\u200cسازی'), ('shipped', 'ارسال شده'), ('delivered', 'تحویل داده شده'), ('cancelled', 'لغو شده'), ('returned', 'مرجوع شده')], default='registered', max_length=20)),
+                ('status', models.CharField(choices=[('registered', 'ثبت شده'), ('preparing', 'در حال آماده\u200cسازی'), ('shipped', 'ارسال شده')], default='registered', max_length=20)),
                 ('total_usd', models.DecimalField(decimal_places=2, default=0, max_digits=12)),
                 ('total_irr', models.DecimalField(decimal_places=0, default=0, max_digits=18)),
                 ('usd_rate', models.DecimalField(decimal_places=4, default=0, max_digits=18)),

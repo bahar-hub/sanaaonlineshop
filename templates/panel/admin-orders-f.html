@@ -350,12 +350,16 @@
                                 ثبت‌شده
                             </option>
 
-                            <option value="preparing">
-                                در حال آماده‌سازی
-                            </option>
-
                             <option value="shipped">
                                 ارسال‌شده
+                            </option>
+
+                            <option value="delivered">
+                                تحویل داده‌شده
+                            </option>
+
+                            <option value="cancelled">
+                                لغوشده
                             </option>
 
                         </select>
@@ -383,6 +387,14 @@
 
                             <option value="partial">
                                 پرداخت ناقص
+                            </option>
+
+                            <option value="failed">
+                                پرداخت ناموفق
+                            </option>
+
+                            <option value="cancelled">
+                                لغوشده
                             </option>
 
                         </select>
@@ -510,6 +522,10 @@
 
                                 <th>
                                     شماره سفارش
+                                </th>
+
+                                <th>
+                                    محصول
                                 </th>
 
                                 <th>
@@ -729,12 +745,16 @@
                             ثبت‌شده
                         </option>
 
-                        <option value="preparing">
-                            در حال آماده‌سازی
-                        </option>
-
                         <option value="shipped">
                             ارسال‌شده
+                        </option>
+
+                        <option value="delivered">
+                            تحویل داده‌شده
+                        </option>
+
+                        <option value="cancelled">
+                            لغوشده
                         </option>
 
                     </select>
@@ -841,6 +861,9 @@
 
                 data-delete-url-template=
                     "{% url 'panel:delete_order' 0 %}"
+
+                data-status-url-template=
+                    "{% url 'panel:update_order_status' 0 %}"
 
                 novalidate
             >
@@ -1001,6 +1024,12 @@
 
                     </div>
 
+                </div>
+
+                <div class="admin-order-total-preview-f">
+                    <span>مبلغ نهایی سفارش</span>
+                    <strong id="adminNewOrderGrandTotalF">۰ ریال</strong>
+                    <small>جمع قیمت نهایی محصولات + باربری + خدمات</small>
                 </div>
 
 
@@ -1177,25 +1206,73 @@
 
                     <div class="admin-order-item-f__price-row">
 
-                        <input
-                            type="number"
-                            class="admin-orders-f__new-order-input admin-order-item-f__price"
-                            min="0"
-                            step="0.01"
-                            placeholder="قیمت واحد"
-                            inputmode="decimal"
-                        >
+                        <div class="admin-order-item-f__input-wrap">
+                            <span class="admin-order-item-f__mini-label">قیمت پایه</span>
+                            <input
+                                type="number"
+                                class="admin-orders-f__new-order-input admin-order-item-f__price"
+                                min="0"
+                                step="0.01"
+                                placeholder="قیمت قبل از افزایش"
+                                inputmode="decimal"
+                            >
+                        </div>
 
-                        <select class="admin-select-f admin-order-item-f__currency">
+                        <div class="admin-order-item-f__input-wrap">
+                            <span class="admin-order-item-f__mini-label">واحد پول</span>
+                            <select class="admin-select-f admin-order-item-f__currency">
+                                <option value="USD">دلار</option>
+                                <option value="EUR">یورو</option>
+                                <option value="TRY">لیر</option>
+                                <option value="AED">درهم امارات</option>
+                                <option value="GBP">پوند</option>
+                            </select>
+                        </div>
 
-                            <option value="USD">دلار</option>
-                            <option value="TRY">لیر</option>
-                            <option value="GBP">پوند</option>
-                            <option value="EUR">یورو</option>
-                            <option value="AED">درهم امارات</option>
+                    </div>
 
-                        </select>
+                    <div class="admin-order-item-f__pricing-row">
+                        <div class="admin-order-item-f__input-wrap">
+                            <span class="admin-order-item-f__mini-label">درصد افزایش</span>
+                            <div class="admin-order-item-f__input-suffix">
+                                <input
+                                    type="number"
+                                    class="admin-orders-f__new-order-input admin-order-item-f__markup"
+                                    min="0"
+                                    max="1000"
+                                    step="0.01"
+                                    inputmode="decimal"
+                                >
+                                <span>٪</span>
+                            </div>
+                        </div>
 
+                        <div class="admin-order-item-f__input-wrap">
+                            <span class="admin-order-item-f__mini-label">نرخ ارز (ریال)</span>
+                            <input
+                                type="number"
+                                class="admin-orders-f__new-order-input admin-order-item-f__exchange-rate"
+                                min="1"
+                                step="1"
+                                placeholder="نرخ هر واحد ارز"
+                                inputmode="numeric"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="admin-order-item-f__price-preview">
+                        <div>
+                            <span>بعد از افزایش</span>
+                            <strong class="admin-order-item-f__after-markup">۰</strong>
+                        </div>
+                        <div>
+                            <span>قیمت نهایی واحد</span>
+                            <strong class="admin-order-item-f__unit-rial">۰ ریال</strong>
+                        </div>
+                        <div>
+                            <span>جمع این محصول</span>
+                            <strong class="admin-order-item-f__line-rial">۰ ریال</strong>
+                        </div>
                     </div>
 
 
@@ -1394,14 +1471,6 @@
          PAGE SCRIPT
     ========================================================== -->
 {{ orders_data|json_script:"orders-data-f" }}
-<script>
-    window.SANAA_FONTS_F = {
-        belleza: "{% static 'fonts/Belleza-Regular.woff2' %}",
-        vazirRegular: "{% static 'fonts/Vazirmatn-Regular.ttf' %}",
-        vazirMedium: "{% static 'fonts/Vazirmatn-Medium.ttf' %}",
-        vazirBold: "{% static 'fonts/Vazirmatn-Bold.ttf' %}"
-    };
-</script>
     <script
         src="{% static 'js/modules/admin-orders-f.js' %}?v=4"
         defer

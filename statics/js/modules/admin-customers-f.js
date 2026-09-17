@@ -16,7 +16,8 @@
     var STATUS_LABEL_F = {
         registered: "ثبت شده",
         shipped: "ارسال شده",
-        delivered: "تحویل داده شده"
+        delivered: "تحویل داده شده",
+        cancelled: "لغو شده"
     };
 
     // NOTE: "registered" intentionally has no --modifier class,
@@ -25,7 +26,8 @@
     var STATUS_MODIFIER_CLASS_F = {
         registered: "",
         shipped: "order-status--shipped",
-        delivered: "order-status--delivered"
+        delivered: "order-status--delivered",
+        cancelled: "order-status--cancelled"
     };
 
     function formatNumberF(value) {

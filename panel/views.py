@@ -29,6 +29,31 @@ from orders.services import (
 def is_superuser(user):
     return user.is_authenticated and user.is_superuser
 
+@require_POST
+@user_passes_test(is_superuser, login_url="base:index")
+def update_order_status_view(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+
+    status = str(request.POST.get("status", "")).strip()
+
+    if status not in Order.Status.values:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "وضعیت سفارش معتبر نیست.",
+            },
+            status=400,
+        )
+
+    order.status = status
+    order.save(update_fields=["status"])
+
+    return JsonResponse(
+        {
+            "success": True,
+            "order": serialize_order(order),
+        }
+    )
 
 @user_passes_test(is_superuser, login_url="base:index")
 def customer_view(request):
@@ -273,22 +298,26 @@ def serialize_order(order):
 
         product = {
             "id": item.id,
-            "name":
-                item.product_name,
-            "qty":
-                item.quantity,
-            "currency":
-                item.currency,
-            "costPrice":
-                float(
-                    item.admin_cost
-                ),
-            "exchangeRate":
-                float(
-                    item.exchange_rate
-                ),
-            "image":
-                image_url,
+            "name": item.product_name,
+            "brand": item.brand or "",
+            "size": item.size or "",
+            "description": item.description or "",
+            "qty": item.quantity,
+            "currency": item.currency,
+            # Base price entered by admin (before markup)
+            "basePrice": float(item.product_price),
+            "markupPercent": float(item.markup_percent),
+            # Foreign-currency price itself does not change.
+            "finalUnitPrice": float(item.sale_unit_price),
+            # Original and percentage-adjusted FX rates.
+            "exchangeRate": float(item.exchange_rate),
+            "adjustedExchangeRate": float(item.adjusted_exchange_rate),
+            # Product price before/after FX-rate percentage increase.
+            "baseUnitPriceRial": float(item.base_unit_price_irr),
+            "unitPriceRial": float(item.unit_price_irr),
+            "lineTotalRial": float(item.line_total_irr),
+            "costPrice": float(item.admin_cost),
+            "image": image_url,
         }
 
         price_field = (
@@ -557,6 +586,15 @@ def parse_order_request(request):
                 )
             )
 
+            markup_percent = Decimal(
+                str(
+                    item.get(
+                        "markup_percent",
+                        OrderItem.DEFAULT_MARKUP_BY_CURRENCY.get(currency, Decimal("0"))
+                    )
+                )
+            )
+
             exchange_rate = Decimal(
                 str(
                     item.get(
@@ -583,6 +621,11 @@ def parse_order_request(request):
         if admin_cost < 0:
             raise ValueError(
                 f"قیمت خرید محصول شماره {index + 1} معتبر نیست."
+            )
+
+        if markup_percent < 0 or markup_percent > 1000:
+            raise ValueError(
+                f"درصد افزایش محصول شماره {index + 1} معتبر نیست."
             )
 
         if exchange_rate <= 0:
@@ -623,6 +666,15 @@ def parse_order_request(request):
                 "product_name":
                     product_name,
 
+                "brand":
+                    str(item.get("brand", "") or "").strip(),
+
+                "size":
+                    str(item.get("size", "") or "").strip(),
+
+                "description":
+                    str(item.get("description", "") or "").strip(),
+
                 "quantity":
                     quantity,
 
@@ -634,6 +686,9 @@ def parse_order_request(request):
 
                 "admin_cost":
                     admin_cost,
+
+                "markup_percent":
+                    markup_percent,
 
                 "exchange_rate":
                     exchange_rate,
