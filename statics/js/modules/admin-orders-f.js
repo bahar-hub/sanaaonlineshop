@@ -604,10 +604,8 @@
     }
 
 
-    function actionButtonsHtmlF(orderNumber) {
-
+        function actionButtonsHtmlF(orderNumber) {
         return (
-
             '<button type="button" class="admin-icon-btn-f" ' +
             'data-view-order-f="' +
             orderNumber +
@@ -616,17 +614,11 @@
             orderNumber +
             '" ' +
             'title="مشاهده جزئیات">' +
-
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-
             '<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" stroke-linecap="round" stroke-linejoin="round"/>' +
-
             '<circle cx="12" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round"/>' +
-
             "</svg>" +
-
             "</button>" +
-
 
             '<button type="button" class="admin-icon-btn-f admin-icon-btn-f--download-f" ' +
             'data-download-order-f="' +
@@ -636,94 +628,29 @@
             orderNumber +
             '" ' +
             'title="دانلود PDF">' +
-
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-
             '<path d="M12 3v12m0 0-4-4m4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>' +
-
             '<path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17" stroke-linecap="round" stroke-linejoin="round"/>' +
-
             "</svg>" +
-
             "</button>" +
 
-
-            '<div class="admin-menu-f">' +
-
-            '<button type="button" class="admin-icon-btn-f" ' +
-            'data-more-menu-btn-f="' +
-            orderNumber +
-            '" ' +
-            'aria-haspopup="true" ' +
-            'aria-expanded="false" ' +
-            'title="بیشتر">' +
-
-            '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
-            '<circle cx="5" cy="12" r="1.6"/>' +
-            '<circle cx="12" cy="12" r="1.6"/>' +
-            '<circle cx="19" cy="12" r="1.6"/>' +
-            "</svg>" +
-
-            "</button>" +
-
-
-            '<div class="admin-menu-f__panel" ' +
-            'data-more-menu-panel-f="' +
-            orderNumber +
-            '" hidden>' +
-
-
-            '<button type="button" class="admin-menu-f__item" ' +
-            'data-edit-order-f="' +
-            orderNumber +
-            '">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<path d="M4 20h4l11-11-4-4L4 16v4Z" stroke-linecap="round" stroke-linejoin="round"/>' +
-            "</svg>" +
-
-            "ویرایش سفارش" +
-
-            "</button>" +
-
-
-            '<button type="button" class="admin-menu-f__item" ' +
-            'data-resend-invoice-f="' +
-            orderNumber +
-            '">' +
-
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<path d="M4 4v6h6M20 20v-6h-6" stroke-linecap="round" stroke-linejoin="round"/>' +
-            '<path d="M5 15a7 7 0 0 0 12 3l3-3M19 9A7 7 0 0 0 7 6L4 9" stroke-linecap="round" stroke-linejoin="round"/>' +
-            "</svg>" +
-
-            "ارسال مجدد فاکتور" +
-
-            "</button>" +
-
-
-            '<button type="button" class="admin-menu-f__item admin-menu-f__item--danger-f" ' +
+            '<button type="button" class="admin-icon-btn-f admin-icon-btn-f--delete-f" ' +
             'data-delete-order-f="' +
             orderNumber +
-            '">' +
-
+            '" ' +
+            'aria-label="حذف سفارش ' +
+            orderNumber +
+            '" ' +
+            'title="حذف سفارش">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">' +
-            '<circle cx="12" cy="12" r="9" stroke-linecap="round"/>' +
-            '<path d="m9 9 6 6m0-6-6 6" stroke-linecap="round"/>' +
+            '<path d="m19 7-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"/>' +
             "</svg>" +
-
-            "حذف سفارش" +
-
-            "</button>" +
-
-
-            "</div>" +
-
-            "</div>"
-
+            "</button>"
         );
-
     }
+
+
+
 
 
     function tableRowHtmlF(order) {
@@ -747,11 +674,6 @@
 
             "<td>" +
             order.number +
-            "</td>" +
-
-
-            '<td class="admin-orders-f__table-product">' +
-            productSummaryF(order) +
             "</td>" +
 
 
@@ -862,20 +784,6 @@
 
             '<span class="admin-orders-f__card-customer">' +
             order.customer.name +
-            "</span>" +
-
-
-            '<span class="admin-orders-f__card-product">' +
-            order.products[0].name +
-            (
-                order.products.length > 1
-                    ? " (+ " +
-                    formatNumberF(
-                        order.products.length - 1
-                    ) +
-                    " محصول دیگر)"
-                    : ""
-            ) +
             "</span>" +
 
 
@@ -1659,66 +1567,19 @@
 
 
                         return (
-
                             '<div class="admin-orders-f__sheet-product">' +
-
-                            "<div>" +
-
-                            '<p class="admin-orders-f__sheet-product-name">' +
-                            product.name +
-                            "</p>" +
-                            '<p class="admin-orders-f__sheet-product-meta">' +
-                            "برند: " +
-                            (product.brand || "—") +
-                            "</p>" +
-
-                            '<p class="admin-orders-f__sheet-product-meta">' +
-                            "سایز: " +
-                            (product.size || "—") +
-                            "</p>" +
-
-                            '<span class="admin-orders-f__sheet-product-qty">' +
-
-                            "تعداد: " +
-                            formatNumberF(
-                                product.qty
-                            ) +
-
-                            " · قیمت واحد: " +
-
-                            formatNumberF(
-                                price
-                            ) +
-
-                            " " +
-
-                            currencyLabel +
-                            '<p class="admin-orders-f__sheet-product-meta">' +
-                            "توضیحات: " +
-                            (product.description || "—") +
-                            "</p>" +
-
-                            '<p class="admin-orders-f__sheet-product-meta">' +
-                            "قیمت کل: " +
-                            "</span>" +
-
-                            "</div>" +
-
-                            "<span>" +
-
-                            formatNumberF(
-                                price *
-                                product.qty *
-                                totals.rate
-                            ) +
-                            " ریال" +
-                            "</p>" +
-
-                            "</div>" +
-
+                                "<div>" +
+                                    '<p class="admin-orders-f__sheet-product-name">' + product.name + "</p>" +
+                                    '<p class="admin-orders-f__sheet-product-meta">' + "برند: " + (product.brand || "—") + "</p>" +
+                                    '<p class="admin-orders-f__sheet-product-meta">' + "سایز: " + (product.size || "—") + "</p>" +
+                                    '<p class="admin-orders-f__sheet-product-meta">' + "تعداد: " + formatNumberF(product.qty) + "</p>" +
+                                    '<p class="admin-orders-f__sheet-product-meta">' + "قیمت واحد: " + formatNumberF(price) + " " + currencyLabel + "</p>" +
+                                    '<p class="admin-orders-f__sheet-product-meta">' + "توضیحات: " + (product.description || "—") + "</p>" +
+                                    '<p class="admin-orders-f__sheet-product-meta">' + "قیمت کل: " + formatNumberF(price * product.qty * totals.rate) + " ریال" + "</p>" +
+                                "</div>" +
                             "</div>"
-
                         );
+
 
                     }
                 )
@@ -1745,12 +1606,12 @@
 
             '<div class="admin-orders-f__sheet-row">' +
 
-            "<span>تخفیف</span>" +
+            "<span>هزینه باربری</span>" +
 
             "<span>" +
 
             (
-                order.discountRial
+                order.shippingRial
                     ?
                     "-" +
                     formatNumberF(
@@ -1769,15 +1630,15 @@
 
             '<div class="admin-orders-f__sheet-row">' +
 
-            "<span>هزینه ارسال</span>" +
+            "<span>هزینه خدمات</span>" +
 
             "<span>" +
 
             (
-                order.shippingRial
+                order.serviceRial
                     ?
                     formatNumberF(
-                        order.shippingRial
+                        order.serviceRial
                     ) +
                     " ریال"
                     :
@@ -1790,8 +1651,8 @@
 
 
         document.getElementById(
-            "adminSheetFinancialF"
-        ).innerHTML =
+                "adminSheetFinancialF"
+            ).innerHTML =
 
             sheetRowF(
                 "مبلغ به ارز مبنا",
@@ -1861,7 +1722,7 @@
                     formatNumberF(
                         order.payment.remainingRial
                     ) +
-                    " ریال"
+                    "رایگان"
             );
 
 
