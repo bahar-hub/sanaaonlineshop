@@ -28,3 +28,7 @@ build/
 
 # Logs
 *.log
+__MACOSX/
+static/
+tmp/
+passenger_wsgi.py
