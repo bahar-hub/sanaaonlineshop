@@ -19,4 +19,17 @@ urlpatterns = [
     name='order_detail_api',
     ),
 
+    path(
+        'password-reset/request/',
+        password_reset_request,
+        name='password_reset_request',
+    ),
+
+    path(
+    'password-reset/verify/',
+    password_reset_verify,
+    name='password_reset_verify',
+),
+
+
 ]

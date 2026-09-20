@@ -11,13 +11,14 @@
     "use strict";
 
     let pendingReset = null; // { phone, code, user }
+    let resendTimer = null;
 
 
     // ========================================
     // Helpers
     // ========================================
 
-    function findUserByPhone(phone) {
+    /* function findUserByPhone(phone) {
 
         const users = getUsers();
 
@@ -32,8 +33,95 @@
         return String(
             Math.floor(1000 + Math.random() * 9000)
         );
+    } */
+
+
+    function getCookie(name) {
+
+    let cookieValue = null;
+
+    if (document.cookie) {
+
+        const cookies =
+            document.cookie.split(";");
+
+
+        for (let cookie of cookies) {
+
+            cookie = cookie.trim();
+
+            if (
+                cookie.startsWith(name + "=")
+            ) {
+
+                cookieValue =
+                    decodeURIComponent(
+                        cookie.substring(
+                            name.length + 1
+                        )
+                    );
+
+                break;
+            }
+        }
     }
 
+    return cookieValue;
+}
+
+
+    function startResendTimer(seconds = 60) {
+
+    const resendButton =
+        document.querySelector("[data-forgot-resend]");
+
+
+    if (!resendButton) {
+        return;
+    }
+
+
+    let remaining = seconds;
+
+
+    resendButton.disabled = true;
+
+
+    resendButton.textContent =
+        `ارسال مجدد (${remaining})`;
+
+
+    clearInterval(resendTimer);
+
+
+    resendTimer = setInterval(() => {
+
+
+        remaining--;
+
+
+        resendButton.textContent =
+            `ارسال مجدد (${remaining})`;
+
+
+        if (remaining <= 0) {
+
+
+            clearInterval(resendTimer);
+
+
+            resendButton.disabled = false;
+
+
+            resendButton.textContent =
+                "ارسال مجدد رمز";
+
+        }
+
+
+    }, 1000);
+
+}
 
     function showStep(step) {
 
@@ -79,40 +167,66 @@
             return;
         }
 
-        const user = findUserByPhone(phone);
+        fetch("/profile/password-reset/request/", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
+    },
+    body: JSON.stringify({
+        phone: phone
+    })
+})
+.then(response => response.json())
+.then(data => {
 
-        if (!user) {
+    if (!data.success) {
 
-            showAuthError(
-                "کاربری با این شماره تلفن یافت نشد.",
-                "forgotForm"
-            );
+        showAuthError(
+            data.message,
+            "forgotForm"
+        );
 
-            return;
-        }
+        return;
+    }
 
-        const code = generateOtpCode();
 
-        pendingReset = { phone, code, user };
+    pendingReset = {
+        phone: phone
+    };
 
-        const hint =
-            document.getElementById("forgotHint");
 
-        if (hint) {
+    const hint =
+        document.getElementById("forgotHint");
 
-            hint.textContent =
-                `کد تایید برای شماره ${phone} پیامک شد. ` +
-                `(کد آزمایشی این نسخه: ${code})`;
-        }
+    if (hint) {
+        hint.textContent =
+            `کد تایید برای شماره ${phone} ارسال شد.`;
+    }
 
-        const codeInput =
-            document.getElementById("forgotCode");
 
-        if (codeInput) {
-            codeInput.value = "";
-        }
+    const codeInput =
+        document.getElementById("forgotCode");
 
-        showStep("code");
+    if (codeInput) {
+        codeInput.value = "";
+    }
+
+
+    showStep("code");
+    startResendTimer(60);
+
+})
+.catch(() => {
+
+    showAuthError(
+        "خطا در ارتباط با سرور.",
+        "forgotForm"
+    );
+
+});
+
+       
     }
 
 
@@ -122,29 +236,97 @@
 
     function handleResendCode() {
 
-        clearAuthError("forgotForm");
+    clearAuthError("forgotForm");
 
-        if (!pendingReset) {
 
-            showStep("phone");
+    if (!pendingReset || !pendingReset.phone) {
+
+        showStep("phone");
+
+        return;
+    }
+
+
+    fetch("/profile/password-reset/request/", {
+
+        method: "POST",
+
+        headers: {
+
+            "Content-Type": "application/json",
+
+            "X-CSRFToken": getCookie("csrftoken")
+
+        },
+
+        body: JSON.stringify({
+
+            phone: pendingReset.phone
+
+        })
+
+    })
+
+
+    .then(response => response.json())
+
+
+    .then(data => {
+
+
+        if (!data.success) {
+
+            showAuthError(
+                data.message,
+                "forgotForm"
+            );
 
             return;
+
         }
 
-        const code = generateOtpCode();
-
-        pendingReset.code = code;
 
         const hint =
             document.getElementById("forgotHint");
 
+
         if (hint) {
 
             hint.textContent =
-                `کد تایید مجدد برای شماره ${pendingReset.phone} پیامک شد. ` +
-                `(کد آزمایشی این نسخه: ${code})`;
+                `کد تایید مجدد برای شماره ${pendingReset.phone} ارسال شد.`;
+
         }
-    }
+
+
+        const codeInput =
+            document.getElementById("forgotCode");
+
+
+        if (codeInput) {
+
+            codeInput.value = "";
+
+
+        }
+        startResendTimer(60);
+
+
+
+    })
+
+
+    .catch(() => {
+
+
+        showAuthError(
+            "خطا در ارتباط با سرور.",
+            "forgotForm"
+        );
+
+
+    });
+
+}
 
 
     // ========================================
@@ -169,24 +351,58 @@
 
         const enteredCode = codeInput.value.trim();
 
-        if (enteredCode !== pendingReset.code) {
 
-            showAuthError(
-                "کد وارد شده صحیح نیست.",
-                "forgotForm"
-            );
+fetch("/profile/password-reset/verify/", {
 
-            return;
-        }
+    method: "POST",
 
-        const currentUser =
-            sanitizeUser(pendingReset.user);
+    headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
+    },
 
-        saveCurrentUser(currentUser);
+    body: JSON.stringify({
 
-        pendingReset = null;
+        phone: pendingReset.phone,
 
-        redirectToRoleHome(currentUser);
+        code: enteredCode
+
+    })
+
+})
+
+.then(response => response.json())
+
+.then(data => {
+
+
+    if (!data.success) {
+
+        showAuthError(
+            data.message,
+            "forgotForm"
+        );
+
+        return;
+    }
+
+
+    // فعلاً تایید موفق را نگه می‌داریم
+    // مرحله بعد تغییر رمز اضافه می‌شود
+
+    window.location.href = "/";
+
+
+})
+
+.catch(() => {
+
+    showAuthError(
+        "خطا در ارتباط با سرور.",
+        "forgotForm"
+    );
+
+});
     }
 
 
