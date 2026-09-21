@@ -1,8 +1,9 @@
 from decimal import Decimal, InvalidOperation
-
+from django.contrib import messages
 import json
 import jdatetime
-
+from django.db import transaction
+from orders.telegram_service import send_order_bundle_to_telegram
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import user_passes_test
 from django.http import JsonResponse
@@ -13,13 +14,13 @@ from django.shortcuts import (
 )
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-
+from orders.telegram_service import send_order_invoice_to_customer
 from orders.models import (
     Order,
     OrderItem,
     Invoice,
 )
-
+from orders.telegram_service import send_order_status_update
 from orders.services import (
     create_order,
     update_order,
@@ -45,8 +46,14 @@ def update_order_status_view(request, order_id):
             status=400,
         )
 
+    old_status = order.status
+
     order.status = status
     order.save(update_fields=["status"])
+
+
+    if old_status != status:
+         send_order_status_update(order)
 
     return JsonResponse(
         {
@@ -67,7 +74,15 @@ def customer_view(request):
         phone = request.POST.get("phone", "").strip()
         password = request.POST.get("password", "")
         address = request.POST.get("address", "").strip()
-
+        if User.objects.filter(phone=phone).exists():
+            messages.error(
+                request,
+                "این شماره موبایل قبلاً ثبت شده است."
+            )
+            return redirect("customers")
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "این نام کاربری قبلاً ثبت شده است.")
+            return redirect("customers")
         user = User(
             first_name=first_name,
             last_name=last_name,
@@ -812,6 +827,21 @@ def create_order_view(request):
 
             usd_rate=
                 data["usd_rate"],
+        )
+        # Each callback needs its own on_commit() call: the 2nd positional
+        # argument of on_commit is `using` (DB alias), not another callback.
+        # robust=True makes a Telegram/PDF failure only get logged, so it can
+        # never turn an already-saved order into a 500 error.
+        created_order_id = order.id
+
+        transaction.on_commit(
+            lambda: send_order_bundle_to_telegram(created_order_id),
+            robust=True,
+        )
+
+        transaction.on_commit(
+            lambda: send_order_invoice_to_customer(order),
+            robust=True,
         )
 
     except ValueError as exc:
