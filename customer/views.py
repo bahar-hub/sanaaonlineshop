@@ -8,6 +8,18 @@ from orders.models import Order
 import jdatetime
 
 from customer.models import TelegramConnection
+import json
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+
+from customer.models import User, PasswordResetOTP
+from customer.utils import send_password_reset_otp
+import hashlib
+from django.contrib.auth import login
+from django.utils import timezone
+
+
 def is_customer(user):
     return user.is_authenticated and not user.is_superuser
 
@@ -185,3 +197,123 @@ def customer_order_detail_api(request, order_id):
     }
 
     return JsonResponse(data)
+
+
+@require_POST
+def password_reset_request(request):
+    data = json.loads(request.body)
+
+    phone = data.get("phone")
+
+    if not phone:
+        return JsonResponse({
+            "success": False,
+            "message": "Phone is required"
+        }, status=400)
+
+
+    user = User.objects.filter(
+        phone=phone
+    ).first()
+
+
+    if not user:
+        return JsonResponse({
+            "success": False,
+            "message": "User not found"
+        }, status=404)
+
+
+    result = send_password_reset_otp(user)
+
+
+    if result:
+        return JsonResponse({
+            "success": True,
+            "message": "OTP sent"
+        })
+
+
+    return JsonResponse({
+        "success": False,
+        "message": "OTP sending failed"
+    }, status=500)
+
+
+@require_POST
+def password_reset_verify(request):
+
+    data = json.loads(request.body)
+
+    phone = data.get("phone")
+    code = data.get("code")
+
+
+    if not phone or not code:
+        return JsonResponse({
+            "success": False,
+            "message": "اطلاعات ناقص است."
+        }, status=400)
+
+
+    user = User.objects.filter(
+        phone=phone
+    ).first()
+
+
+    if not user:
+        return JsonResponse({
+            "success": False,
+            "message": "کاربر یافت نشد."
+        }, status=404)
+
+
+    otp = PasswordResetOTP.objects.filter(
+        user=user,
+        is_used=False
+    ).order_by("-created_at").first()
+
+
+    if not otp:
+        return JsonResponse({
+            "success": False,
+            "message": "کدی برای تایید وجود ندارد."
+        }, status=400)
+
+
+    if otp.expires_at < timezone.now():
+
+        return JsonResponse({
+            "success": False,
+            "message": "کد منقضی شده است."
+        }, status=400)
+
+
+    code_hash = hashlib.sha256(
+        code.encode()
+    ).hexdigest()
+
+    # print("ENTERED CODE:", code)
+    # print("ENTERED HASH:", code_hash)
+    # print("DB HASH:", otp.code_hash)
+
+
+    if code_hash != otp.code_hash:
+
+        return JsonResponse({
+            "success": False,
+            "message": "کد وارد شده صحیح نیست."
+        }, status=400)
+
+
+    otp.is_used = True
+    otp.save()
+
+
+    login(request, user)
+
+
+    return JsonResponse({
+        "success": True,
+        "message": "ورود موفق بود."
+})
