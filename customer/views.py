@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from orders.models import Order
 import jdatetime
 
-
+from customer.models import TelegramConnection
 def is_customer(user):
     return user.is_authenticated and not user.is_superuser
 
@@ -88,9 +88,20 @@ def profile_view(request):
                     extra_tags="password"
                 )
 
+    telegram_connect_url = request.session.pop(
+        "telegram_connect_url",
+        None
+    )
+    telegram_connection = TelegramConnection.objects.filter(
+        user=request.user
+    ).first()
+
     context = {
-        "customer": request.user
+        "customer": request.user,
+        "telegram_connect_url": telegram_connect_url,
+        "telegram_connection": telegram_connection,
     }
+
 
     return render(
         request,

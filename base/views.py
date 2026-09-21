@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, get_user_model
-
+from django.conf import settings
 
 User = get_user_model()
 
@@ -107,7 +107,14 @@ def signup_view(request):
 
         # ورود خودکار بعد از ثبت نام
         login(request, user)
+    
+        telegram_url = (
+            f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}"
+            f"?start={user.id}"
+        )
 
+
+        request.session["telegram_connect_url"] = telegram_url
         # مشتری بعد از ثبت نام → پروفایل
         return redirect("customer:profile")
 

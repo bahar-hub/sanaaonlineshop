@@ -1,0 +1,261 @@
+<!-- <!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #F3EFE8;
+            color: #201B1D;
+            font-family: Tahoma, Arial, sans-serif;
+            direction: rtl;
+        }
+
+        .invoice {
+            width: 640px;
+            margin: 0 auto;
+            background: #F3EFE8;
+        }
+
+        .band {
+            height: 200px;
+            background: #B9C3B9;
+            text-align: center;
+            padding: 30px 20px 10px;
+        }
+
+        .logo {
+            font-size: 54px;
+            letter-spacing: 8px;
+            color: #A61579;
+            direction: ltr;
+            margin-bottom: 8px;
+        }
+
+        .logo-sub {
+            font-size: 18px;
+            letter-spacing: 5px;
+            color: #A61579;
+            direction: ltr;
+        }
+
+        .type {
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #5C5356;
+        }
+
+        .card {
+            width: 90%;
+            margin: -50px auto 0;
+            background: white;
+            padding: 0 18px 36px;
+        }
+
+        .meta {
+            padding: 18px 0 14px;
+            border-bottom: 1px solid #4B4748;
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            font-size: 14px;
+            line-height: 1.9;
+        }
+
+        .meta p {
+            margin: 0;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 28px;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 13px;
+        }
+
+        th {
+            background: #A61579;
+            color: white;
+            padding: 10px 6px;
+            text-align: center;
+        }
+
+        td {
+            padding: 10px 6px;
+            text-align: center;
+            vertical-align: middle;
+            border-bottom: 1px solid #eee;
+            word-wrap: break-word;
+        }
+
+        td.name {
+            text-align: right;
+        }
+
+        .summary {
+            width: 320px;
+            margin-top: 36px;
+            margin-right: auto;
+            font-size: 14px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .summary-total {
+            margin-top: 12px;
+            border-top: 2px solid #4B4748;
+            padding-top: 12px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .profit-box {
+            margin-top: 18px;
+            padding: 10px 12px;
+            border: 1px dashed #A61579;
+            background: #FBF2F8;
+            font-size: 13px;
+        }
+
+        .footer {
+            width: 90%;
+            margin: 0 auto;
+            min-height: 110px;
+            padding: 28px 0 0;
+            display: flex;
+            justify-content: space-between;
+            color: #A61579;
+        }
+
+        .thanks {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .contact {
+            text-align: left;
+            direction: ltr;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice">
+        <div class="band">
+            <div class="logo">SANAA</div>
+            <div class="logo-sub">ONLINE SHOP</div>
+            {% if is_admin %}
+                <div class="type">فاکتور داخلی — فقط ادمین</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="meta">
+                <div>
+                    <p><strong>مشتری:</strong> {{ customer_name }}</p>
+                    <p><strong>شماره تماس:</strong> {{ customer_phone }}</p>
+                    <p><strong>وضعیت پرداخت:</strong> {{ payment_status_label }}</p>
+
+                    {% if is_admin %}
+                        <p><strong>نرخ {{ primary_currency_label }} اولیه:</strong> {{ primary_rate }} ریال</p>
+                        <p><strong>درصد افزایش:</strong> {{ primary_markup_percent }}%</p>
+                        <p><strong>نرخ {{ primary_currency_label }} بعد از افزایش:</strong> {{ primary_adjusted_rate }} ریال</p>
+                    {% endif %}
+                </div>
+
+                <div style="text-align:left;">
+                    <p><strong>شماره سفارش:</strong> {{ order_number }}</p>
+                    <p><strong>تاریخ صدور:</strong> {{ order_date }}</p>
+                    <p><strong>وضعیت سفارش:</strong> {{ order_status_label }}</p>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>کالا</th>
+                        <th>برند</th>
+                        <th>سایز</th>
+                        <th>تعداد</th>
+                        {% if is_admin %}
+                            <th>قیمت واحد (ارز)</th>
+                            <th>قیمت واحد (ریال)</th>
+                        {% else %}
+                            <th>قیمت واحد</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td class="name">{{ item.name }}</td>
+                            <td>{{ item.brand }}</td>
+                            <td>{{ item.size }}</td>
+                            <td>{{ item.qty }}</td>
+
+                            {% if is_admin %}
+                                <td>{{ item.foreign_price }} {{ item.currency_label }}</td>
+                                <td>
+                                    قبل: {{ item.base_unit_price_irr }} ریال
+                                    <br>
+                                    بعد: {{ item.unit_price_irr }} ریال
+                                </td>
+                            {% else %}
+                                <td>{{ item.unit_price_irr }} ریال</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="summary">
+                <div class="summary-row">
+                    <span>جمع کل:</span>
+                    <span>{{ items_total }} ریال</span>
+                </div>
+                <div class="summary-row">
+                    <span>هزینه خدمات:</span>
+                    <span>{{ service_cost }} ریال</span>
+                </div>
+                <div class="summary-row">
+                    <span>هزینه باربری:</span>
+                    <span>{{ shipping_cost }} ریال</span>
+                </div>
+                <div class="summary-row summary-total">
+                    <span>مجموع کل</span>
+                    <span>{{ grand_total }} ریال</span>
+                </div>
+
+                {% if is_admin %}
+                    <div class="profit-box">
+                        <div><strong>جمع قبل از افزایش:</strong> {{ base_items_total }} ریال</div>
+                        <div><strong>مجموع افزایش اعمال‌شده:</strong> {{ profit_total }} ریال</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="thanks">با تشکر از خرید شما</div>
+            <div class="contact">
+                <div>instagram : sanaa.onlineshop</div>
+                <div>phone : +98 915 579 3189</div>
+                <div>website : sanaaonlineshop.com</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> -->

@@ -654,7 +654,51 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => requireCustomerAuth());
     </script>
+    {% if telegram_connect_url %}
 
+    <div id="telegramConnectModal" class="telegram-modal">
+
+        <div class="telegram-modal-box">
+
+            <h3>
+                ثبت نام شما موفق بود 🎉
+            </h3>
+
+            <p>
+                برای دریافت وضعیت سفارش‌ها و اطلاع‌رسانی‌ها،
+                تلگرام خود را متصل کنید.
+            </p>
+
+
+            <a
+                href="{{ telegram_connect_url }}"
+                target="_blank"
+                class="telegram-connect-btn">
+
+                اتصال به ربات تلگرام
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <script>
+    document.addEventListener(
+    "DOMContentLoaded",
+    function(){
+
+        document
+        .getElementById(
+            "telegramConnectModal"
+        )
+        .classList.add("show");
+
+    });
+    </script>
+
+    {% endif %}
 </body>
 
 </html>
