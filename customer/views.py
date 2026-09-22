@@ -1,5 +1,4 @@
 
-from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
@@ -101,28 +100,17 @@ def profile_view(request):
                     extra_tags="password"
                 )
 
-    # این لینک فقط یک بار (بلافاصله بعد از ثبت‌نام) به‌صورت پاپ‌آپ
-    # نمایش داده می‌شود.
-    telegram_signup_popup_url = request.session.pop(
+    telegram_connect_url = request.session.pop(
         "telegram_connect_url",
         None
     )
-
     telegram_connection = TelegramConnection.objects.filter(
         user=request.user
     ).first()
 
-    # لینک اتصال/اتصال‌مجدد که همیشه در پروفایل کاربر در دسترس است،
-    # حتی اگر پاپ‌آپ ثبت‌نام را بسته باشد یا اتصال قبلی قطع شده باشد.
-    telegram_connect_url = (
-        f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}"
-        f"?start={request.user.id}"
-    )
-
     context = {
         "customer": request.user,
         "telegram_connect_url": telegram_connect_url,
-        "telegram_signup_popup_url": telegram_signup_popup_url,
         "telegram_connection": telegram_connection,
     }
 
