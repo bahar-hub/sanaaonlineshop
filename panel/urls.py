@@ -6,11 +6,6 @@ app_name = 'panel'
 urlpatterns = [
     path('', admin_manage_view, name='admin_page'),
     path('customers/', customer_view, name='customers'),
-    path(
-        'customers/<int:user_id>/telegram-test/',
-        test_telegram_connection_view,
-        name='test_telegram_connection',
-    ),
     path('report/', report_view, name='report'),
     path('orders/', orders_view, name='orders'),
     path(
