@@ -21,11 +21,14 @@ from orders.models import (
     Invoice,
 )
 from orders.telegram_service import send_order_status_update
+from orders.telegram_service import send_order_update_notification
+from orders.telegram_service import check_telegram_connection
 from orders.services import (
     create_order,
     update_order,
     delete_order as delete_order_service,
 )
+from customer.models import TelegramConnection
 
 def is_superuser(user):
     return user.is_authenticated and user.is_superuser
@@ -61,6 +64,53 @@ def update_order_status_view(request, order_id):
             "order": serialize_order(order),
         }
     )
+
+@require_POST
+@user_passes_test(is_superuser, login_url="base:index")
+def test_telegram_connection_view(request, user_id):
+
+    User = get_user_model()
+
+    customer = get_object_or_404(
+        User,
+        id=user_id,
+        is_superuser=False,
+    )
+
+    connection = TelegramConnection.objects.filter(
+        user=customer
+    ).first()
+
+    if not connection:
+        return JsonResponse(
+            {
+                "success": True,
+                "connected": False,
+                "status": "not_linked",
+                "message":
+                    "این مشتری هنوز حساب تلگرام خود را متصل نکرده است.",
+            }
+        )
+
+    result = check_telegram_connection(connection)
+
+    if result["connected"]:
+        status = "connected"
+    elif result.get("reason") == "not_linked":
+        status = "not_linked"
+    else:
+        status = "disconnected"
+
+    return JsonResponse(
+        {
+            "success": True,
+            "connected": result["connected"],
+            "status": status,
+            "message": result["message"],
+            "telegramUsername": connection.username,
+        }
+    )
+
 
 @user_passes_test(is_superuser, login_url="base:index")
 def customer_view(request):
@@ -100,6 +150,7 @@ def customer_view(request):
         User.objects
         .filter(is_superuser=False)
         .prefetch_related("orders")
+        .select_related("telegram_connection")
         .order_by("-date_joined")
     )
 
@@ -109,6 +160,18 @@ def customer_view(request):
         orders = list(
             customer.orders.all().order_by("-registered_at")
         )
+
+        telegram_connection = getattr(
+            customer, "telegram_connection", None
+        )
+
+        if telegram_connection and telegram_connection.telegram_id:
+            if telegram_connection.is_active:
+                telegram_status = "connected"
+            else:
+                telegram_status = "disconnected"
+        else:
+            telegram_status = "not_linked"
 
         total_spent = sum(
             (order.total_irr for order in orders),
@@ -135,6 +198,12 @@ def customer_view(request):
 
             "ordersCount": len(orders),
             "totalSpent": float(total_spent),
+
+            "telegramStatus": telegram_status,
+            "telegramUsername": (
+                telegram_connection.username
+                if telegram_connection else None
+            ),
 
             "orders": [
                 {
@@ -924,6 +993,12 @@ def update_order_view(
 
             usd_rate=
                 data["usd_rate"],
+        )
+
+        # مشتری از ویرایش سفارش خودش در ربات تلگرام مطلع می‌شود.
+        transaction.on_commit(
+            lambda: send_order_update_notification(order),
+            robust=True,
         )
 
     except ValueError as exc:

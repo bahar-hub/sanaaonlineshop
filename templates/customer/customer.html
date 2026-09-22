@@ -451,6 +451,69 @@
                     </form>
 
 
+                        <div
+                            class="panel-divider"
+                            aria-hidden="true"
+                        ></div>
+
+
+                       <div class="panel-section-header">
+    <div>
+        <h3 class="panel-section-header__title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M21 3 3.8 10.2c-.8.35-.75 1.5.1 1.75l4.5 1.35 1.35 4.5c.25.85 1.4.9 1.75.1L18.7 5.1c.25-.6-.35-1.2-.95-.95L9.5 8.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="m8.4 13.3 3.1-2.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+             اتصال تلگرام
+        </h3>
+        <p class="panel-section-header__subtitle">دریافت وضعیت سفارش‌ها و اطلاعیه‌ها در ربات تلگرام</p>
+    </div>
+</div>
+
+                        <div class="profile-telegram-f">
+
+                            <div class="profile-telegram-f__info">
+
+                                {% if telegram_connection and telegram_connection.is_active %}
+                                    <span class="profile-telegram-f__status profile-telegram-f__status--connected">
+                                        متصل به ربات تلگرام
+                                    </span>
+                                    <span class="profile-telegram-f__hint">
+                                        از این پس سفارش‌ها و تغییرات آن‌ها برای شما در تلگرام ارسال می‌شود.
+                                    </span>
+                                {% elif telegram_connection %}
+                                    <span class="profile-telegram-f__status profile-telegram-f__status--disconnected">
+                                        اتصال قطع شده است
+                                    </span>
+                                    <span class="profile-telegram-f__hint">
+                                        برای دریافت دوباره پیام‌ها، دوباره روی دکمه اتصال بزنید و ربات را استارت کنید.
+                                    </span>
+                                {% else %}
+                                    <span class="profile-telegram-f__status profile-telegram-f__status--not-linked">
+                                        هنوز متصل نشده‌اید
+                                    </span>
+                                    <span class="profile-telegram-f__hint">
+                                        با اتصال به ربات تلگرام، از وضعیت سفارش‌های خود باخبر می‌شوید.
+                                    </span>
+                                {% endif %}
+
+                            </div>
+
+                            <a
+                                href="{{ telegram_connect_url }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="telegram-connect-btn"
+                            >
+                                {% if telegram_connection and telegram_connection.is_active %}
+                                    اتصال مجدد
+                                {% else %}
+                                    اتصال به ربات تلگرام
+                                {% endif %}
+                            </a>
+
+                        </div>
+
 
                     </section>
 
@@ -654,7 +717,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", () => requireCustomerAuth());
     </script>
-    {% if telegram_connect_url %}
+    {% if telegram_signup_popup_url %}
 
     <div id="telegramConnectModal" class="telegram-modal">
 
