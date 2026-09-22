@@ -3762,3 +3762,108 @@ textarea.admin-order-item-f__description {
     text-decoration:none;
 
 }
+
+
+/* ============================================================
+ * Admin panel — customer card Telegram row (test connection)
+ * ============================================================ */
+
+.admin-customers-f__card-telegram {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #EFE8DE;
+}
+
+.admin-customers-f__telegram-test-btn {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 0.72rem;
+}
+
+.admin-customers-f__telegram-test-btn[aria-busy="true"] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.admin-customers-f__telegram-test-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+
+/* ============================================================
+ * Customer profile — persistent Telegram connection section
+ * ============================================================ */
+
+.profile-telegram-f {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #E3DCD2;
+  border-radius: 14px;
+  background: #FFFFFF;
+}
+
+.profile-telegram-f__info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-telegram-f__label {
+  font-weight: 600;
+  color: #191715;
+}
+
+.profile-telegram-f__hint {
+  font-size: 0.82rem;
+  color: #8A8178;
+}
+
+.profile-telegram-f__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.profile-telegram-f__status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: currentColor;
+}
+
+.profile-telegram-f__status--connected {
+  background-color: rgba(46, 125, 50, 0.12);
+  color: #2E7D32;
+}
+
+.profile-telegram-f__status--disconnected {
+  background-color: rgba(198, 40, 40, 0.1);
+  color: #C62828;
+}
+
+.profile-telegram-f__status--not-linked {
+  background-color: #F5F1EA;
+  color: #8A8178;
+}
+
+.profile-telegram-f .telegram-connect-btn {
+  margin-top: 0;
+  padding: 10px 22px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
