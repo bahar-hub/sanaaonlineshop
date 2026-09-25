@@ -459,7 +459,7 @@
             (Number(order.shippingRial) || 0) +
             (Number(order.serviceRial) || 0);
 
-        return {
+                return {
 
             baseAmount: baseAmount,
             baseText: baseText,
@@ -467,6 +467,7 @@
             multiCurrency: codes.length > 1,
             productsRial: calc.itemsRial,
             totalRial: totalRial,
+            profitRial: calc.profitRial,
             lines: calc.lines,
 
             rate:
@@ -723,9 +724,16 @@
             "</td>" +
 
 
-            '<td class="admin-orders-f__table-amount-rial">' +
+                        '<td class="admin-orders-f__table-amount-rial">' +
             formatNumberF(
                 totals.totalRial
+            ) +
+            " ریال</td>" +
+
+
+            '<td class="admin-orders-f__table-profit-f">' +
+            formatNumberF(
+                totals.profitRial || 0
             ) +
             " ریال</td>" +
 
@@ -816,16 +824,22 @@
             "</span>" +
 
 
-            '<span class="admin-orders-f__card-amount">' +
+                        '<span class="admin-orders-f__card-amount">' +
             formatNumberF(
                 totals.totalRial
+            ) +
+            " ریال</span>" +
+
+            '<span class="admin-orders-f__card-profit-f">' +
+            "سود: " +
+            formatNumberF(
+                totals.profitRial || 0
             ) +
             " ریال</span>" +
 
             "</div>" +
 
 
-            '<div class="admin-orders-f__card-bottom">' +
 
             '<span class="admin-orders-f__card-payment">' +
 
@@ -1603,9 +1617,17 @@
                             );
                         }
 
+                                                var imageHtml =
+                            product.image
+                                ? '<img class="admin-orders-f__sheet-product-img-f" src="' + product.image + '" alt="' + product.name + '">'
+                                : '<span class="admin-orders-f__sheet-product-img-f admin-orders-f__sheet-product-img-f--empty-f"></span>';
+
                         return (
                             '<div class="admin-orders-f__sheet-product">' +
-                                '<p class="admin-orders-f__sheet-product-name">' + product.name + "</p>" +
+                                '<div class="admin-orders-f__sheet-product-head-f">' +
+                                    imageHtml +
+                                    '<p class="admin-orders-f__sheet-product-name">' + product.name + "</p>" +
+                                "</div>" +
                                 '<dl class="admin-orders-f__sheet-product-grid">' +
                                     cellF("برند", product.brand || "—") +
                                     cellF("سایز", product.size || "—") +
@@ -1617,15 +1639,17 @@
                                     cellF("قیمت واحد", formatNumberF(line.finalUnitRial) + " ریال") +
                                     (product.description ? cellF("توضیحات", product.description, true) : "") +
                                     cellF("قیمت کل", formatNumberF(line.lineRial) + " ریال", true, true) +
+                                    cellF("سود این محصول", formatNumberF(line.profit) + " ریال", true, true) +
                                 "</dl>" +
                             "</div>"
                         );
-
                     }
                 )
                 .join("")
 
             +
+
+                        +
 
             '<div class="admin-orders-f__sheet-row">' +
 
@@ -1637,6 +1661,22 @@
                 totals.productsRial
             ) +
 
+
+            " ریال</span>" +
+
+            "</div>"
+
+            +
+
+            '<div class="admin-orders-f__sheet-row admin-orders-f__sheet-row--profit-f">' +
+
+            "<span>سود کل سفارش</span>" +
+
+            "<span>" +
+
+            formatNumberF(
+                totals.profitRial || 0
+            ) +
 
             " ریال</span>" +
 
@@ -3577,7 +3617,7 @@
             byCurrency[item.currency] =
                 (byCurrency[item.currency] || 0) + lineForeign;
 
-            return {
+                        return {
                 name: item.name,
                 brand: item.brand,
                 size: item.size,
@@ -3593,7 +3633,8 @@
                 finalUnitRial: finalUnitRial,
                 baseLineRial: baseLineRial,
                 lineForeign: lineForeign,
-                lineRial: lineRial
+                lineRial: lineRial,
+                profit: lineRial - baseLineRial
             };
 
         });
