@@ -77,7 +77,6 @@ class Order(models.Model):
         self.total_irr = (
             items_total_irr
             + (self.shipping_cost or Decimal("0"))
-            + (self.service_cost or Decimal("0"))
         ).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
 
         if self.usd_rate and self.usd_rate > 0:
@@ -121,6 +120,12 @@ class OrderItem(models.Model):
     product_name = models.CharField(max_length=255)
     brand = models.CharField(max_length=255, blank=True, default="")
     size = models.CharField(max_length=100, blank=True, default="")
+    color = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="رنگ محصول"
+    )
     description = models.TextField(blank=True, default="")
     quantity = models.PositiveIntegerField(default=1)
     currency = models.CharField(
@@ -148,6 +153,13 @@ class OrderItem(models.Model):
         max_digits=12,
         decimal_places=2,
         default=0,
+    )
+
+    service_cost = models.DecimalField(
+        max_digits=18,
+        decimal_places=0,
+        default=0,
+        verbose_name="هزینه خدمات"
     )
 
     # Rial value of one unit of selected foreign currency at order time.
