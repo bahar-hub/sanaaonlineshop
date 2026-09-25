@@ -1,8 +1,8 @@
 import io
+from django.utils import timezone
 import requests
 
 from django.conf import settings
-from django.utils import timezone
 
 from .models import Order
 from .invoice_utils import (

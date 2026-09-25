@@ -13,12 +13,6 @@
         inactive: { label: "غیرفعال", color: "neutral" }
     };
 
-    var TELEGRAM_STATUS_F = {
-        connected: { label: "متصل به تلگرام", color: "success" },
-        disconnected: { label: "اتصال قطع شده", color: "danger" },
-        not_linked: { label: "متصل نشده", color: "neutral" }
-    };
-
     var STATUS_LABEL_F = {
         registered: "ثبت شده",
         shipped: "ارسال شده",
@@ -46,13 +40,6 @@
             : "—";
 
         var statusInfo = CUSTOMER_STATUS_F[customer.status];
-
-        var telegramStatus =
-            customer.telegramStatus || "not_linked";
-
-        var telegramInfo =
-            TELEGRAM_STATUS_F[telegramStatus] ||
-            TELEGRAM_STATUS_F.not_linked;
 
         return "" +
             "<div class=\"admin-customers-f__card-top\">" +
@@ -96,32 +83,6 @@
             "<span>مجموع خرید</span>" +
             "<strong>" + formatNumberF(customer.totalSpent) + " ریال</strong>" +
             "</div>" +
-            "</div>" +
-
-            "<div class=\"admin-customers-f__card-telegram\">" +
-
-            "<span class=\"admin-badge-f admin-badge-f--" +
-            telegramInfo.color + "-f\" " +
-            "data-telegram-badge-f=\"" + customer.userId + "\">" +
-            telegramInfo.label +
-            "</span>" +
-
-            "<button type=\"button\" " +
-            "class=\"admin-btn-f admin-btn-f--secondary-f " +
-            "admin-customers-f__telegram-test-btn\" " +
-            "data-test-telegram-f=\"" + customer.userId + "\">" +
-
-            "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" " +
-            "stroke-width=\"1.5\" aria-hidden=\"true\">" +
-            "<path d=\"M4 12a8 8 0 0 1 14-5.2M20 12a8 8 0 0 1-14 5.2\" " +
-            "stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
-            "<path d=\"M18 4v4h-4M6 20v-4h4\" " +
-            "stroke-linecap=\"round\" stroke-linejoin=\"round\"/>" +
-            "</svg>" +
-
-            "تست اتصال" +
-            "</button>" +
-
             "</div>";
     }
 
@@ -600,163 +561,11 @@
     });
 }
 
-    /* ============================================================
-     * Telegram — Test Connection
-     * ============================================================ */
-
-    function getCsrfTokenF() {
-        var input = document.querySelector(
-            'input[name="csrfmiddlewaretoken"]'
-        );
-
-        return input ? input.value : "";
-    }
-
-    function buildTelegramTestUrlF(customerId) {
-        var listEl = document.getElementById("adminCustomersListF");
-
-        var template = listEl
-            ? listEl.getAttribute("data-telegram-test-url-template")
-            : "";
-
-        if (!template) return null;
-
-        return template.replace("/0/", "/" + customerId + "/");
-    }
-
-    function showToastF(message, type) {
-        var region = document.getElementById("adminToastRegionF");
-
-        if (!region) return;
-
-        var toast = document.createElement("div");
-
-        toast.className =
-            "admin-toast-f" +
-            (type ? " admin-toast-f--" + type + "-f" : "");
-
-        toast.innerHTML =
-            (
-                type === "error"
-                    ?
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
-                    '<circle cx="12" cy="12" r="9"/>' +
-                    '<path d="M12 8v5M12 16h.01" stroke-linecap="round"/>' +
-                    "</svg>"
-                    :
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">' +
-                    '<path d="m5 13 4 4 10-10" stroke-linecap="round" stroke-linejoin="round"/>' +
-                    "</svg>"
-            ) +
-            "<span>" + message + "</span>";
-
-        region.appendChild(toast);
-
-        window.setTimeout(function () {
-            toast.remove();
-        }, 3200);
-    }
-
-    function updateTelegramBadgeF(customerId, status) {
-        var badge = document.querySelector(
-            '[data-telegram-badge-f="' + customerId + '"]'
-        );
-
-        var info =
-            TELEGRAM_STATUS_F[status] || TELEGRAM_STATUS_F.not_linked;
-
-        if (badge) {
-            badge.className =
-                "admin-badge-f admin-badge-f--" + info.color + "-f";
-            badge.textContent = info.label;
-        }
-
-        // Keep the in-memory dataset in sync so re-renders
-        // (search/sort) don't revert to the stale status.
-        mockCustomersF.forEach(function (customer) {
-            if (String(customer.userId) === String(customerId)) {
-                customer.telegramStatus = status;
-            }
-        });
-    }
-
-    function initTelegramTestF() {
-        document.addEventListener("click", function (event) {
-            var button = event.target.closest("[data-test-telegram-f]");
-
-            if (!button) return;
-
-            var customerId = button.getAttribute("data-test-telegram-f");
-            var url = buildTelegramTestUrlF(customerId);
-
-            if (!url) {
-                showToastF("آدرس تست اتصال یافت نشد.", "error");
-                return;
-            }
-
-            if (button.getAttribute("aria-busy") === "true") return;
-
-            button.setAttribute("aria-busy", "true");
-
-            fetch(url, {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": getCsrfTokenF()
-                }
-            })
-                .then(function (response) {
-                    return response.text().then(function (text) {
-                        var data = {};
-
-                        try {
-                            data = JSON.parse(text);
-                        } catch (error) {
-                            data = {};
-                        }
-
-                        return { ok: response.ok, data: data };
-                    });
-                })
-                .then(function (result) {
-                    button.removeAttribute("aria-busy");
-
-                    if (!result.ok || !result.data.success) {
-                        showToastF(
-                            (result.data && result.data.message) ||
-                                "بررسی اتصال با خطا مواجه شد.",
-                            "error"
-                        );
-                        return;
-                    }
-
-                    updateTelegramBadgeF(customerId, result.data.status);
-
-                    var isProblem =
-                        !result.data.connected &&
-                        result.data.status !== "not_linked";
-
-                    showToastF(
-                        result.data.message,
-                        isProblem ? "error" : null
-                    );
-                })
-                .catch(function () {
-                    button.removeAttribute("aria-busy");
-
-                    showToastF(
-                        "ارتباط با سرور برقرار نشد. دوباره تلاش کنید.",
-                        "error"
-                    );
-                });
-        });
-    }
-
     function initAdminCustomersF() {
         renderCustomerListF(mockCustomersF);
         initToolbarF();
         initAddCustomerModalF();
         initOrdersModalF();
-        initTelegramTestF();
     }
 
     if (document.readyState === "loading") {

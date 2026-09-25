@@ -2345,7 +2345,7 @@ scss .admin-layout-f[hidden] {
   font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
   font-size: 0.85rem;
   text-align: center;
-  -moz-appearance: textfield;
+
 }
 
 .admin-qty-stepper-f__input::-webkit-outer-spin-button,

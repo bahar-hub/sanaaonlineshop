@@ -158,6 +158,6 @@ TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN", default="")
 TELEGRAM_CHAT_ID = config("TELEGRAM_CHAT_ID", default="")
 SITE_NAME = config("SITE_NAME", default="SANAA ONLINE SHOP")
 TELEGRAM_BOT_USERNAME = config(
-    "TELEGRAM_BOT_USERNAME",
+    "sanaa_orders_bot",
     default="sanaa_orders_bot"
 )
