@@ -633,12 +633,7 @@
 }
 
 
-// ============================================================
-// Modal polish — sizes, scroll behaviour, compact product cards
-// ============================================================
 
-// Never let a scrolled modal pull the page underneath with it, and use
-// dynamic viewport units so mobile browser bars don't cut the sheet off.
 .modal__panel {
     max-height: 90vh;
     max-height: 90dvh;
@@ -672,8 +667,7 @@
     overflow-wrap: anywhere;
 }
 
-// Product card: compact two-column label/value grid instead of one very
-// tall line-per-field list.
+
 .admin-orders-f__sheet-product {
     padding: $spacing-sm $spacing-md;
 
@@ -752,4 +746,41 @@
     .admin-invoice-modal-f .modal__panel {
         max-width: 720px;
     }
+}
+
+.admin-orders-f__table-profit-f {
+    color: $color-success;
+    font-weight: 700;
+}
+
+.admin-orders-f__card-profit-f {
+    color: $color-text-muted;
+
+    font-size: 0.76rem;
+    line-height: 1.6;
+}
+
+
+.admin-orders-f__sheet-product-head-f {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-sm;
+}
+
+.admin-orders-f__sheet-product-img-f {
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+
+    object-fit: cover;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+
+    background-color: $color-input-bg;
+}
+
+.admin-orders-f__sheet-product-img-f--empty-f {
+    display: block;
 }
