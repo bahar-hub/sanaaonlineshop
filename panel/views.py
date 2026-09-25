@@ -3,7 +3,10 @@ from django.contrib import messages
 import json
 import jdatetime
 from django.db import transaction
-from orders.telegram_service import send_order_bundle_to_telegram
+from orders.telegram_service import (
+    send_order_update_notification,
+    send_new_products_notification,
+)
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import user_passes_test
 from django.http import JsonResponse
@@ -14,7 +17,7 @@ from django.shortcuts import (
 )
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from orders.telegram_service import send_order_invoice_to_customer
+from orders.telegram_service import send_order_invoice_to_customer , send_order_bundle_to_telegram
 from orders.models import (
     Order,
     OrderItem,
@@ -967,12 +970,23 @@ def update_order_view(
         Order,
         id=order_id,
     )
-
+    old_item_ids = set(
+        order.items.values_list(
+            "id",
+            flat=True
+        )
+    )
+    old_data = {
+        "shipping_cost": order.shipping_cost,
+        "service_cost": order.service_cost,
+        "payment_status": order.payment_status,
+        "total_irr": order.total_irr,
+    }
     try:
         data = parse_order_request(
             request
         )
-
+        
         order = update_order(
             order=order,
 
@@ -995,11 +1009,54 @@ def update_order_view(
                 data["usd_rate"],
         )
 
-        # مشتری از ویرایش سفارش خودش در ربات تلگرام مطلع می‌شود.
-        transaction.on_commit(
-            lambda: send_order_update_notification(order),
-            robust=True,
+
+        new_items = order.items.exclude(
+            id__in=old_item_ids
         )
+        changes = []
+
+
+        if old_data["shipping_cost"] != order.shipping_cost:
+            changes.append(
+                f"🚚 هزینه باربری:\n{int(order.shipping_cost):,} تومان"
+            )
+
+
+        if old_data["service_cost"] != order.service_cost:
+            changes.append(
+                f"🛠 هزینه خدمات:\n{int(order.service_cost):,} تومان"
+            )
+
+
+        if old_data["payment_status"] != order.payment_status:
+            changes.append(
+                f"💳 وضعیت پرداخت:\n{order.get_payment_status_display()}"
+            )
+
+
+        if old_data["total_irr"] != order.total_irr:
+            changes.append(
+                f"💰 مبلغ سفارش:\n{int(order.total_irr):,} ریال"
+            )
+        # مشتری از ویرایش سفارش خودش در ربات تلگرام مطلع می‌شود.
+        if changes:
+            transaction.on_commit(
+                lambda: send_order_update_notification(
+                    order,
+                    changes
+                ),
+                robust=True,
+            )
+
+
+        if new_items.exists():
+            transaction.on_commit(
+                lambda: send_new_products_notification(
+                    order,
+                    new_items
+                ),
+                robust=True,
+            )
 
     except ValueError as exc:
 

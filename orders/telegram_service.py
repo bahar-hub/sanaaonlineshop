@@ -16,40 +16,65 @@ from .invoice_utils import (
 TELEGRAM_API_BASE = "https://api.telegram.org"
 def send_order_status_update(order):
 
-        connection = getattr(
-            order.user,
-            "telegram_connection",
-            None
-        )
+    connection = getattr(
+        order.user,
+        "telegram_connection",
+        None
+    )
 
-        if not connection:
-            return False
+    if not connection:
+        return False
 
-        if not connection.is_active:
-            return False
+    if not connection.is_active:
+        return False
 
+
+    # فقط برای ارسال شده
+    if order.status == Order.Status.SHIPPED:
 
         message = f"""
-    سلام {order.user.first_name} عزیز 👋
+سلام، وقت بخیر ✨
 
-    وضعیت سفارش شما در سانا آنلاین شاپ تغییر کرد.
+سفارشتون رسیددد 😍📦✨
 
-    🧾 شماره سفارش:
-    #{order.id}
+هزینه باربری شماره سفارش #{order.id}:
 
-    📦 وضعیت جدید:
-    {order.get_status_display()}
+📦 مشخصات سفارش
 
-    با تشکر از اعتماد شما 🌱
-    """
+💰 هزینه باربری: {int(order.shipping_cost or 0):,} تومان
+
+بعد از پرداخت باربری، برای ارسال سفارشتون با ما هماهنگ کنید 🫶🏽
+"""
 
 
-        send_telegram_text(
-            connection.telegram_id,
-            message
-        )
+    # بقیه وضعیت‌ها
+    else:
 
-        return True
+        message = f"""
+سلام {order.user.first_name} عزیز 👋
+
+سفارش شما در Sanaa Online Shop ویرایش و به‌روزرسانی شد ✏️
+
+
+🧾 شماره سفارش:
+#{order.id}
+
+
+📦 وضعیت سفارش:
+{order.get_status_display()}
+
+
+با تشکر از اعتماد شما 🌱
+"""
+
+
+    send_telegram_text(
+        connection.telegram_id,
+        message
+    )
+
+    return True
+
 
 def send_telegram_text(chat_id, text):
 
@@ -99,7 +124,6 @@ def send_order_bundle_to_telegram(order_id, chat_id=None):
         _telegram_url("sendPhoto"),
         data={
             "chat_id": target_chat_id,
-            "caption": "test invoice",
         },
         files={
             "photo": (
@@ -175,38 +199,28 @@ def send_order_invoice_to_customer(order):
 
 
     message = f"""
-سلام {order.user.first_name} عزیز 👋
 
-سفارش شما با موفقیت ثبت شد ✅
+Sanaa Online Shop
 
+🤍 لطفاً قبل از پرداخت، سایز،رنگ 
+موجودی ،قیمت روز را چک کنید.
 
-🧾 شماره سفارش:
-#{order.id}
+⏱️ اعتبار این فاکتور: ۳۰ دقیقه
 
+🚚 هزینه باربری هر کیلو :
+اروپا: ۱۵€ | کانادا: ۴۵–۵۰ CAD | آمریکا: ۳۸ USD | ترکیه:۶۵۰-۷۰۰ تومان 
 
-📦 محصولات:
-"""
+📍 از آنجایی که باربری دلاری و با نرخ روز محاسبه می‌شود، پیشنهاد می‌کنیم دلار باربری را از قبل تهیه کنید تا در صورت افزایش نرخ، متضرر نشوید.
 
-    for item in order.items.all():
+📦 زمان روتین ارسال به ایران: 
+۱ تا ۴ هفته؛ ممکن است با توجه به شرایط کشور، بیشتر شود.
 
-        message += (
-            f"\n- {item.product_name}"
-            f" × {item.quantity}"
-        )
+شماره کارت: 6219861909505736 
+شماره شبا:
+IR940560611828005120289101
 
-
-    message += f"""
-
-💰 مبلغ نهایی:
-{int(order.total_irr):,} ریال
-
-
-📌 وضعیت:
-{order.get_status_display()}
-
-
-سانا آنلاین شاپ 🌱
-"""
+سیده ثنا مدنی فرد 
+    """
 
 
     send_telegram_text(
@@ -215,29 +229,12 @@ def send_order_invoice_to_customer(order):
     )
 
 
-    pdf_bytes = build_invoice_pdf_bytes(
-        order,
-        is_admin=False
-    )
-
-
-    send_telegram_document(
-        chat_id,
-        pdf_bytes,
-        f"invoice-{order.id}.pdf"
-    )
 
 
     return True
 
 
-def send_order_update_notification(order):
-    """
-    Notifies the customer on Telegram whenever an admin edits an
-    already-registered order (items, costs, payment status, ...).
-    Separate from send_order_status_update, which only fires on a
-    status change.
-    """
+def send_order_update_notification(order, changes):
 
     connection = getattr(
         order.user,
@@ -251,22 +248,26 @@ def send_order_update_notification(order):
     if not connection.is_active:
         return False
 
+
     message = f"""
 سلام {order.user.first_name} عزیز 👋
 
-سفارش شما در سانا آنلاین شاپ ویرایش و به‌روزرسانی شد ✏️
+سفارش شما در SANAA ONLINE SHOP به‌روزرسانی شد ✨
 
 🧾 شماره سفارش:
 #{order.id}
 
-💰 مبلغ نهایی جدید:
-{int(order.total_irr):,} ریال
+"""
 
-📌 وضعیت:
-{order.get_status_display()}
+
+    message += "\n\n".join(changes)
+
+
+    message += """
 
 سانا آنلاین شاپ 🌱
 """
+
 
     send_telegram_text(
         connection.telegram_id,
@@ -344,3 +345,77 @@ def check_telegram_connection(connection):
         "message": "مشتری ربات را بلاک کرده یا اتصال قطع شده است.",
         "detail": error_description,
     }
+
+
+
+def send_new_products_notification(order, new_items):
+
+    connection = getattr(
+        order.user,
+        "telegram_connection",
+        None
+    )
+
+    if not connection:
+        return False
+
+    if not connection.is_active:
+        return False
+
+
+    message = f"""
+سلام {order.user.first_name} عزیز 👋
+
+محصول جدیدی به سفارش شما در Sanaa Online Shop اضافه شد ✨
+
+
+🧾 شماره سفارش:
+#{order.id}
+
+
+📦 مشخصات محصول:
+"""
+
+
+    for item in new_items:
+
+        message += f"""
+
+🔹 {item.product_name}
+
+🏷 برند:
+{item.brand or "-"}
+
+📏 سایز:
+{item.size or "-"}
+
+🔢 تعداد:
+{item.quantity}
+
+💰 قیمت:
+{int(item.line_total_irr):,} ریال
+
+"""
+
+
+    message += f"""
+
+💰 مبلغ نهایی جدید سفارش:
+{int(order.total_irr):,} ریال
+
+
+فاکتور سفارش شما به‌روزرسانی شد 🌱
+"""
+
+
+    send_telegram_text(
+        connection.telegram_id,
+        message
+    )
+
+
+    # ارسال فاکتور جدید فقط در صورت اضافه شدن محصول
+    send_order_invoice_to_customer(order)
+
+
+    return True

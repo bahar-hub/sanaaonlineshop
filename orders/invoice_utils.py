@@ -3,15 +3,29 @@ from decimal import Decimal
 
 import jdatetime
 import pymupdf
+import base64
 
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils import timezone
-
+import shutil
 from playwright.sync_api import sync_playwright
 from .models import Order
+from pathlib import Path
+def get_font_base64():
+
+    font_path = (
+        Path(settings.BASE_DIR)
+        / "static/fonts/Vazirmatn-Regular.ttf"
+    )
+
+    with open(font_path, "rb") as f:
+        return base64.b64encode(
+            f.read()
+        ).decode()
 
 
+    
 def format_price(value):
     try:
         return f"{int(Decimal(value)):,}"
@@ -109,9 +123,18 @@ def build_invoice_context(order, is_admin=False):
 
 
 def render_invoice_html(order, is_admin=False):
-    context = build_invoice_context(order, is_admin=is_admin)
-    return render_to_string("orders/invoice_pdf.html", context)
 
+    context = build_invoice_context(
+        order,
+        is_admin=is_admin
+    )
+
+    context["font_base64"] = get_font_base64()
+
+    return render_to_string(
+        "orders/invoice_pdf.html",
+        context
+    )
 
 def build_invoice_pdf_bytes(order, is_admin=False):
 
@@ -122,10 +145,12 @@ def build_invoice_pdf_bytes(order, is_admin=False):
 
     with sync_playwright() as p:
 
-
         browser = p.chromium.launch(
             headless=True,
-            executable_path=r"C:\Program Files\Google\Chrome\Application\chrome.exe"
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+            ],
         )
 
         page = browser.new_page(
@@ -137,8 +162,10 @@ def build_invoice_pdf_bytes(order, is_admin=False):
 
         page.set_content(
             html_string,
-            wait_until="networkidle"
+            wait_until="load"
         )
+
+        page.wait_for_timeout(3000)
 
         pdf = page.pdf(
             format="A4",
@@ -148,7 +175,6 @@ def build_invoice_pdf_bytes(order, is_admin=False):
         browser.close()
 
     return pdf
-
 
 def build_invoice_image_bytes(order, is_admin=False):
     pdf_bytes = build_invoice_pdf_bytes(order, is_admin=is_admin)

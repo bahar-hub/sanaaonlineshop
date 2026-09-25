@@ -630,6 +630,18 @@
             "</svg>" +
             "</button>" +
 
+            '<button type="button" class="admin-icon-btn-f" ' +
+                'data-admin-invoice-order-f="' +
+                orderNumber +
+                '" ' +
+                'title="مشاهده فاکتور ادمین">' +
+
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">' +
+                '<path d="M6 2h9l3 3v17H6z" stroke-linecap="round" stroke-linejoin="round"/>' +
+                '<path d="M9 13h6M9 17h6M9 9h3" stroke-linecap="round"/>' +
+                '</svg>' +
+
+            '</button>' +
             '<button type="button" class="admin-icon-btn-f admin-icon-btn-f--download-f" ' +
             'data-download-order-f="' +
             orderNumber +
@@ -2651,7 +2663,81 @@
                     event.target.closest(
                         "[data-view-order-f]"
                     );
+                var invoiceTrigger =
+                    event.target.closest(
+                        "[data-admin-invoice-order-f]"
+                    );
 
+
+                if (invoiceTrigger) {
+
+                    var orderNumber =
+                        invoiceTrigger.getAttribute(
+                            "data-admin-invoice-order-f"
+                        );
+
+
+                    var order =
+                        findOrderByNumberF(
+                            orderNumber
+                        );
+
+
+                    if (order) {
+
+                        var calc =
+                            buildInvoiceCalcFromOrderF(order);
+
+
+                        var meta = {
+
+                            orderNumber:
+                                order.number,
+
+                            date:
+                                order.date,
+
+                            customerName:
+                                order.customer &&
+                                order.customer.name
+                                    ? order.customer.name
+                                    : "—",
+
+                            paymentLabel:
+                                order.paymentStatus || "—"
+
+                        };
+
+
+                        var adminInvoice =
+                            document.getElementById(
+                                "adminInternalInvoiceF"
+                            );
+
+
+                        if (adminInvoice) {
+
+                            adminInvoice.innerHTML =
+                                renderInvoiceHtmlF(
+                                    calc,
+                                    meta,
+                                    true
+                                );
+
+                        }
+
+
+                        openInvoiceModalF(
+                            "adminInternalInvoiceModalF"
+                        );
+
+                    }
+
+
+                    return;
+
+                }
+                
 
                 if (viewTrigger) {
 
@@ -2671,7 +2757,7 @@
                     return;
 
                 }
-
+                
 
                 var row =
                     event.target.closest(

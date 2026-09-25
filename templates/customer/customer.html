@@ -721,7 +721,15 @@
 
     <div id="telegramConnectModal" class="telegram-modal">
 
-        <div class="telegram-modal-box">
+    <div class="telegram-modal-box">
+
+            <button 
+                type="button"
+                class="telegram-close-btn"
+                onclick="closeTelegramModal()">
+                ×
+            </button>
+
 
             <h3>
                 ثبت نام شما موفق بود 🎉
@@ -759,6 +767,19 @@
         .classList.add("show");
 
     });
+
+
+    function closeTelegramModal(){
+
+        const modal = document.getElementById(
+            "telegramConnectModal"
+        );
+
+        if(modal){
+            modal.style.display = "none";
+        }
+
+    }
     </script>
 
     {% endif %}
