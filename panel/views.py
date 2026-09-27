@@ -336,6 +336,8 @@ def serialize_order(order):
             "lineTotalRial": float(item.line_total_irr),
             "costPrice": float(item.admin_cost),
             "image": image_url,
+            "color": item.color or "",
+            "serviceCost": float(item.service_cost or 0),
         }
 
         price_field = (
@@ -436,9 +438,11 @@ def serialize_order(order):
             ),
 
         "serviceRial":
-            float(
-                order.service_cost
-            ),
+            # Order-level service cost was replaced by a per-item service
+            # cost (OrderItem.service_cost, already folded into totalRial),
+            # so this is always 0 now; kept only because older JS still
+            # reads order.serviceRial.
+            0,
 
         "totalRial":
             total_irr,
@@ -651,6 +655,30 @@ def parse_order_request(request):
                 f"نرخ ارز محصول شماره {index + 1} معتبر نیست."
             )
 
+        try:
+            item_service_cost = Decimal(
+                str(
+                    item.get(
+                        "service_cost",
+                        0
+                    )
+                )
+            )
+
+        except (
+            InvalidOperation,
+            TypeError,
+            ValueError,
+        ):
+            raise ValueError(
+                f"هزینه خدمات محصول شماره {index + 1} معتبر نیست."
+            )
+
+        if item_service_cost < 0:
+            raise ValueError(
+                f"هزینه خدمات محصول شماره {index + 1} معتبر نیست."
+            )
+
         item_id = item.get(
             "id"
         )
@@ -690,6 +718,9 @@ def parse_order_request(request):
                 "size":
                     str(item.get("size", "") or "").strip(),
 
+                "color":
+                    str(item.get("color", "") or "").strip(),
+
                 "description":
                     str(item.get("description", "") or "").strip(),
 
@@ -711,6 +742,9 @@ def parse_order_request(request):
                 "exchange_rate":
                     exchange_rate,
 
+                "service_cost":
+                    item_service_cost,
+
                 "photo":
                     photo,
             }
@@ -726,12 +760,6 @@ def parse_order_request(request):
         "shipping_cost":
             request.POST.get(
                 "shipping_cost",
-                "0",
-            ),
-
-        "service_cost":
-            request.POST.get(
-                "service_cost",
                 "0",
             ),
 
@@ -822,9 +850,6 @@ def create_order_view(request):
             shipping_cost=
                 data["shipping_cost"],
 
-            service_cost=
-                data["service_cost"],
-
             payment_status=
                 data["payment_status"],
 
@@ -909,7 +934,6 @@ def update_order_view(
     )
     old_data = {
         "shipping_cost": order.shipping_cost,
-        "service_cost": order.service_cost,
         "payment_status": order.payment_status,
         "total_irr": order.total_irr,
     }
@@ -930,9 +954,6 @@ def update_order_view(
             shipping_cost=
                 data["shipping_cost"],
 
-            service_cost=
-                data["service_cost"],
-
             payment_status=
                 data["payment_status"],
 
@@ -950,12 +971,6 @@ def update_order_view(
         if old_data["shipping_cost"] != order.shipping_cost:
             changes.append(
                 f"🚚 هزینه باربری:\n{int(order.shipping_cost):,} تومان"
-            )
-
-
-        if old_data["service_cost"] != order.service_cost:
-            changes.append(
-                f"🛠 هزینه خدمات:\n{int(order.service_cost):,} تومان"
             )
 
 

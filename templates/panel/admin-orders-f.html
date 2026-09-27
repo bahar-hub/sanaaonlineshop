@@ -933,55 +933,30 @@
 
                 <!-- Fees -->
 
-                <div class="admin-orders-f__new-order-grid">
+                <div class="admin-orders-f__new-order-field">
 
-                    <div class="admin-orders-f__new-order-field">
+                    <label
+                        for="adminNewOrderShippingF"
+                        class="admin-orders-f__new-order-label"
+                    >
+                        هزینه باربری (ریال)
+                    </label>
 
-                        <label
-                            for="adminNewOrderShippingF"
-                            class="admin-orders-f__new-order-label"
-                        >
-                            هزینه باربری (ریال)
-                        </label>
-
-                        <input
-                            type="number"
-                            id="adminNewOrderShippingF"
-                            class="admin-orders-f__new-order-input"
-                            min="0"
-                            value="0"
-                            inputmode="numeric"
-                        >
-
-                    </div>
-
-
-                    <div class="admin-orders-f__new-order-field">
-
-                        <label
-                            for="adminNewOrderServiceF"
-                            class="admin-orders-f__new-order-label"
-                        >
-                            هزینه خدمات (ریال)
-                        </label>
-
-                        <input
-                            type="number"
-                            id="adminNewOrderServiceF"
-                            class="admin-orders-f__new-order-input"
-                            min="0"
-                            value="0"
-                            inputmode="numeric"
-                        >
-
-                    </div>
+                    <input
+                        type="number"
+                        id="adminNewOrderShippingF"
+                        class="admin-orders-f__new-order-input"
+                        min="0"
+                        value="0"
+                        inputmode="numeric"
+                    >
 
                 </div>
 
                 <div class="admin-order-total-preview-f">
                     <span>مبلغ نهایی سفارش</span>
                     <strong id="adminNewOrderGrandTotalF">۰ ریال</strong>
-                    <small>جمع قیمت نهایی محصولات + باربری + خدمات</small>
+                    <small>جمع قیمت نهایی محصولات + هزینه خدمات هر محصول + باربری</small>
                 </div>
 
 
@@ -1140,6 +1115,8 @@
                         placeholder="اسم محصول"
                     >
 
+                    
+
                     <div class="admin-order-item-f__meta-row">
 
                         <input
@@ -1147,14 +1124,47 @@
                             class="admin-orders-f__new-order-input admin-order-item-f__brand"
                             placeholder="برند"
                         >
+                    </div>
+                    <div class="admin-order-item-f__meta-row admin-order-item-f__meta-row--split-f">
 
-                        <input
-                            type="text"
-                            class="admin-orders-f__new-order-input admin-order-item-f__size"
-                            placeholder="سایز"
-                        >
+                        <div class="admin-order-item-f__input-wrap">
+                            <span class="admin-order-item-f__mini-label">سایز</span>
+                            <input
+                                type="text"
+                                class="admin-orders-f__new-order-input admin-order-item-f__size"
+                                placeholder="مثلاً L"
+                            >
+                        </div>
+
+                        <div class="admin-order-item-f__input-wrap">
+                            <span class="admin-order-item-f__mini-label">رنگ محصول</span>
+                            <input
+                                type="text"
+                                class="admin-orders-f__new-order-input admin-order-item-f__color"
+                                placeholder="مثلاً مشکی"
+                            >
+                        </div>
 
                     </div>
+
+                    <div class="admin-order-item-f__input-wrap admin-order-item-f__input-wrap--service-f">
+
+                        <span class="admin-order-item-f__mini-label">
+                            هزینه خدمات
+                            <em class="admin-order-item-f__admin-only-tag-f">فقط ادمین می‌بیند</em>
+                        </span>
+
+                        <input
+                            type="number"
+                            class="admin-orders-f__new-order-input admin-order-item-f__cost admin-order-item-f__service-cost"
+                            min="0"
+                            step="1000"
+                            inputmode="numeric"
+                            placeholder="۰ تومان"
+                        />
+
+                    </div>
+
 
                     <div class="admin-order-item-f__price-row">
 
@@ -1220,6 +1230,10 @@
                         <div>
                             <span>قیمت نهایی واحد</span>
                             <strong class="admin-order-item-f__unit-rial">۰ ریال</strong>
+                        </div>
+                        <div class="admin-order-item-f__price-preview-total-f">
+                            <span>مبلغ نهایی این کالا</span>
+                            <strong class="admin-order-item-f__line-total">۰ ریال</strong>
                         </div>
                     </div>
 

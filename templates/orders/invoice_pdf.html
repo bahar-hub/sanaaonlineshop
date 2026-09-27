@@ -107,6 +107,28 @@
             text-align: right;
         }
 
+        .product-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .product-cell__img {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        .product-cell__img--empty {
+            background: #F3EFE8;
+        }
+
+        .product-cell__name {
+            text-align: right;
+        }
+
         .summary {
             width: 320px;
             margin-top: 36px;
@@ -196,6 +218,7 @@
                         <th>کالا</th>
                         <th>برند</th>
                         <th>سایز</th>
+                        <th>رنگ</th>
                         <th>تعداد</th>
                         {% if is_admin %}
                             <th>قیمت واحد (ارز)</th>
@@ -208,9 +231,19 @@
                 <tbody>
                     {% for item in items %}
                         <tr>
-                            <td class="name">{{ item.name }}</td>
+                            <td class="name">
+                                <div class="product-cell">
+                                    {% if item.photo %}
+                                        <img class="product-cell__img" src="{{ item.photo }}" alt="">
+                                    {% else %}
+                                        <span class="product-cell__img product-cell__img--empty"></span>
+                                    {% endif %}
+                                    <span class="product-cell__name">{{ item.name }}</span>
+                                </div>
+                            </td>
                             <td>{{ item.brand }}</td>
                             <td>{{ item.size }}</td>
+                            <td>{{ item.color }}</td>
                             <td>{{ item.qty }}</td>
 
                             {% if is_admin %}
@@ -232,10 +265,6 @@
                 <div class="summary-row">
                     <span>جمع کل:</span>
                     <span>{{ items_total }} ریال</span>
-                </div>
-                <div class="summary-row">
-                    <span>هزینه خدمات:</span>
-                    <span>{{ service_cost }} ریال</span>
                 </div>
                 <div class="summary-row">
                     <span>هزینه باربری:</span>

@@ -1,4 +1,4 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_CEILING
 
 from django.core.files.storage import default_storage
 from django.db import transaction
@@ -13,19 +13,33 @@ def to_decimal(value, default="0"):
         return Decimal(default)
 
 
+# The store always rounds the final payable amount UP to the nearest
+# 10,000 rials (i.e. the last 4 digits become zero), never down.
+_INVOICE_ROUNDING_STEP = Decimal("10000")
+
+
+def round_invoice_total_up(value):
+    return (
+        (value / _INVOICE_ROUNDING_STEP)
+        .to_integral_value(rounding=ROUND_CEILING)
+        * _INVOICE_ROUNDING_STEP
+    )
+
+
 def _recalculate_order(order):
     items_total_irr = Decimal("0")
     markup_total_irr = Decimal("0")
 
     for item in order.items.all():
+        # item.line_total_irr already includes that item's own service
+        # cost (see OrderItem.line_total_irr), so it isn't added again here.
         items_total_irr += item.line_total_irr
         markup_total_irr += item.markup_amount_irr
 
-    total_irr = (
+    total_irr = round_invoice_total_up(
         items_total_irr
         + (order.shipping_cost or Decimal("0"))
-        + (order.service_cost or Decimal("0"))
-    ).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    )
 
     if order.usd_rate > 0:
         total_usd = (total_irr / order.usd_rate).quantize(
@@ -83,14 +97,17 @@ def create_order(
             product_name=item["product_name"],
             brand=item.get("brand", ""),
             size=item.get("size", ""),
+            color=item.get("color", ""),
             description=item.get("description", ""),
             quantity=int(item.get("quantity", 1)),
             currency=item["currency"],
             product_price=to_decimal(item.get("product_price")),
             markup_percent=to_decimal(item.get("markup_percent")),
             admin_cost=to_decimal(item.get("admin_cost")),
+            service_cost=to_decimal(item.get("service_cost")),
             exchange_rate=to_decimal(item.get("exchange_rate")),
             photo=item.get("photo"),
+          
         )
 
     _recalculate_order(order)
@@ -151,12 +168,19 @@ def update_order(
         order_item.product_name = item_data["product_name"]
         order_item.brand = item_data.get("brand", "")
         order_item.size = item_data.get("size", "")
+        order_item.color = item_data.get(
+            "color",
+            ""
+        )
         order_item.description = item_data.get("description", "")
         order_item.quantity = int(item_data.get("quantity", 1))
         order_item.currency = item_data["currency"]
         order_item.product_price = to_decimal(item_data.get("product_price"))
         order_item.markup_percent = to_decimal(item_data.get("markup_percent"))
         order_item.admin_cost = to_decimal(item_data.get("admin_cost"))
+        order_item.service_cost = to_decimal(
+            item_data.get("service_cost")
+        )
         order_item.exchange_rate = to_decimal(item_data.get("exchange_rate"))
 
         new_photo = item_data.get("photo")

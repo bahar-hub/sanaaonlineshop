@@ -33,6 +33,34 @@ def format_price(value):
         return "0"
 
 
+def get_photo_data_uri(photo_field):
+    """
+    Playwright renders the invoice HTML with page.set_content(), which has
+    no base URL, so a plain relative /media/... <img src> never resolves
+    and the product photo silently fails to show up in the generated
+    PDF/PNG (and therefore in the Telegram invoice). Embedding the image
+    as a base64 data URI avoids depending on any URL resolution at all.
+    """
+    if not photo_field:
+        return ""
+
+    try:
+        photo_field.open("rb")
+        try:
+            raw = photo_field.read()
+        finally:
+            photo_field.close()
+    except (FileNotFoundError, ValueError, OSError):
+        return ""
+
+    ext = Path(photo_field.name).suffix.lower().lstrip(".") or "jpeg"
+    if ext == "jpg":
+        ext = "jpeg"
+
+    encoded = base64.b64encode(raw).decode()
+    return f"data:image/{ext};base64,{encoded}"
+
+
 def get_customer_name(user):
     name = f"{user.first_name} {user.last_name}".strip()
     return name or user.username or "—"
@@ -66,6 +94,7 @@ def build_invoice_context(order, is_admin=False):
             "name": item.product_name or "—",
             "brand": item.brand or "—",
             "size": item.size or "—",
+            "color": item.color or "—",
             "qty": item.quantity,
             "currency": item.currency,
             "currency_label": currency_label_map.get(item.currency, item.currency),
@@ -80,6 +109,7 @@ def build_invoice_context(order, is_admin=False):
             "markup_percent": item.markup_percent,
             "line_total_irr": format_price(item.line_total_irr),
             "line_total_irr_raw": item.line_total_irr,
+            "photo": get_photo_data_uri(item.photo),
         }
         items.append(row)
 
@@ -100,7 +130,6 @@ def build_invoice_context(order, is_admin=False):
         "order_status_label": order.get_status_display(),
         "items": items,
         "items_total": format_price(items_total),
-        "service_cost": format_price(order.service_cost),
         "shipping_cost": format_price(order.shipping_cost),
         "grand_total": format_price(order.total_irr),
         "base_items_total": format_price(base_items_total),
@@ -221,6 +250,5 @@ def build_telegram_caption(order):
 
     lines.append("")
     lines.append(f"🚚 باربری: {format_price(order.shipping_cost)} ریال")
-    lines.append(f"🛠 خدمات: {format_price(order.service_cost)} ریال")
 
     return "\n".join(lines)

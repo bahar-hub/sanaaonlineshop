@@ -1,4 +1,4 @@
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_CEILING
 
 from django.conf import settings
 from django.db import models
@@ -68,16 +68,22 @@ class Order(models.Model):
         return f"Order #{self.id} - {self.user}"
 
     def calculate_totals(self):
-        """Recalculate using each item's marked-up sale price and own FX rate."""
+        """
+        Recalculate using each item's marked-up sale price and own FX rate.
+        Each item's line_total_irr already includes that item's own service
+        fee, so it isn't added again here — only shipping is.
+        """
         items_total_irr = sum(
             (item.line_total_irr for item in self.items.all()),
             Decimal("0"),
         )
 
+        step = Decimal("10000")
+        raw_total = items_total_irr + (self.shipping_cost or Decimal("0"))
         self.total_irr = (
-            items_total_irr
-            + (self.shipping_cost or Decimal("0"))
-        ).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+            (raw_total / step).to_integral_value(rounding=ROUND_CEILING)
+            * step
+        )
 
         if self.usd_rate and self.usd_rate > 0:
             self.total_usd = (self.total_irr / self.usd_rate).quantize(
@@ -215,15 +221,45 @@ class OrderItem(models.Model):
 
     @property
     def line_total_irr(self):
-        return (self.unit_price_irr * self.quantity).quantize(
+        """
+        Total payable amount for this line: unit price (after markup) × qty,
+        plus this item's own service fee — charged once per item entry, not
+        multiplied by quantity. This is what actually gets billed for the
+        item, so it's what feeds into the order grand total; it is never
+        broken out as a separate "service cost" line anywhere the customer
+        can see it.
+        """
+        line_before_service = (
+            self.unit_price_irr * self.quantity
+        ).quantize(
+            Decimal("1"),
+            rounding=ROUND_HALF_UP,
+        )
+
+        return (
+            line_before_service
+            + (self.service_cost or Decimal("0"))
+        ).quantize(
             Decimal("1"),
             rounding=ROUND_HALF_UP,
         )
 
     @property
     def markup_amount_irr(self):
+        """
+        Currency-markup profit only. The service fee is a separate concept
+        (an admin-entered charge for the item, not FX markup), so it is
+        deliberately excluded here even though it's now part of
+        line_total_irr.
+        """
+        line_before_service = (
+            self.unit_price_irr * self.quantity
+        ).quantize(
+            Decimal("1"),
+            rounding=ROUND_HALF_UP,
+        )
         base_total = self.base_unit_price_irr * self.quantity
-        return (self.line_total_irr - base_total).quantize(
+        return (line_before_service - base_total).quantize(
             Decimal("1"),
             rounding=ROUND_HALF_UP,
         )
