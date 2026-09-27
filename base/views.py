@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.conf import settings
+from django.http import JsonResponse
+from django.urls import reverse
 
 User = get_user_model()
 
@@ -30,14 +32,36 @@ def login_view(request):
             password=password,
         )
 
+        is_ajax = (
+            request.headers.get("X-Requested-With")
+            == "XMLHttpRequest"
+        )
+
         if user is not None:
 
             login(request, user)
 
             if user.is_superuser:
-                return redirect("panel:orders")
+                redirect_url = reverse("panel:orders")
+            else:
+                redirect_url = reverse("customer:profile")
 
-            return redirect("customer:profile")
+            if is_ajax:
+                return JsonResponse({
+                    "success": True,
+                    "redirect_url": redirect_url,
+                })
+
+            return redirect(redirect_url)
+
+        if is_ajax:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "نام کاربری یا رمز عبور اشتباه است."
+                },
+                status=400,
+            )
 
         return render(
             request,
@@ -48,7 +72,6 @@ def login_view(request):
         )
 
     return redirect("base:index")
-
 
 def signup_view(request):
 

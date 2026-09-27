@@ -234,6 +234,11 @@ def report_view(request):
             "items_count":
                 order.items.count(),
 
+            "items_sold": sum(
+                item.quantity
+                for item in order.items.all()
+            ),
+
             # برای تشخیص فروش واقعی
             "is_paid":
                 order.payment_status
