@@ -58,18 +58,42 @@ function initHero() {
 // ========================================
 
 function initSplash() {
+
     const splash = document.getElementById("splash");
     const hero = document.getElementById("hero");
+    const authPage = document.getElementById("authPage");
+
+    // اگر Django فرم لاگین را به خاطر خطا باز کرده
+    if (authPage && !authPage.hidden) {
+
+        if (splash) {
+            splash.remove();
+        }
+
+        if (hero) {
+            hero.hidden = true;
+        }
+
+        requestAnimationFrame(() => {
+            authPage.classList.add("is-visible");
+        });
+
+        return;
+    }
+
 
     if (!splash) {
         return;
     }
 
+
     const SPLASH_DURATION = 2200;
+
 
     setTimeout(() => {
 
         splash.classList.add("is-hidden");
+
 
         requestAnimationFrame(() => {
 
@@ -80,9 +104,11 @@ function initSplash() {
 
         });
 
+
         setTimeout(() => {
             splash.remove();
         }, 800);
+
 
     }, SPLASH_DURATION);
 }
@@ -215,8 +241,53 @@ function initForms() {
 // Login Handler
 // ========================================
 
-function handleLogin(event) {
-    // Django handles the login
+async function handleLogin(event) {
+
+    event.preventDefault();
+
+    const form = event.currentTarget;
+
+    clearAuthError("loginForm");
+
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const formData = new FormData(form);
+
+    try {
+
+        const response = await fetch(form.action, {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+
+            showAuthError(
+                data.message || "نام کاربری یا رمز عبور اشتباه است.",
+                "loginForm"
+            );
+
+            return;
+        }
+
+        window.location.href = data.redirect_url;
+
+    } catch (error) {
+
+        showAuthError(
+            "ارتباط با سرور برقرار نشد. دوباره تلاش کنید.",
+            "loginForm"
+        );
+
+    }
 }
 
 
