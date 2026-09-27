@@ -221,10 +221,10 @@
                         <th>رنگ</th>
                         <th>تعداد</th>
                         {% if is_admin %}
-                            <th>قیمت واحد (ارز)</th>
-                            <th>قیمت واحد (ریال)</th>
+                            <th>قیمت کل (ارز)</th>
+                            <th>قیمت کل (ریال)</th>
                         {% else %}
-                            <th>قیمت واحد</th>
+                            <th>قیمت کل</th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -247,14 +247,10 @@
                             <td>{{ item.qty }}</td>
 
                             {% if is_admin %}
-                                <td>{{ item.foreign_price }} {{ item.currency_label }}</td>
-                                <td>
-                                    قبل: {{ item.base_unit_price_irr }} ریال
-                                    <br>
-                                    بعد: {{ item.unit_price_irr }} ریال
-                                </td>
+                                <td>{{ item.foreign_total }} {{ item.currency_label }}</td>
+                                <td>{{ item.line_total_irr }} ریال</td>
                             {% else %}
-                                <td>{{ item.unit_price_irr }} ریال</td>
+                                <td>{{ item.line_total_irr }} ریال</td>
                             {% endif %}
                         </tr>
                     {% endfor %}
@@ -279,6 +275,7 @@
                     <div class="profit-box">
                         <div><strong>جمع قبل از افزایش:</strong> {{ base_items_total }} ریال</div>
                         <div><strong>مجموع افزایش اعمال‌شده:</strong> {{ profit_total }} ریال</div>
+                        <div><strong>هزینه کل خدمات:</strong> {{ total_service_cost }} ریال</div>
                     </div>
                 {% endif %}
             </div>

@@ -1664,7 +1664,6 @@
 
             +
 
-                        +
 
             '<div class="admin-orders-f__sheet-row">' +
 
@@ -3768,27 +3767,17 @@
                     : line.currency;
 
             // ظاهر جدول دقیقاً مثل نسخه اولیه حفظ شده است.
-            // برای ادمین، قیمت ریالی قبل و بعد از افزایش داخل همان سلول قبلی نمایش داده می‌شود.
-            var rialCell;
-
-            if (isAdminF) {
-                rialCell =
-                    '<td class="invoice-price">' +
-                        '<div class="invoice-price-stack-f">' +
-                            '<div>' + moneyHtmlF(line.finalUnitRial, "ریال") + '</div>' +
-                        '</div>' +
-                    '</td>';
-            } else {
-                rialCell =
-                    '<td class="invoice-price">' +
-                    moneyHtmlF(line.finalUnitRial, "ریال") + '</td>';
-            }
+            // ستون قیمت، مبلغ نهایی همان ردیف را نشان می‌دهد (قیمت واحد ×
+            // تعداد + هزینه خدمات همان آیتم)، نه قیمت واحد.
+            var rialCell =
+                '<td class="invoice-price">' +
+                moneyHtmlF(line.lineRial, "ریال") + '</td>';
 
             var foreignCell =
                 isAdminF
                     ? '<td class="invoice-price">' +
                       '<span class="invoice-money-f" dir="rtl"><bdi class="invoice-money-f__number" dir="ltr">' +
-                      formatForeignF(line.price) + '</bdi><span class="invoice-money-f__label"> ' + currencyLabel + '</span></span>' +
+                      formatForeignF(line.price * line.qty) + '</bdi><span class="invoice-money-f__label"> ' + currencyLabel + '</span></span>' +
                       '</td>'
                     : '';
 
@@ -3871,6 +3860,10 @@
                         '<span>مجموع افزایش اعمال‌شده</span>' +
                         '<strong>' + formatNumberF(calc.profitRial) + ' ریال</strong>' +
                     '</div>' +
+                    '<div class="invoice-summary-row-f">' +
+                        '<span>هزینه کل خدمات</span>' +
+                        '<strong>' + formatNumberF(calc.serviceCostRial) + ' ریال</strong>' +
+                    '</div>' +
                 '</div>';
         }
 
@@ -3881,8 +3874,8 @@
 
         var tableHeadHtml =
             isAdminF
-                ? '<tr><th>کالا</th><th>برند</th><th>سایز</th><th>رنگ</th><th>تعداد</th><th>قیمت واحد (ارز)</th><th>قیمت واحد (ریال)</th></tr>'
-                : '<tr><th>کالا</th><th>برند</th><th>سایز</th><th>رنگ</th><th>تعداد</th><th>قیمت واحد</th></tr>';
+                ? '<tr><th>کالا</th><th>برند</th><th>سایز</th><th>رنگ</th><th>تعداد</th><th>قیمت کل (ارز)</th><th>قیمت کل (ریال)</th></tr>'
+                : '<tr><th>کالا</th><th>برند</th><th>سایز</th><th>رنگ</th><th>تعداد</th><th>قیمت کل</th></tr>';
 
 
         // 7 columns for the admin invoice (name+photo, brand, size, color,

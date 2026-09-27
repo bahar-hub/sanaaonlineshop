@@ -80,6 +80,7 @@ def build_invoice_context(order, is_admin=False):
     items_total = Decimal("0")
     base_items_total = Decimal("0")
     total_profit = Decimal("0")
+    total_service_cost = Decimal("0")
 
     for item in order.items.all():
         currency_label_map = {
@@ -100,10 +101,14 @@ def build_invoice_context(order, is_admin=False):
             "currency_label": currency_label_map.get(item.currency, item.currency),
             "foreign_price": format_price(item.product_price),
             "foreign_price_raw": item.product_price,
+            "foreign_total": format_price(item.product_price * item.quantity),
             "unit_price_irr": format_price(item.unit_price_irr),
             "unit_price_irr_raw": item.unit_price_irr,
             "base_unit_price_irr": format_price(item.base_unit_price_irr),
             "base_unit_price_irr_raw": item.base_unit_price_irr,
+            "base_line_total_irr": format_price(
+                item.base_unit_price_irr * item.quantity
+            ),
             "exchange_rate": format_price(item.exchange_rate),
             "adjusted_exchange_rate": format_price(item.adjusted_exchange_rate),
             "markup_percent": item.markup_percent,
@@ -116,6 +121,7 @@ def build_invoice_context(order, is_admin=False):
         items_total += item.line_total_irr
         base_items_total += item.base_unit_price_irr * item.quantity
         total_profit += item.markup_amount_irr
+        total_service_cost += item.service_cost or Decimal("0")
 
     context = {
         "site_name": getattr(settings, "SITE_NAME", "SANAA ONLINE SHOP"),
@@ -134,6 +140,7 @@ def build_invoice_context(order, is_admin=False):
         "grand_total": format_price(order.total_irr),
         "base_items_total": format_price(base_items_total),
         "profit_total": format_price(total_profit),
+        "total_service_cost": format_price(total_service_cost),
     }
 
     if items:
