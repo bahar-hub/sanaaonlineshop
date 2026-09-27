@@ -733,6 +733,7 @@
     }
 }
 
+
 // Desktop: the default 440px dialog is too narrow for these three modals.
 @include respond-to(md) {
     #adminOrderDetailsModalF .modal__panel {
@@ -783,4 +784,32 @@
 
 .admin-orders-f__sheet-product-img-f--empty-f {
     display: block;
+}
+
+
+
+.admin-orders-f__sheet-row.admin-orders-f__sheet-row--badge-f {
+    align-items: center;
+}
+
+.admin-orders-f__sheet-row--badge-f span:last-child {
+    min-width: 0;
+    max-width: none;
+
+    color: inherit;
+    font-weight: inherit;
+    text-align: inherit;
+    overflow-wrap: normal;
+}
+
+
+
+.admin-orders-f__sheet-product-cell--strong-f.admin-orders-f__sheet-product-cell--profit-f dd {
+    color: $color-success;
+    font-weight: 700;
+}
+
+.admin-orders-f__sheet-row.admin-orders-f__sheet-row--profit-f span:last-child {
+    color: $color-success;
+    font-weight: 700;
 }

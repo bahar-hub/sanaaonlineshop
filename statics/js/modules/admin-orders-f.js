@@ -530,6 +530,19 @@
 
     }
 
+        function sheetBadgeRowF(label, badgeHtml) {
+
+        return (
+            '<div class="admin-orders-f__sheet-row admin-orders-f__sheet-row--badge-f">' +
+            "<span>" +
+            label +
+            "</span>" +
+            badgeHtml +
+            "</div>"
+        );
+
+    }
+
 
     /* ============================================================
      * TOAST
@@ -1547,7 +1560,7 @@
 
             +
 
-            sheetRowF(
+                        sheetBadgeRowF(
                 "وضعیت سفارش",
                 badgeHtmlF(
                     ORDER_STATUS_F,
@@ -1557,7 +1570,7 @@
 
             +
 
-            sheetRowF(
+            sheetBadgeRowF(
                 "وضعیت فاکتور",
                 badgeHtmlF(
                     INVOICE_STATUS_F,
@@ -1621,11 +1634,12 @@
                                 ? EXCHANGE_RATES_F[line.currency].label
                                 : line.currency;
 
-                        function cellF(label, value, full, strong) {
+                                                function cellF(label, value, full, strong, profit) {
                             return (
                                 '<div class="admin-orders-f__sheet-product-cell' +
                                 (full ? ' admin-orders-f__sheet-product-cell--full-f' : '') +
                                 (strong ? ' admin-orders-f__sheet-product-cell--strong-f' : '') +
+                                (profit ? ' admin-orders-f__sheet-product-cell--profit-f' : '') +
                                 '"><dt>' + label + '</dt><dd>' + value + '</dd></div>'
                             );
                         }
@@ -1654,7 +1668,7 @@
                                     cellF("هزینه خدمات (ادمین)", formatNumberF(product.serviceCost || 0) + " ریال") +
                                     (product.description ? cellF("توضیحات", product.description, true) : "") +
                                     cellF("قیمت کل", formatNumberF(line.lineRial) + " ریال", true, true) +
-                                    cellF("سود این محصول", formatNumberF(line.profit) + " ریال", true, true) +
+                                    cellF("سود این محصول", formatNumberF(line.profit) + " ریال", true, true, true) +
                                 "</dl>" +
                             "</div>"
                         );
@@ -1796,7 +1810,7 @@
             "adminSheetPaymentF"
         ).innerHTML =
 
-            sheetRowF(
+            sheetBadgeRowF(
                 "وضعیت پرداخت",
                 badgeHtmlF(
                     PAYMENT_STATUS_F,

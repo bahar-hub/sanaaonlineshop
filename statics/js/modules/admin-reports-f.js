@@ -447,11 +447,20 @@
 
     var newCustomers = countNewCustomersF(jy, jm);
 
+    var totalInvoices = paidOrders.length;
+
+    var totalItemsSold = paidOrders.reduce(function (sum, order) {
+        return sum + Number(order.items_sold || 0);
+    }, 0);
+
     document.getElementById("monthlySalesValueF").textContent =
         formatNumberF(totalSales);
 
-    document.getElementById("monthlyOrdersValueF").textContent =
-        formatNumberF(orderCount);
+    document.getElementById("monthlyItemsSoldValueF").textContent =
+        formatNumberF(totalItemsSold);
+
+    document.getElementById("monthlyInvoicesValueF").textContent =
+        formatNumberF(totalInvoices);
 
     document.getElementById("monthlyNewCustomersValueF").textContent =
         formatNumberF(newCustomers);
@@ -535,14 +544,24 @@ for (var day = 1; day <= dayCount; day += 1) {
         return sum + Number(order.total_irr || 0);
     }, 0);
 
-    var orderCount = yearlyOrders.length;
+        var orderCount = yearlyOrders.length;
     var newCustomers = countNewCustomersYearF(jy);
+
+    // TODO(بک‌اند): همان توضیح بخش ماهانه — این دو مقدار placeholder‌اند.
+    var totalInvoices = yearlyOrders.length;
+
+    var totalItemsSold = yearlyOrders.reduce(function (sum, order) {
+        return sum + Number(order.items_sold || 0);
+    }, 0);
 
     document.getElementById("yearlySalesValueF").textContent =
         formatNumberF(totalSales);
 
-    document.getElementById("yearlyOrdersValueF").textContent =
-        formatNumberF(orderCount);
+    document.getElementById("yearlyItemsSoldValueF").textContent =
+        formatNumberF(totalItemsSold);
+
+    document.getElementById("yearlyInvoicesValueF").textContent =
+        formatNumberF(totalInvoices);
 
     document.getElementById("yearlyNewCustomersValueF").textContent =
         formatNumberF(newCustomers);
