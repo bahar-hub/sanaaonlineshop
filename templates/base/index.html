@@ -18,6 +18,14 @@
 
     <title>Sanaa Online Shop</title>
 
+    <!-- PWA / Add to Home Screen -->
+    <link rel="manifest" href="{% static 'manifest.webmanifest' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/logo.PNG' %}">
+    <meta name="theme-color" content="#A61579">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SANAA">
+
     <!-- Persian Typeface: Vazirmatn -->
     <link
         rel="stylesheet"
@@ -411,6 +419,11 @@
                                 autocomplete="street-address"
                                 required
                             ></textarea>
+                            <p class="form-hint form-hint--primary">
+
+    لطفاً استان و شهر را حتماً در آدرس ذکر کنید.
+
+</p>
 
                         </div>
                         <div class="form-group">
@@ -693,6 +706,80 @@
         </div>
 
     </main>
+    <!-- ========================================
+         Add to Home Screen Guide
+    ========================================= -->
+    <div
+        class="a2hs-modal"
+        id="a2hsModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="a2hsTitle"
+        hidden
+    >
+        <div
+            class="a2hs-modal__backdrop"
+            data-a2hs-close
+        ></div>
+
+        <section class="a2hs-modal__panel">
+
+            <button
+                type="button"
+                class="a2hs-modal__close"
+                data-a2hs-close
+                aria-label="بستن"
+            >
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M6 6l12 12M18 6L6 18"
+                        stroke-linecap="round"
+                    />
+                </svg>
+            </button>
+
+            <div class="a2hs-modal__brand" dir="ltr">
+                SANAA
+            </div>
+
+            <h2
+                class="a2hs-modal__title"
+                id="a2hsTitle"
+            >
+                سانا رو همیشه دم دست داشته باش
+            </h2>
+
+            <p
+                class="a2hs-modal__text"
+                id="a2hsText"
+            >
+                برای دسترسی سریع‌تر، SANAA رو به گوشی‌ات اضافه کن.
+            </p>
+
+            <button
+                type="button"
+                class="a2hs-modal__action"
+                id="a2hsInstall"
+            >
+                افزودن SANAA
+            </button>
+
+            <button
+                type="button"
+                class="a2hs-modal__later"
+                data-a2hs-close
+            >
+                بعداً
+            </button>
+
+        </section>
+    </div>
 
 
     <!-- JavaScript -->

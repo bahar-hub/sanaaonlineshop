@@ -3955,43 +3955,229 @@
      * Invoice modals — open/close/navigate/print
      * ---------------------------------------------------------- */
 
-    function fitInvoiceWrapF(wrap) {
+    function clearInvoiceModalScrollF(modal, wrap) {
 
-        var invoice = wrap.querySelector(".admin-invoice-f");
+        if (!modal || !wrap) {
+            return;
+        }
+
+        // Do not depend on modal class names.
+        // Walk from the invoice wrapper up to the modal itself and remove
+        // every overflow/max-height rule that can create an inner scrollbar.
+        var node = wrap;
+
+        while (node && node !== modal) {
+
+            node.style.setProperty(
+                "overflow",
+                "hidden",
+                "important"
+            );
+
+            node.style.setProperty(
+                "overflow-y",
+                "hidden",
+                "important"
+            );
+
+            node.style.setProperty(
+                "overflow-x",
+                "hidden",
+                "important"
+            );
+
+            node.style.setProperty(
+                "max-height",
+                "none",
+                "important"
+            );
+
+            node.style.setProperty(
+                "min-height",
+                "0",
+                "important"
+            );
+
+            node = node.parentElement;
+        }
+
+        modal.style.setProperty(
+            "overflow",
+            "hidden",
+            "important"
+        );
+
+        modal.style.setProperty(
+            "overflow-y",
+            "hidden",
+            "important"
+        );
+
+        modal.style.setProperty(
+            "overflow-x",
+            "hidden",
+            "important"
+        );
+
+    }
+
+
+    function fitInvoiceWrapF(wrap, modal) {
+
+        var invoice =
+            wrap.querySelector(
+                ".admin-invoice-f"
+            );
 
         if (!invoice) {
             return;
         }
 
-        // Reset before measuring the invoice at its real size.
+        modal =
+            modal ||
+            wrap.closest(
+                "#adminCustomerInvoiceModalF, #adminInternalInvoiceModalF"
+            );
+
+        if (modal) {
+            clearInvoiceModalScrollF(
+                modal,
+                wrap
+            );
+        }
+
+        // Always measure at the invoice's original dimensions first.
         invoice.style.transform = "none";
-        wrap.style.height = "auto";
+        invoice.style.transformOrigin = "top center";
 
-        var naturalWidth = invoice.offsetWidth;
-        var naturalHeight = invoice.offsetHeight;
-        var availableWidth = wrap.clientWidth;
+        wrap.style.setProperty(
+            "height",
+            "auto",
+            "important"
+        );
 
-        // The modal also contains the close button and invoice action buttons.
-        // Reserve enough vertical space for them so the *whole* invoice,
-        // including its footer, remains visible in the modal.
-        var availableHeight = Math.max(360, window.innerHeight - 220);
+        wrap.style.setProperty(
+            "overflow",
+            "hidden",
+            "important"
+        );
+
+        wrap.style.setProperty(
+            "width",
+            "100%",
+            "important"
+        );
+
+        wrap.style.setProperty(
+            "max-width",
+            "100%",
+            "important"
+        );
+
+        var naturalWidth =
+            invoice.offsetWidth;
+
+        var naturalHeight =
+            invoice.offsetHeight;
+
+        if (!naturalWidth || !naturalHeight) {
+            return;
+        }
+
+
+        // Width:
+        // use the real visible parent width rather than only wrap.clientWidth,
+        // because some modal wrappers calculate their width after opening.
+        var parent =
+            wrap.parentElement;
+
+        var parentRect =
+            parent
+                ? parent.getBoundingClientRect()
+                : null;
+
+        var viewportWidth =
+            window.innerWidth ||
+            document.documentElement.clientWidth ||
+            1024;
+
+        var viewportHeight =
+            window.innerHeight ||
+            document.documentElement.clientHeight ||
+            768;
+
+        var availableWidth =
+            parentRect &&
+            parentRect.width > 0
+                ? parentRect.width
+                : viewportWidth - 32;
+
+        availableWidth =
+            Math.max(
+                260,
+                Math.min(
+                    availableWidth - 16,
+                    viewportWidth - 24
+                )
+            );
+
+
+        // Height:
+        // reserve room for close button + action buttons.
+        // Admin invoice can be taller than customer invoice because of
+        // its internal-profit section, so scale by actual natural height.
+        var reservedUiHeight = 150;
+
+        var availableHeight =
+            Math.max(
+                280,
+                viewportHeight -
+                reservedUiHeight
+            );
+
 
         var widthScale =
-            availableWidth > 0 && naturalWidth > 0
-                ? availableWidth / naturalWidth
-                : 1;
+            availableWidth /
+            naturalWidth;
 
         var heightScale =
-            availableHeight > 0 && naturalHeight > 0
-                ? availableHeight / naturalHeight
-                : 1;
+            availableHeight /
+            naturalHeight;
 
-        var scale = Math.min(1, widthScale, heightScale);
+        var scale =
+            Math.min(
+                1,
+                widthScale,
+                heightScale
+            );
 
-        invoice.style.transformOrigin = "top center";
-        invoice.style.transform = "scale(" + scale + ")";
-        wrap.style.height = Math.ceil(naturalHeight * scale) + "px";
-        wrap.style.overflow = "hidden";
+        // Never let a bad measurement produce an unusable scale.
+        if (
+            !isFinite(scale) ||
+            scale <= 0
+        ) {
+            scale = 1;
+        }
+
+        invoice.style.setProperty(
+            "transform",
+            "scale(" + scale + ")",
+            "important"
+        );
+
+        invoice.style.setProperty(
+            "transform-origin",
+            "top center",
+            "important"
+        );
+
+        wrap.style.setProperty(
+            "height",
+            Math.ceil(
+                naturalHeight * scale
+            ) + "px",
+            "important"
+        );
 
     }
 
@@ -4002,47 +4188,178 @@
             return;
         }
 
-        modal.querySelectorAll(".invoice-scale-wrap-f").forEach(fitInvoiceWrapF);
+        var wraps =
+            modal.querySelectorAll(
+                ".invoice-scale-wrap-f"
+            );
+
+        wraps.forEach(
+            function (wrap) {
+
+                clearInvoiceModalScrollF(
+                    modal,
+                    wrap
+                );
+
+                fitInvoiceWrapF(
+                    wrap,
+                    modal
+                );
+
+            }
+        );
 
     }
 
 
-    window.addEventListener("resize", function () {
+    function refitOpenInvoiceModalsF() {
 
-        document.querySelectorAll(".invoice-scale-wrap-f").forEach(function (wrap) {
+        [
+            "adminCustomerInvoiceModalF",
+            "adminInternalInvoiceModalF"
+        ].forEach(
+            function (id) {
 
-            if (wrap.offsetParent !== null) {
-                fitInvoiceWrapF(wrap);
+                var modal =
+                    document.getElementById(
+                        id
+                    );
+
+                if (
+                    modal &&
+                    !modal.hidden
+                ) {
+                    fitInvoicesInModalF(
+                        modal
+                    );
+                }
+
             }
+        );
 
-        });
+    }
 
-    });
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            window.requestAnimationFrame(
+                refitOpenInvoiceModalsF
+            );
+
+        }
+    );
 
 
     function openInvoiceModalF(id) {
 
-        var modal = document.getElementById(id);
+        var modal =
+            document.getElementById(
+                id
+            );
 
-        if (modal) {
-
-            modal.hidden = false;
-
-            requestAnimationFrame(function () {
-                fitInvoicesInModalF(modal);
-            });
-
+        if (!modal) {
+            return;
         }
+
+        modal.hidden = false;
+
+        document.documentElement.style.setProperty(
+            "overflow",
+            "hidden",
+            "important"
+        );
+
+        document.body.style.setProperty(
+            "overflow",
+            "hidden",
+            "important"
+        );
+
+        modal.style.setProperty(
+            "overflow",
+            "hidden",
+            "important"
+        );
+
+        // First layout pass.
+        requestAnimationFrame(
+            function () {
+
+                fitInvoicesInModalF(
+                    modal
+                );
+
+                // Second pass after the modal has a real rendered size.
+                requestAnimationFrame(
+                    function () {
+
+                        fitInvoicesInModalF(
+                            modal
+                        );
+
+                        // Images/fonts can slightly change invoice height.
+                        window.setTimeout(
+                            function () {
+                                fitInvoicesInModalF(
+                                    modal
+                                );
+                            },
+                            80
+                        );
+
+                    }
+                );
+
+            }
+        );
 
     }
 
 
     function closeInvoiceModalF(id) {
 
-        var modal = document.getElementById(id);
+        var modal =
+            document.getElementById(
+                id
+            );
 
         if (modal) {
             modal.hidden = true;
+        }
+
+        var customerModal =
+            document.getElementById(
+                "adminCustomerInvoiceModalF"
+            );
+
+        var internalModal =
+            document.getElementById(
+                "adminInternalInvoiceModalF"
+            );
+
+        var invoiceModalStillOpen =
+            (
+                customerModal &&
+                !customerModal.hidden
+            )
+            ||
+            (
+                internalModal &&
+                !internalModal.hidden
+            );
+
+        if (!invoiceModalStillOpen) {
+
+            document.documentElement.style.removeProperty(
+                "overflow"
+            );
+
+            document.body.style.removeProperty(
+                "overflow"
+            );
+
         }
 
     }

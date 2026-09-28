@@ -7,7 +7,13 @@
     position: relative;
     overflow: hidden;
 
+    // Fallback for older browsers.
     min-height: 100vh;
+
+    // Mobile browsers have dynamic top/bottom toolbars. `100dvh`
+    // follows the actually visible viewport, so the bottom hero bar
+    // does not end up behind Safari/Chrome browser chrome.
+    min-height: 100dvh;
 
     background-image: url("../img/pattern.PNG");
 
@@ -136,7 +142,10 @@
 // ----------------------------------------
 
 .hero__bar {
-    position: fixed;
+    // On mobile keep the bar inside the hero's dynamic viewport.
+    // Using absolute positioning here avoids the common iOS/Chrome
+    // issue where a fixed element can sit underneath browser UI.
+    position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
@@ -146,8 +155,14 @@
     align-items: center;
     justify-content: space-between;
 
-    height: 64px;
-    padding: 0 $spacing-md;
+    min-height: 64px;
+    height: auto;
+
+    // Respect iPhone home-indicator / safe-area as well.
+    padding:
+        0
+        $spacing-md
+        env(safe-area-inset-bottom, 0px);
 
     background-color: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(14px);
@@ -215,8 +230,15 @@
     }
 
     .hero__bar {
+        position: fixed;
+
+        min-height: 76px;
         height: 76px;
-        padding: 0 $spacing-2xl;
+
+        padding:
+            0
+            $spacing-2xl
+            env(safe-area-inset-bottom, 0px);
     }
 
     .hero__bar-logo {
