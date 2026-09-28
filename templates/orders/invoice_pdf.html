@@ -264,7 +264,11 @@
                 </div>
                 <div class="summary-row">
                     <span>هزینه باربری:</span>
-                    <span>{{ shipping_cost }} ریال</span>
+                    {% if not is_admin and shipping_is_zero %}
+                        <span>هزینه باربری اعلام خواهد شد.</span>
+                    {% else %}
+                        <span>{{ shipping_cost }} ریال</span>
+                    {% endif %}
                 </div>
                 <div class="summary-row summary-total">
                     <span>مجموع کل</span>

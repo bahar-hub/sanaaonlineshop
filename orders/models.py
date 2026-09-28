@@ -8,7 +8,8 @@ class Order(models.Model):
 
     class Status(models.TextChoices):
         REGISTERED = "registered", "ثبت شده"
-        SHIPPED = "shipped", "ارسال شده"
+        SHIPPED_TO_IRAN = "shipped_to_iran", "ارسال به ایران"
+        SHIPPED_TO_CUSTOMER = "shipped_to_customer", "ارسال به مشتری"
         DELIVERED = "delivered", "تحویل داده شده"
         CANCELLED = "cancelled", "لغو شده"
 

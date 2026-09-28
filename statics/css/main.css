@@ -536,9 +536,19 @@ body {
   color: #7A5A13;
 }
 
-.order-status--shipped {
+.order-status--shipped_to_iran {
+  background-color: rgba(30, 90, 170, 0.1);
+  color: #1E5AAA;
+}
+
+.order-status--shipped_to_customer {
   background-color: rgba(166, 21, 121, 0.1);
   color: #A61579;
+}
+
+.order-status--cancelled {
+  background-color: rgba(183, 28, 28, 0.1);
+  color: #B71C1C;
 }
 
 .order-status--delivered {

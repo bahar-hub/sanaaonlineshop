@@ -137,6 +137,7 @@ def build_invoice_context(order, is_admin=False):
         "items": items,
         "items_total": format_price(items_total),
         "shipping_cost": format_price(order.shipping_cost),
+        "shipping_is_zero": not (order.shipping_cost or 0) > 0,
         "grand_total": format_price(order.total_irr),
         "base_items_total": format_price(base_items_total),
         "profit_total": format_price(total_profit),

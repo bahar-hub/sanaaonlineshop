@@ -30,7 +30,7 @@ function getMockOrders() {
         {
             id: "SN-10417",
             date: "1404/04/28",
-            status: "shipped",
+            status: "shipped_to_iran",
             items: [
                 {
                     name: "کیف دستی چرم",
@@ -74,7 +74,8 @@ function getMockOrders() {
 
 const ORDER_STATUS_LABELS = {
     registered: "ثبت شده",
-    shipped: "ارسال شده",
+    shipped_to_iran: "ارسال به ایران",
+    shipped_to_customer: "ارسال به مشتری",
     delivered: "تحویل داده شده",
     cancelled: "لغو شده"
 };
@@ -623,7 +624,7 @@ function renderCustomerInvoiceHtml(order) {
 
                             '<div class="invoice-summary-row-f">' +
                                 '<span>هزینه باربری :</span>' +
-                                '<span>' + Math.round(shippingRial).toLocaleString("fa-IR") + ' ریال</span>' +
+                                '<span>' + (shippingRial > 0 ? Math.round(shippingRial).toLocaleString("fa-IR") + ' ریال' : 'هزینه باربری اعلام خواهد شد.') + '</span>' +
                             '</div>' +
 
                             '<div class="invoice-summary-row-f invoice-summary-total-f">' +

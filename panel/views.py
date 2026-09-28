@@ -6,6 +6,7 @@ from django.db import transaction
 from orders.telegram_service import (
     send_order_update_notification,
     send_new_products_notification,
+    send_shipping_cost_notification,
 )
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import user_passes_test
@@ -24,7 +25,6 @@ from orders.models import (
     OrderItem,
     Invoice,
 )
-from orders.telegram_service import send_order_status_update
 from orders.telegram_service import check_telegram_connection
 from orders.services import (
     create_order,
@@ -34,38 +34,6 @@ from orders.services import (
 
 def is_superuser(user):
     return user.is_authenticated and user.is_superuser
-
-@require_POST
-@user_passes_test(is_superuser, login_url="base:index")
-def update_order_status_view(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-
-    status = str(request.POST.get("status", "")).strip()
-
-    if status not in Order.Status.values:
-        return JsonResponse(
-            {
-                "success": False,
-                "message": "وضعیت سفارش معتبر نیست.",
-            },
-            status=400,
-        )
-
-    old_status = order.status
-
-    order.status = status
-    order.save(update_fields=["status"])
-
-
-    if old_status != status:
-         send_order_status_update(order)
-
-    return JsonResponse(
-        {
-            "success": True,
-            "order": serialize_order(order),
-        }
-    )
 
 @require_POST
 @user_passes_test(is_superuser, login_url="base:index")
@@ -587,6 +555,17 @@ def parse_order_request(request):
             "وضعیت پرداخت معتبر نیست."
         )
 
+    # وضعیت سفارش فقط هنگام ویرایش ارسال می‌شود (اختیاری).
+    status = request.POST.get("status")
+
+    if status is not None:
+        status = str(status).strip()
+
+        if status not in Order.Status.values:
+            raise ValueError(
+                "وضعیت سفارش معتبر نیست."
+            )
+
     items_json = request.POST.get(
         "items",
         "[]",
@@ -829,6 +808,9 @@ def parse_order_request(request):
         "payment_status":
             payment_status,
 
+        "status":
+            status,
+
         "shipping_cost":
             request.POST.get(
                 "shipping_cost",
@@ -1003,6 +985,7 @@ def update_order_view(
         "shipping_cost": order.shipping_cost,
         "payment_status": order.payment_status,
         "total_irr": order.total_irr,
+        "status": order.status,
     }
     try:
         data = parse_order_request(
@@ -1026,6 +1009,9 @@ def update_order_view(
 
             usd_rate=
                 data["usd_rate"],
+
+            status=
+                data["status"],
         )
 
 
@@ -1034,32 +1020,52 @@ def update_order_view(
         )
         changes = []
 
+        status_changed = old_data["status"] != order.status
 
-        if old_data["shipping_cost"] != order.shipping_cost:
-            changes.append(
-                f"🚚 هزینه باربری:\n{int(order.shipping_cost):,} تومان"
-            )
+        # وقتی وضعیت به «ارسال به ایران» می‌رود و هزینه باربری صفر نیست،
+        # فقط پیام هزینه باربری برای مشتری ارسال می‌شود.
+        send_shipping_message = (
+            status_changed
+            and order.status == Order.Status.SHIPPED_TO_IRAN
+            and (order.shipping_cost or 0) > 0
+        )
 
-
-        if old_data["payment_status"] != order.payment_status:
-            changes.append(
-                f"💳 وضعیت پرداخت:\n{order.get_payment_status_display()}"
-            )
-
-
-        if old_data["total_irr"] != order.total_irr:
-            changes.append(
-                f"💰 مبلغ سفارش:\n{int(order.total_irr):,} ریال"
-            )
-        # مشتری از ویرایش سفارش خودش در ربات تلگرام مطلع می‌شود.
-        if changes:
+        if send_shipping_message:
             transaction.on_commit(
-                lambda: send_order_update_notification(
-                    order,
-                    changes
-                ),
+                lambda: send_shipping_cost_notification(order),
                 robust=True,
             )
+
+        else:
+            # در غیر این صورت فقط همان بخش‌هایی که تغییر کرده‌اند گفته می‌شود.
+            if status_changed:
+                changes.append(
+                    f"📦 وضعیت سفارش:\n{order.get_status_display()}"
+                )
+
+            if old_data["shipping_cost"] != order.shipping_cost:
+                changes.append(
+                    f"🚚 هزینه باربری:\n{int(order.shipping_cost):,} ریال"
+                )
+
+            if old_data["payment_status"] != order.payment_status:
+                changes.append(
+                    f"💳 وضعیت پرداخت:\n{order.get_payment_status_display()}"
+                )
+
+            if old_data["total_irr"] != order.total_irr:
+                changes.append(
+                    f"💰 مبلغ سفارش:\n{int(order.total_irr):,} ریال"
+                )
+
+            if changes:
+                transaction.on_commit(
+                    lambda: send_order_update_notification(
+                        order,
+                        changes
+                    ),
+                    robust=True,
+                )
 
 
         if new_items.exists():
