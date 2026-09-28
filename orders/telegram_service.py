@@ -1,8 +1,9 @@
 import io
-from django.utils import timezone
+import logging
 import requests
 
 from django.conf import settings
+from django.utils import timezone
 
 from .models import Order
 from .invoice_utils import (
@@ -10,6 +11,7 @@ from .invoice_utils import (
     build_invoice_image_bytes,
     build_invoice_filenames,
     build_telegram_caption,
+    build_order_number,
 )
 
 
@@ -41,7 +43,7 @@ def send_order_status_update(order):
 
 📦 مشخصات سفارش
 
-💰 هزینه باربری: {int(order.shipping_cost or 0):,} تومان
+💰 هزینه باربری: {int(order.shipping_cost or 0):,} ریال
 
 بعد از پرداخت باربری، برای ارسال سفارشتون با ما هماهنگ کنید 🫶🏽
 """
@@ -208,7 +210,7 @@ Sanaa Online Shop
 ⏱️ اعتبار این فاکتور: ۳۰ دقیقه
 
 🚚 هزینه باربری هر کیلو :
-اروپا: ۱۵€ | کانادا: ۴۵–۵۰ CAD | آمریکا: ۳۸ USD | ترکیه:۶۵۰-۷۰۰ تومان 
+اروپا: ۱۵€ | کانادا: ۴۵–۵۰ CAD | آمریکا: ۳۸ USD | ترکیه:۶۵۰-۷۰۰ تومان | دبی: 35 درهم
 
 📍 از آنجایی که باربری دلاری و با نرخ روز محاسبه می‌شود، پیشنهاد می‌کنیم دلار باربری را از قبل تهیه کنید تا در صورت افزایش نرخ، متضرر نشوید.
 
@@ -250,9 +252,9 @@ def send_order_update_notification(order, changes):
 
 
     message = f"""
-سلام {order.user.first_name} عزیز 👋
+{order.user.first_name} عزیز مبارکتون باشه. 🎉
 
-سفارش شما در SANAA ONLINE SHOP به‌روزرسانی شد ✨
+سفارش شما در Sanaa Online Shop ثبت شد ✨
 
 🧾 شماره سفارش:
 #{order.id}
@@ -265,7 +267,6 @@ def send_order_update_notification(order, changes):
 
     message += """
 
-سانا آنلاین شاپ 🌱
 """
 
 
@@ -419,3 +420,143 @@ def send_new_products_notification(order, new_items):
 
 
     return True
+
+
+logger = logging.getLogger(__name__)
+
+
+def _post_telegram_file(chat_id, method, field, filename, file_bytes,
+                        mime, caption=None):
+    """
+    Sends one file to one chat. Returns (ok, error_description).
+    Never raises, so one failed chat can't break the order request.
+    """
+    data = {"chat_id": chat_id}
+    if caption:
+        data["caption"] = caption
+
+    try:
+        response = requests.post(
+            _telegram_url(method),
+            data=data,
+            files={field: (filename, io.BytesIO(file_bytes), mime)},
+            timeout=60,
+        )
+    except requests.RequestException as exc:
+        return False, f"network: {exc}"
+
+    try:
+        result = response.json()
+    except ValueError:
+        result = {}
+
+    if response.ok and result.get("ok"):
+        return True, None
+
+    return False, result.get("description") or f"HTTP {response.status_code}"
+
+
+def _mark_connection_error(connection, error):
+    """Blocked / chat not found -> remember it so the admin panel shows it."""
+    if not connection:
+        return
+
+    connection.last_error = error
+    fields = ["last_error"]
+
+    lowered = (error or "").lower()
+    if "blocked" in lowered or "chat not found" in lowered or "deactivated" in lowered:
+        connection.is_active = False
+        connection.disconnected_at = timezone.now()
+        fields += ["is_active", "disconnected_at"]
+
+    connection.save(update_fields=fields)
+
+
+def _send_invoice_files(chat_id, order, pdf_bytes, image_bytes, filenames, caption):
+    ok_photo, err_photo = _post_telegram_file(
+        chat_id, "sendPhoto", "photo",
+        filenames["image"], image_bytes, "image/png", caption,
+    )
+    ok_pdf, err_pdf = _post_telegram_file(
+        chat_id, "sendDocument", "document",
+        filenames["pdf"], pdf_bytes, "application/pdf",
+        f"PDF فاکتور {filenames['pdf']}",
+    )
+    return (ok_photo or ok_pdf), (err_photo or err_pdf)
+
+
+def send_order_invoice_bundle(order_id):
+    """
+    Called after a new order is saved.
+
+    1) Sends the invoice (image + PDF) to the customer's OWN Telegram
+       account, using the chat id saved when they pressed Start in the bot.
+    2) Then sends the payment-instructions text to the same customer.
+    3) Optionally sends a copy to the admin chat (TELEGRAM_CHAT_ID).
+
+    The invoice is rendered only once and reused for every recipient.
+    """
+    if not settings.TELEGRAM_BOT_TOKEN:
+        logger.warning("Invoice not sent: TELEGRAM_BOT_TOKEN is empty.")
+        return
+
+    order = (
+        Order.objects
+        .select_related("user")
+        .prefetch_related("items")
+        .get(id=order_id)
+    )
+
+    connection = getattr(order.user, "telegram_connection", None)
+    customer_chat_id = (
+        connection.telegram_id
+        if connection and connection.is_active
+        else None
+    )
+    admin_chat_id = settings.TELEGRAM_CHAT_ID or None
+
+    if not customer_chat_id and not admin_chat_id:
+        logger.warning(
+            "Invoice for order %s not sent: customer has no active "
+            "Telegram connection.", order_id,
+        )
+        return
+
+    pdf_bytes = build_invoice_pdf_bytes(order, is_admin=False)
+    image_bytes = build_invoice_image_bytes(
+        order, is_admin=False, pdf_bytes=pdf_bytes
+    )
+    filenames = build_invoice_filenames(order, is_admin=False)
+
+    # --- customer ---
+    if customer_chat_id:
+        caption = (
+            f"🧾 فاکتور سفارش {build_order_number(order)}\n"
+            f"{order.user.first_name} عزیز، ممنون از خریدتون 🤍"
+        )
+        ok, error = _send_invoice_files(
+            customer_chat_id, order, pdf_bytes, image_bytes, filenames, caption
+        )
+
+        if ok:
+            connection.last_error = None
+            connection.save(update_fields=["last_error"])
+            send_order_invoice_to_customer(order)
+        else:
+            logger.error(
+                "Invoice for order %s failed for customer %s: %s",
+                order_id, order.user_id, error,
+            )
+            _mark_connection_error(connection, error)
+
+    # --- admin copy ---
+    if admin_chat_id and str(admin_chat_id) != str(customer_chat_id):
+        ok, error = _send_invoice_files(
+            admin_chat_id, order, pdf_bytes, image_bytes, filenames,
+            build_telegram_caption(order),
+        )
+        if not ok:
+            logger.error(
+                "Admin copy of invoice %s failed: %s", order_id, error
+            )

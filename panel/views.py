@@ -17,13 +17,15 @@ from django.shortcuts import (
 )
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from orders.telegram_service import send_order_invoice_to_customer , send_order_bundle_to_telegram
+from orders.telegram_service import send_order_invoice_to_customer , send_order_bundle_to_telegram, send_order_invoice_bundle
+from customer.models import TelegramConnection
 from orders.models import (
     Order,
     OrderItem,
     Invoice,
 )
 from orders.telegram_service import send_order_status_update
+from orders.telegram_service import check_telegram_connection
 from orders.services import (
     create_order,
     update_order,
@@ -65,6 +67,53 @@ def update_order_status_view(request, order_id):
         }
     )
 
+@require_POST
+@user_passes_test(is_superuser, login_url="base:index")
+def test_telegram_connection_view(request, user_id):
+
+    User = get_user_model()
+
+    customer = get_object_or_404(
+        User,
+        id=user_id,
+        is_superuser=False,
+    )
+
+    connection = TelegramConnection.objects.filter(
+        user=customer
+    ).first()
+
+    if not connection:
+        return JsonResponse(
+            {
+                "success": True,
+                "connected": False,
+                "status": "not_linked",
+                "message":
+                    "این مشتری هنوز حساب تلگرام خود را متصل نکرده است.",
+            }
+        )
+
+    result = check_telegram_connection(connection)
+
+    if result["connected"]:
+        status = "connected"
+    elif result.get("reason") == "not_linked":
+        status = "not_linked"
+    else:
+        status = "disconnected"
+
+    return JsonResponse(
+        {
+            "success": True,
+            "connected": result["connected"],
+            "status": status,
+            "message": result["message"],
+            "telegramUsername": connection.username,
+        }
+    )
+
+
 @user_passes_test(is_superuser, login_url="base:index")
 def customer_view(request):
 
@@ -102,6 +151,7 @@ def customer_view(request):
     customers_queryset = (
         User.objects
         .filter(is_superuser=False)
+        .select_related("telegram_connection")
         .prefetch_related("orders")
         .order_by("-date_joined")
     )
@@ -117,6 +167,18 @@ def customer_view(request):
             (order.total_irr for order in orders),
             Decimal("0")
         )
+
+        telegram_connection = getattr(
+            customer, "telegram_connection", None
+        )
+
+        if telegram_connection and telegram_connection.telegram_id:
+            if telegram_connection.is_active:
+                telegram_status = "connected"
+            else:
+                telegram_status = "disconnected"
+        else:
+            telegram_status = "not_linked"
 
         customer_name = (
             f"{customer.first_name} {customer.last_name}"
@@ -138,6 +200,11 @@ def customer_view(request):
 
             "ordersCount": len(orders),
             "totalSpent": float(total_spent),
+            "telegramStatus": telegram_status,
+            "telegramUsername": (
+                telegram_connection.username
+                if telegram_connection else None
+            ),
 
             "orders": [
                 {
@@ -868,12 +935,7 @@ def create_order_view(request):
         created_order_id = order.id
 
         transaction.on_commit(
-            lambda: send_order_bundle_to_telegram(created_order_id),
-            robust=True,
-        )
-
-        transaction.on_commit(
-            lambda: send_order_invoice_to_customer(order),
+            lambda: send_order_invoice_bundle(created_order_id),
             robust=True,
         )
 

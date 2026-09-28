@@ -212,8 +212,9 @@ def build_invoice_pdf_bytes(order, is_admin=False):
 
     return pdf
 
-def build_invoice_image_bytes(order, is_admin=False):
-    pdf_bytes = build_invoice_pdf_bytes(order, is_admin=is_admin)
+def build_invoice_image_bytes(order, is_admin=False, pdf_bytes=None):
+    if pdf_bytes is None:
+        pdf_bytes = build_invoice_pdf_bytes(order, is_admin=is_admin)
 
     pdf_doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     page = pdf_doc.load_page(0)
