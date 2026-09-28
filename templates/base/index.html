@@ -49,6 +49,7 @@
         class="splash"
         id="splash"
         aria-label="Sanaa introduction"
+        {% if login_error %}hidden{% endif %}
     >
 
         <div class="splash__texture"></div>
@@ -157,7 +158,7 @@
     <main
         class="auth-page"
         id="authPage"
-        hidden
+        {% if not login_error %}hidden{% endif %}
     >
 
         <div class="auth-page__container">
@@ -228,6 +229,11 @@
                         action="{% url 'base:login' %}"
                     >
                         {% csrf_token %}
+                        {% if login_error %}
+                            <p class="login-error">
+                                {{ login_error }}
+                            </p>
+                        {% endif %}
                         <div class="form-group">
 
                             <label
