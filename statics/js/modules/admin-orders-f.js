@@ -958,10 +958,8 @@
 
     }
 
-    var lastRenderedOrdersF = null;
 
     function renderListF(orders) {
-        lastRenderedOrdersF = orders;
 
         var tbody =
             document.getElementById(
@@ -1390,37 +1388,26 @@
      * CSV
      * ============================================================ */
 
-        function exportOrdersCsvF() {
+    function exportOrdersCsvF() {
 
-        // ستون‌ها دقیقاً هم‌ترتیب و هم‌نام با ستون‌های جدول صفحه هستند.
         var rows = [
 
             [
                 "شماره سفارش",
                 "مشتری",
                 "تاریخ",
-                "مبلغ",
-                "ارز",
-                "مبلغ نهایی (ریال)",
-                "سود (ریال)",
-                "پرداخت",
-                "وضعیت سفارش",
-                "فاکتور"
+                "مبلغ ریالی",
+                "وضعیت پرداخت",
+                "وضعیت سفارش"
             ]
 
         ];
 
 
-        function statusLabelF(map, key) {
-
-            return map[key]
-                ? map[key].label
-                : (key || "");
-
-        }
+        
 
 
-            (lastRenderedOrdersF || ordersF).forEach(
+        ordersF.forEach(
             function (order) {
 
                 var totals =
@@ -1429,42 +1416,27 @@
                 rows.push(
                     [
                         order.number || "",
-
                         order.customer
                             ? order.customer.name || ""
                             : "",
-
                         order.date || "",
-
-                        // همان منطق ستون «مبلغ» جدول: اگر چند ارزی بود متن، وگرنه عدد
-                        totals.multiCurrency
-                            ? totals.baseText
-                            : totals.baseAmount,
-
-                        totals.currencyText,
-
                         Math.round(
                             totals.totalRial
                         ),
-
-                        Math.round(
-                            totals.profitRial || 0
-                        ),
-
-                        statusLabelF(
-                            PAYMENT_STATUS_F,
+                        PAYMENT_STATUS_F[
                             order.paymentStatus
-                        ),
-
-                        statusLabelF(
-                            ORDER_STATUS_F,
+                        ]
+                            ? PAYMENT_STATUS_F[
+                                order.paymentStatus
+                            ].label
+                            : order.paymentStatus || "",
+                        ORDER_STATUS_F[
                             order.orderStatus
-                        ),
-
-                        statusLabelF(
-                            INVOICE_STATUS_F,
-                            order.invoiceStatus
-                        )
+                        ]
+                            ? ORDER_STATUS_F[
+                                order.orderStatus
+                            ].label
+                            : order.orderStatus || ""
                     ]
                 );
 
@@ -1499,7 +1471,6 @@
             .join("\n");
 
 
-        // \uFEFF (BOM) باعث می‌شود Excel و Numbers فارسی را درست بخوانند
         var blob =
             new Blob(
                 ["\uFEFF" + csv],
