@@ -165,6 +165,15 @@
 
     font-size: 0.7rem;
 }
+.form-hint {
+    margin-top: 6px;
+    font-size: 0.78rem;
+    line-height: 1.7;
+}
+
+.form-hint--primary {
+    color: $color-primary;
+}
 
 
 // ----------------------------------------

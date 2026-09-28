@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initSplash();
 
+    initAddToHomeScreen();
+
     initHero();
 
     initAuthTabs();
@@ -82,10 +84,221 @@ function initSplash() {
 
         setTimeout(() => {
             splash.remove();
+
+            // Show the Add to Home Screen guide only after
+            // the splash transition has completely finished.
+            window.dispatchEvent(
+                new CustomEvent("sanaa:splash-finished")
+            );
+
         }, 800);
 
     }, SPLASH_DURATION);
 }
+
+
+// ========================================
+// Add to Home Screen
+// ========================================
+
+let deferredInstallPrompt = null;
+
+
+function isRunningStandalone() {
+
+    return (
+        window.matchMedia &&
+        window.matchMedia("(display-mode: standalone)").matches
+    ) || (
+        "standalone" in window.navigator &&
+        window.navigator.standalone === true
+    );
+}
+
+
+function isIOSDevice() {
+
+    return /iphone|ipad|ipod/i.test(
+        window.navigator.userAgent || ""
+    );
+}
+
+
+function initAddToHomeScreen() {
+
+    const modal =
+        document.getElementById("a2hsModal");
+
+    const installButton =
+        document.getElementById("a2hsInstall");
+
+    const text =
+        document.getElementById("a2hsText");
+
+    if (!modal || !installButton || !text) {
+        return;
+    }
+
+
+    window.addEventListener(
+        "beforeinstallprompt",
+        (event) => {
+
+            event.preventDefault();
+
+            deferredInstallPrompt =
+                event;
+
+        }
+    );
+
+
+    function configureModal() {
+
+        if (isIOSDevice()) {
+
+            text.textContent =
+                "در Safari روی Share بزن و بعد «Add to Home Screen» رو انتخاب کن.";
+
+            installButton.textContent =
+                "متوجه شدم";
+
+            return;
+        }
+
+
+        text.textContent =
+            "برای دسترسی سریع‌تر، SANAA رو به گوشی‌ات اضافه کن.";
+
+        installButton.textContent =
+            deferredInstallPrompt
+                ? "افزودن SANAA"
+                : "متوجه شدم";
+    }
+
+
+    function openModal() {
+
+        if (
+            modal.hidden === false ||
+            isRunningStandalone()
+        ) {
+            return;
+        }
+
+        configureModal();
+
+        modal.hidden = false;
+
+        document.documentElement.style.overflow =
+            "hidden";
+
+        document.body.style.overflow =
+            "hidden";
+    }
+
+
+    function closeModal() {
+
+        modal.hidden = true;
+
+        document.documentElement.style.overflow =
+            "";
+
+        document.body.style.overflow =
+            "";
+    }
+
+
+    modal.querySelectorAll(
+        "[data-a2hs-close]"
+    ).forEach((button) => {
+
+        button.addEventListener(
+            "click",
+            closeModal
+        );
+
+    });
+
+
+    installButton.addEventListener(
+        "click",
+        async () => {
+
+            // iOS cannot trigger Add to Home Screen from JavaScript.
+            // The single screen already shows the Safari instruction.
+            if (isIOSDevice()) {
+                closeModal();
+                return;
+            }
+
+
+            if (!deferredInstallPrompt) {
+                closeModal();
+                return;
+            }
+
+
+            deferredInstallPrompt.prompt();
+
+            try {
+                await deferredInstallPrompt.userChoice;
+            } catch (error) {
+                console.error(
+                    "Install prompt error:",
+                    error
+                );
+            }
+
+            deferredInstallPrompt = null;
+
+            closeModal();
+        }
+    );
+
+
+    window.addEventListener(
+        "sanaa:splash-finished",
+        () => {
+
+            window.setTimeout(
+                openModal,
+                250
+            );
+
+        }
+    );
+
+
+    window.addEventListener(
+        "appinstalled",
+        () => {
+
+            deferredInstallPrompt =
+                null;
+
+            closeModal();
+        }
+    );
+
+
+    document.addEventListener(
+        "keydown",
+        (event) => {
+
+            if (
+                event.key === "Escape" &&
+                !modal.hidden
+            ) {
+                closeModal();
+            }
+
+        }
+    );
+
+}
+
 
 
 // ========================================
