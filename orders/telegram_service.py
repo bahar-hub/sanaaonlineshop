@@ -16,7 +16,11 @@ from .invoice_utils import (
 
 
 TELEGRAM_API_BASE = "https://api.telegram.org"
-def send_order_status_update(order):
+def send_shipping_cost_notification(order):
+    """
+    پیام هزینه باربری؛ فقط وقتی سفارش به مرحله «ارسال به ایران»
+    می‌رسد و هزینه باربری صفر نیست ارسال می‌شود.
+    """
 
     connection = getattr(
         order.user,
@@ -24,17 +28,15 @@ def send_order_status_update(order):
         None
     )
 
-    if not connection:
+    if not connection or not connection.is_active:
         return False
 
-    if not connection.is_active:
-        return False
+    items_text = "\n".join(
+        f"▫️ {item.product_name} × {item.quantity}"
+        for item in order.items.all()
+    )
 
-
-    # فقط برای ارسال شده
-    if order.status == Order.Status.SHIPPED:
-
-        message = f"""
+    message = f"""
 سلام، وقت بخیر ✨
 
 سفارشتون رسیددد 😍📦✨
@@ -42,33 +44,12 @@ def send_order_status_update(order):
 هزینه باربری شماره سفارش #{order.id}:
 
 📦 مشخصات سفارش
+{items_text}
 
 💰 هزینه باربری: {int(order.shipping_cost or 0):,} ریال
 
 بعد از پرداخت باربری، برای ارسال سفارشتون با ما هماهنگ کنید 🫶🏽
 """
-
-
-    # بقیه وضعیت‌ها
-    else:
-
-        message = f"""
-سلام {order.user.first_name} عزیز 👋
-
-سفارش شما در Sanaa Online Shop ویرایش و به‌روزرسانی شد ✏️
-
-
-🧾 شماره سفارش:
-#{order.id}
-
-
-📦 وضعیت سفارش:
-{order.get_status_display()}
-
-
-با تشکر از اعتماد شما 🌱
-"""
-
 
     send_telegram_text(
         connection.telegram_id,
@@ -251,10 +232,11 @@ def send_order_update_notification(order, changes):
         return False
 
 
+    # فقط بخش‌هایی که تغییر کرده‌اند گزارش می‌شوند.
     message = f"""
-{order.user.first_name} عزیز مبارکتون باشه. 🎉
+سلام {order.user.first_name} عزیز 👋
 
-سفارش شما در Sanaa Online Shop ثبت شد ✨
+سفارش شما در Sanaa Online Shop به‌روزرسانی شد ✏️
 
 🧾 شماره سفارش:
 #{order.id}

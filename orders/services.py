@@ -124,21 +124,31 @@ def update_order(
     service_cost=0,
     payment_status=Order.PaymentStatus.PENDING,
     usd_rate=0,
+    status=None,
 ):
     order.user = user
     order.shipping_cost = to_decimal(shipping_cost)
     order.service_cost = to_decimal(service_cost)
     order.payment_status = payment_status
     order.usd_rate = to_decimal(usd_rate)
-    order.save(
-        update_fields=[
-            "user",
-            "shipping_cost",
-            "service_cost",
-            "payment_status",
-            "usd_rate",
-        ]
-    )
+
+    update_fields = [
+        "user",
+        "shipping_cost",
+        "service_cost",
+        "payment_status",
+        "usd_rate",
+    ]
+
+    # وضعیت سفارش همراه با ویرایش سفارش ذخیره می‌شود؛
+    # اگر ارسال نشده باشد، وضعیت فعلی دست‌نخورده می‌ماند.
+    if status is not None:
+        if status not in Order.Status.values:
+            raise ValueError("وضعیت سفارش معتبر نیست.")
+        order.status = status
+        update_fields.append("status")
+
+    order.save(update_fields=update_fields)
 
     existing_items = {
         item.id: item

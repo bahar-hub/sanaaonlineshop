@@ -339,12 +339,20 @@
                                         ثبت‌شده
                                     </option>
 
-                                    <option value="preparing">
-                                        در حال آماده‌سازی
+                                    <option value="shipped_to_iran">
+                                        ارسال به ایران
                                     </option>
 
-                                    <option value="shipped">
-                                        ارسال‌شده
+                                    <option value="shipped_to_customer">
+                                        ارسال به مشتری
+                                    </option>
+
+                                    <option value="delivered">
+                                        تحویل داده‌شده
+                                    </option>
+
+                                    <option value="cancelled">
+                                        لغوشده
                                     </option>
                                 </select>
 
@@ -675,54 +683,6 @@
 
                 </section>
 
-
-                <!-- Status -->
-
-                <section
-                    class="admin-orders-f__sheet-section admin-orders-f__sheet-section--no-print-f"
-                >
-
-                    <h3 class="admin-orders-f__sheet-section-title">
-                        تغییر وضعیت سفارش
-                    </h3>
-
-
-                    <select
-                        class="admin-select-f"
-                        id="adminSheetStatusSelectF"
-                        style="width:100%;"
-                    >
-
-                        <option value="registered">
-                            ثبت‌شده
-                        </option>
-
-                        <option value="shipped">
-                            ارسال‌شده
-                        </option>
-
-                        <option value="delivered">
-                            تحویل داده‌شده
-                        </option>
-
-                        <option value="cancelled">
-                            لغوشده
-                        </option>
-
-                    </select>
-
-
-                    <button
-                        type="button"
-                        class="admin-btn-f"
-                        id="adminSheetStatusBtnF"
-                        style="width:100%; justify-content:center; margin-top:8px;"
-                    >
-                        به‌روزرسانی وضعیت
-                    </button>
-
-                </section>
-
             </div>
 
 
@@ -813,9 +773,6 @@
 
                 data-delete-url-template=
                     "{% url 'panel:delete_order' 0 %}"
-
-                data-status-url-template=
-                    "{% url 'panel:update_order_status' 0 %}"
 
                 novalidate
             >
@@ -957,6 +914,51 @@
                     <span>مبلغ نهایی سفارش</span>
                     <strong id="adminNewOrderGrandTotalF">۰ ریال</strong>
                     <small>جمع قیمت نهایی محصولات + هزینه خدمات هر محصول + باربری</small>
+                </div>
+
+
+                <!-- Order status (visible only when editing) -->
+
+                <div
+                    class="admin-orders-f__new-order-field"
+                    id="adminNewOrderStatusFieldF"
+                    hidden
+                >
+
+                    <label
+                        for="adminNewOrderStatusF"
+                        class="admin-orders-f__new-order-label"
+                    >
+                        وضعیت سفارش
+                    </label>
+
+                    <select
+                        id="adminNewOrderStatusF"
+                        class="admin-select-f admin-select-f--block-f"
+                    >
+
+                        <option value="registered">
+                            ثبت‌شده
+                        </option>
+
+                        <option value="shipped_to_iran">
+                            ارسال به ایران
+                        </option>
+
+                        <option value="shipped_to_customer">
+                            ارسال به مشتری
+                        </option>
+
+                        <option value="delivered">
+                            تحویل داده‌شده
+                        </option>
+
+                        <option value="cancelled">
+                            لغوشده
+                        </option>
+
+                    </select>
+
                 </div>
 
 

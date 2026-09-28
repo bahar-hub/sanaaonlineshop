@@ -232,8 +232,13 @@
             color: "neutral"
         },
 
-        shipped: {
-            label: "ارسال‌شده",
+        shipped_to_iran: {
+            label: "ارسال به ایران",
+            color: "info"
+        },
+
+        shipped_to_customer: {
+            label: "ارسال به مشتری",
             color: "primary"
         },
 
@@ -1841,20 +1846,6 @@
                 order.payment.paidDate
             );
 
-
-        var statusSelect =
-            document.getElementById(
-                "adminSheetStatusSelectF"
-            );
-
-
-        if (statusSelect) {
-
-            statusSelect.value =
-                order.orderStatus;
-
-        }
-
     }
 
 
@@ -2106,18 +2097,6 @@
             );
 
 
-        var statusBtn =
-            document.getElementById(
-                "adminSheetStatusBtnF"
-            );
-
-
-        var statusSelect =
-            document.getElementById(
-                "adminSheetStatusSelectF"
-            );
-
-
         if (!modal) {
             return;
         }
@@ -2293,88 +2272,6 @@
             );
 
         }
-
-
-        if (statusBtn) {
-
-            statusBtn.addEventListener(
-                "click",
-                function () {
-
-                    if (!activeOrderNumber || !statusSelect) {
-                        return;
-                    }
-
-                    var order =
-                        findOrderByNumberF(activeOrderNumber);
-
-                    if (!order) {
-                        showToastF("سفارش پیدا نشد.", "error");
-                        return;
-                    }
-
-                    var form =
-                        document.getElementById("adminNewOrderFormF");
-
-                    var urlTemplate =
-                        form && form.dataset
-                            ? form.dataset.statusUrlTemplate
-                            : "";
-
-                    var requestUrl =
-                        buildOrderUrlF(urlTemplate, order.id);
-
-                    if (!requestUrl) {
-                        showToastF("آدرس بروزرسانی وضعیت پیدا نشد.", "error");
-                        return;
-                    }
-
-                    var formData = new FormData();
-                    formData.append("status", statusSelect.value);
-                    formData.append("csrfmiddlewaretoken", getCsrfTokenF());
-
-                    statusBtn.disabled = true;
-
-                    fetchJsonF(
-                        requestUrl,
-                        {
-                            method: "POST",
-                            body: formData
-                        }
-                    )
-                    .then(function (data) {
-
-                        if (!data || !data.order) {
-                            throw new Error("پاسخ سرور معتبر نیست.");
-                        }
-
-                        replaceOrderF(data.order);
-                        activeOrderNumber = data.order.number;
-
-                        renderDetailsSheetF(data.order);
-                        applyFiltersF();
-
-                        showToastF(
-                            "وضعیت سفارش بروزرسانی شد.",
-                            "success"
-                        );
-                    })
-                    .catch(function (error) {
-                        showToastF(
-                            error.message || "بروزرسانی وضعیت انجام نشد.",
-                            "error"
-                        );
-                    })
-                    .finally(function () {
-                        statusBtn.disabled = false;
-                    });
-
-                }
-            );
-
-        }
-
-
 
     }
 
@@ -3931,7 +3828,7 @@
                     '<div class="admin-invoice-f__summary-wrap">' +
                         '<div class="admin-invoice-f__summary">' +
                             '<div class="invoice-summary-row-f"><span>جمع کل :</span><span>' + formatNumberF(calc.itemsRial) + ' ریال</span></div>' +
-                            '<div class="invoice-summary-row-f"><span>هزینه باربری :</span><span>' + formatNumberF(calc.shippingRial) + ' ریال</span></div>' +
+                            '<div class="invoice-summary-row-f"><span>هزینه باربری :</span><span>' + ((!isAdminF && !(Number(calc.shippingRial) > 0)) ? 'هزینه باربری اعلام خواهد شد.' : formatNumberF(calc.shippingRial) + ' ریال') + '</span></div>' +
                             '<div class="invoice-summary-row-f invoice-summary-total-f"><strong>مجموع کل</strong><strong>' + formatNumberF(calc.grandTotalRial) + ' ریال</strong></div>' +
                         '</div>' +
                         profitBlock +
@@ -4988,6 +4885,30 @@
         }
 
 
+        // فیلد «وضعیت سفارش» فقط در حالت ویرایش نمایش داده می‌شود.
+        function setStatusFieldF(visible, value) {
+
+            var field =
+                document.getElementById(
+                    "adminNewOrderStatusFieldF"
+                );
+
+            var select =
+                document.getElementById(
+                    "adminNewOrderStatusF"
+                );
+
+            if (field) {
+                field.hidden = !visible;
+            }
+
+            if (select && visible) {
+                select.value = value || "registered";
+            }
+
+        }
+
+
         function closeNewOrderModal() {
 
             modal.hidden =
@@ -5010,6 +4931,8 @@
             resetOrderItemsF();
 
             showFormErrorF("");
+
+            setStatusFieldF(false);
 
 
             var title =
@@ -5119,6 +5042,12 @@
                         order.paymentStatus ||
                         "pending";
                 }
+
+
+                setStatusFieldF(
+                    true,
+                    order.orderStatus
+                );
 
 
                 var container =
@@ -5410,6 +5339,22 @@
                         "payment_status",
                         paymentStatus
                     );
+
+                    if (isEditing) {
+
+                        var statusInput =
+                            document.getElementById(
+                                "adminNewOrderStatusF"
+                            );
+
+                        if (statusInput) {
+
+                            formData.append(
+                                "status",
+                                statusInput.value
+                            );
+                        }
+                    }
 
                     var usdItem = items.find(function (item) {
                         return item.currency === "USD" && Number(item.exchangeRate) > 0;
