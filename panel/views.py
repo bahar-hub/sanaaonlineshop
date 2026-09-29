@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 import json
@@ -102,10 +103,10 @@ def customer_view(request):
                 request,
                 "این شماره موبایل قبلاً ثبت شده است."
             )
-            return redirect("customers")
+            return redirect("panel:customers")
         if User.objects.filter(username=username).exists():
             messages.error(request, "این نام کاربری قبلاً ثبت شده است.")
-            return redirect("customers")
+            return redirect("panel:customers")
         user = User(
             first_name=first_name,
             last_name=last_name,
@@ -162,6 +163,10 @@ def customer_view(request):
             "userId": customer.id,
             "id": "C-" + str(customer.id).zfill(4),
             "name": customer_name,
+            "firstName": customer.first_name,
+            "lastName": customer.last_name,
+            "username": customer.username,
+            "address": customer.address,
             "phone": customer.phone,
             "joinDate": jdatetime.datetime.fromgregorian(
                 datetime=customer.date_joined
@@ -200,6 +205,147 @@ def customer_view(request):
         request,
         "panel/admin-customers-f.html",
         context
+    )
+
+
+def _normalize_phone(value):
+    """Persian/Arabic digits -> English, drop spaces/dashes, +98 -> 0."""
+    value = (value or "").strip()
+    value = value.translate(
+        str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+    )
+    value = re.sub(r"[\s-]", "", value)
+    if value.startswith("+98"):
+        value = "0" + value[3:]
+    return value
+
+
+@require_POST
+@user_passes_test(is_superuser, login_url="base:index")
+def update_customer_view(request, user_id):
+
+    User = get_user_model()
+
+    customer = get_object_or_404(
+        User,
+        id=user_id,
+        is_superuser=False,
+    )
+
+    first_name = request.POST.get("first_name", "").strip()
+    last_name = request.POST.get("last_name", "").strip()
+    username = request.POST.get("username", "").strip()
+    phone = _normalize_phone(request.POST.get("phone", ""))
+    address = request.POST.get("address", "").strip()
+    password = request.POST.get("password", "")
+    is_active = request.POST.get("is_active") == "on"
+
+    errors = {}
+
+    if not first_name:
+        errors["first_name"] = "لطفاً نام مشتری را وارد کنید."
+
+    if not last_name:
+        errors["last_name"] = "لطفاً نام خانوادگی مشتری را وارد کنید."
+
+    if not phone:
+        errors["phone"] = "لطفاً شماره موبایل را وارد کنید."
+    elif not re.fullmatch(r"09\d{9}", phone):
+        errors["phone"] = "شماره موبایل واردشده معتبر نیست."
+    elif User.objects.filter(phone=phone).exclude(pk=customer.pk).exists():
+        errors["phone"] = "این شماره موبایل قبلاً ثبت شده است."
+
+    if not username:
+        errors["username"] = "لطفاً نام کاربری را وارد کنید."
+    elif not re.fullmatch(r"[a-zA-Z0-9_]{4,}", username):
+        errors["username"] = (
+            "نام کاربری باید حداقل ۴ کاراکتر و فقط شامل "
+            "حروف انگلیسی، اعداد و _ باشد."
+        )
+    elif User.objects.filter(username=username).exclude(pk=customer.pk).exists():
+        errors["username"] = "این نام کاربری قبلاً ثبت شده است."
+
+    if not address:
+        errors["address"] = "لطفاً آدرس مشتری را وارد کنید."
+
+    # رمز عبور اختیاری است: خالی = بدون تغییر
+    if password and len(password) < 6:
+        errors["password"] = "رمز عبور باید حداقل ۶ کاراکتر باشد."
+
+    if errors:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "لطفاً خطاهای فرم را برطرف کنید.",
+                "errors": errors,
+            },
+            status=400,
+        )
+
+    customer.first_name = first_name
+    customer.last_name = last_name
+    customer.username = username
+    customer.phone = phone
+    customer.address = address
+    customer.is_active = is_active
+
+    if password:
+        customer.set_password(password)
+
+    customer.save()
+
+    name = f"{customer.first_name} {customer.last_name}".strip()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "اطلاعات مشتری با موفقیت به‌روزرسانی شد.",
+            "customer": {
+                "name": name or customer.username,
+                "firstName": customer.first_name,
+                "lastName": customer.last_name,
+                "username": customer.username,
+                "phone": customer.phone,
+                "address": customer.address,
+                "status": "active" if customer.is_active else "inactive",
+            },
+        }
+    )
+
+
+@require_POST
+@user_passes_test(is_superuser, login_url="base:index")
+def delete_customer_view(request, user_id):
+
+    User = get_user_model()
+
+    customer = get_object_or_404(
+        User,
+        id=user_id,
+        is_superuser=False,
+    )
+
+    # سفارش‌ها به کاربر PROTECT شده‌اند؛ مشتری دارای سفارش حذف نمی‌شود
+    # تا سوابق مالی و فاکتورها از بین نروند.
+    if customer.orders.exists():
+        return JsonResponse(
+            {
+                "success": False,
+                "message": (
+                    "این مشتری سفارش ثبت‌شده دارد و قابل حذف نیست. "
+                    "به‌جای حذف می‌توانید او را غیرفعال کنید."
+                ),
+            },
+            status=409,
+        )
+
+    customer.delete()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "مشتری با موفقیت حذف شد.",
+        }
     )
 
 

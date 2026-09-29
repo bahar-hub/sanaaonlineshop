@@ -11,6 +11,16 @@ urlpatterns = [
         test_telegram_connection_view,
         name='test_telegram_connection',
     ),
+    path(
+        'customers/<int:user_id>/update/',
+        update_customer_view,
+        name='update_customer',
+    ),
+    path(
+        'customers/<int:user_id>/delete/',
+        delete_customer_view,
+        name='delete_customer',
+    ),
     path('report/', report_view, name='report'),
     path('orders/', orders_view, name='orders'),
     path(

@@ -42,6 +42,15 @@
         return value.toLocaleString("fa-IR");
     }
 
+    function escapeHtmlF(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
     function customerCardHtmlF(customer) {
         var lastOrderDate = customer.orders.length
             ? customer.orders[0].date
@@ -59,14 +68,14 @@
         return "" +
             "<div class=\"admin-customers-f__card-top\">" +
             "<div>" +
-            "<p class=\"admin-customers-f__card-name\">" + customer.name + "</p>" +
+            "<p class=\"admin-customers-f__card-name\">" + escapeHtmlF(customer.name) + "</p>" +
             "<p class=\"admin-customers-f__card-id\">شناسه: #" + customer.id + "</p>" +
             "</div>" +
             "<div class=\"admin-customers-f__card-actions\">" +
 
             "<button type=\"button\" class=\"admin-icon-btn-f\" " +
             "data-view-orders-f=\"" + customer.id + "\" " +
-            "aria-label=\"مشاهده سفارش‌های " + customer.name + "\">" +
+            "aria-label=\"مشاهده سفارش‌های " + escapeHtmlF(customer.name) + "\">" +
             "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" " +
             "stroke-width=\"1.5\" aria-hidden=\"true\">" +
             "<rect x=\"4\" y=\"7\" width=\"16\" height=\"13\" rx=\"1.5\" " +
@@ -80,7 +89,7 @@
             "</div>" +
 
             "<div class=\"admin-customers-f__card-meta\">" +
-            "<span dir=\"ltr\">" + customer.phone + "</span>" +
+            "<span dir=\"ltr\">" + escapeHtmlF(customer.phone) + "</span>" +
             "<span>عضویت: " + customer.joinDate + "</span>" +
             "<span>آخرین سفارش: " + lastOrderDate + "</span>" +
             "<span class=\"admin-badge-f admin-badge-f--" +
@@ -145,8 +154,11 @@
         customers.forEach(function (customer) {
             var li = document.createElement("li");
 
-            li.className = "admin-customers-f__card";
+            li.className = "admin-customers-f__card admin-customers-f__card--clickable";
             li.setAttribute("data-customer-card-f", customer.id);
+            li.setAttribute("data-customer-user-id-f", customer.userId);
+            li.setAttribute("tabindex", "0");
+            li.setAttribute("title", "برای ویرایش یا حذف کلیک کنید");
             li.innerHTML = customerCardHtmlF(customer);
 
             listEl.appendChild(li);
@@ -753,10 +765,435 @@
         });
     }
 
+    /* ============================================================
+     * Edit / Delete Customer Modal
+     * Click a customer card -> modal opens.
+     * Save   -> POST (fetch) to panel:update_customer
+     * Delete -> POST (fetch) to panel:delete_customer
+     * ============================================================ */
+
+    function buildCustomerUrlF(attrName, customerId) {
+        var listEl = document.getElementById("adminCustomersListF");
+
+        var template = listEl ? listEl.getAttribute(attrName) : "";
+
+        if (!template) return null;
+
+        return template.replace("/0/", "/" + customerId + "/");
+    }
+
+    function findCustomerByUserIdF(userId) {
+        for (var i = 0; i < mockCustomersF.length; i++) {
+            if (String(mockCustomersF[i].userId) === String(userId)) {
+                return mockCustomersF[i];
+            }
+        }
+
+        return null;
+    }
+
+    function readJsonResponseF(response) {
+        return response.text().then(function (text) {
+            var data = {};
+
+            try {
+                data = JSON.parse(text);
+            } catch (error) {
+                data = {};
+            }
+
+            return { ok: response.ok, status: response.status, data: data };
+        });
+    }
+
+    function initEditCustomerModalF() {
+        var modal = document.getElementById("adminEditCustomerModalF");
+        var form = document.getElementById("adminEditCustomerFormF");
+        var listEl = document.getElementById("adminCustomersListF");
+
+        if (!modal || !form || !listEl) return;
+
+        var titleEl = document.getElementById("adminEditCustomerTitleF");
+        var closeBtn = document.getElementById("adminEditCustomerCloseF");
+        var saveBtn = document.getElementById("adminEditCustomerSaveF");
+        var deleteBtn = document.getElementById("adminEditCustomerDeleteF");
+        var actionsEl = document.getElementById("adminEditCustomerActionsF");
+        var confirmEl = document.getElementById("adminEditCustomerConfirmF");
+        var confirmTextEl =
+            document.getElementById("adminEditCustomerConfirmTextF");
+        var confirmYesBtn =
+            document.getElementById("adminEditCustomerConfirmYesF");
+        var confirmNoBtn =
+            document.getElementById("adminEditCustomerConfirmNoF");
+
+        var fields = {
+            first_name: document.getElementById("adminEditCustomerFirstNameF"),
+            last_name: document.getElementById("adminEditCustomerLastNameF"),
+            phone: document.getElementById("adminEditCustomerPhoneF"),
+            username: document.getElementById("adminEditCustomerUsernameF"),
+            password: document.getElementById("adminEditCustomerPasswordF"),
+            address: document.getElementById("adminEditCustomerAddressF")
+        };
+
+        var activeCheckbox =
+            document.getElementById("adminEditCustomerActiveF");
+
+        var currentCustomer = null;
+        var isBusy = false;
+
+        function getGroup(input) {
+            return input
+                ? input.closest(".admin-customers-f__form-group")
+                : null;
+        }
+
+        function setFieldError(input, message) {
+            var group = getGroup(input);
+
+            if (!group) return;
+
+            group.classList.add("has-error");
+
+            var errorEl =
+                group.querySelector(".admin-customers-f__form-error");
+
+            if (errorEl) errorEl.textContent = message;
+        }
+
+        function clearFieldError(input) {
+            var group = getGroup(input);
+
+            if (!group) return;
+
+            group.classList.remove("has-error");
+
+            var errorEl =
+                group.querySelector(".admin-customers-f__form-error");
+
+            if (errorEl) errorEl.textContent = "";
+        }
+
+        function clearAllErrors() {
+            Object.keys(fields).forEach(function (key) {
+                clearFieldError(fields[key]);
+            });
+        }
+
+        Object.keys(fields).forEach(function (key) {
+            fields[key].addEventListener("input", function () {
+                clearFieldError(fields[key]);
+            });
+        });
+
+        function setBusy(busy) {
+            isBusy = busy;
+
+            [saveBtn, deleteBtn, confirmYesBtn, confirmNoBtn]
+                .forEach(function (btn) {
+                    if (btn) btn.disabled = busy;
+                });
+        }
+
+        function hideDeleteConfirm() {
+            confirmEl.hidden = true;
+            actionsEl.hidden = false;
+        }
+
+        function openModal(customer) {
+            currentCustomer = customer;
+
+            titleEl.textContent = "ویرایش " + customer.name;
+
+            fields.first_name.value = customer.firstName || "";
+            fields.last_name.value = customer.lastName || "";
+            fields.phone.value = customer.phone || "";
+            fields.username.value = customer.username || "";
+            fields.password.value = "";
+            fields.address.value = customer.address || "";
+
+            activeCheckbox.checked = customer.status === "active";
+
+            clearAllErrors();
+            hideDeleteConfirm();
+            setBusy(false);
+
+            modal.hidden = false;
+
+            fields.first_name.focus();
+        }
+
+        function closeModal() {
+            if (isBusy) return;
+
+            modal.hidden = true;
+            currentCustomer = null;
+
+            form.reset();
+            clearAllErrors();
+            hideDeleteConfirm();
+        }
+
+        /* ---- open: click / Enter on a customer card ---- */
+
+        listEl.addEventListener("click", function (event) {
+            /*
+             * Buttons inside the card (orders, telegram test)
+             * keep their own behaviour and must not open this modal.
+             */
+            if (event.target.closest("button, a, input, select")) return;
+
+            var card = event.target.closest("[data-customer-user-id-f]");
+
+            if (!card) return;
+
+            var customer = findCustomerByUserIdF(
+                card.getAttribute("data-customer-user-id-f")
+            );
+
+            if (customer) openModal(customer);
+        });
+
+        listEl.addEventListener("keydown", function (event) {
+            if (event.key !== "Enter") return;
+            if (event.target.closest("button, a, input, select")) return;
+
+            var card = event.target.closest("[data-customer-user-id-f]");
+
+            if (!card) return;
+
+            var customer = findCustomerByUserIdF(
+                card.getAttribute("data-customer-user-id-f")
+            );
+
+            if (customer) openModal(customer);
+        });
+
+        /* ---- close ---- */
+
+        if (closeBtn) closeBtn.addEventListener("click", closeModal);
+
+        var backdrop = modal.querySelector(".modal__backdrop");
+
+        if (backdrop) backdrop.addEventListener("click", closeModal);
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape" && !modal.hidden) closeModal();
+        });
+
+        /* ---- save ---- */
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            if (!currentCustomer || isBusy) return;
+
+            clearAllErrors();
+
+            var firstName = fields.first_name.value.trim();
+            var lastName = fields.last_name.value.trim();
+            var phone = fields.phone.value.trim();
+            var username = fields.username.value.trim();
+            var password = fields.password.value;
+            var address = fields.address.value.trim();
+
+            var hasError = false;
+
+            if (!firstName) {
+                setFieldError(fields.first_name, "لطفاً نام مشتری را وارد کنید.");
+                hasError = true;
+            }
+
+            if (!lastName) {
+                setFieldError(
+                    fields.last_name,
+                    "لطفاً نام خانوادگی مشتری را وارد کنید."
+                );
+                hasError = true;
+            }
+
+            if (!phone) {
+                setFieldError(fields.phone, "لطفاً شماره موبایل را وارد کنید.");
+                hasError = true;
+            } else if (!isValidIranianMobileF(phone)) {
+                setFieldError(fields.phone, "شماره موبایل واردشده معتبر نیست.");
+                hasError = true;
+            }
+
+            if (!username) {
+                setFieldError(fields.username, "لطفاً نام کاربری را وارد کنید.");
+                hasError = true;
+            } else if (username.length < 4) {
+                setFieldError(
+                    fields.username,
+                    "نام کاربری باید حداقل ۴ کاراکتر باشد."
+                );
+                hasError = true;
+            } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                setFieldError(
+                    fields.username,
+                    "نام کاربری فقط می‌تواند شامل حروف انگلیسی، اعداد و _ باشد."
+                );
+                hasError = true;
+            }
+
+            /* Password is optional when editing */
+            if (password && password.length < 6) {
+                setFieldError(
+                    fields.password,
+                    "رمز عبور باید حداقل ۶ کاراکتر باشد."
+                );
+                hasError = true;
+            }
+
+            if (!address) {
+                setFieldError(fields.address, "لطفاً آدرس مشتری را وارد کنید.");
+                hasError = true;
+            }
+
+            if (hasError) return;
+
+            var url = buildCustomerUrlF(
+                "data-update-url-template",
+                currentCustomer.userId
+            );
+
+            if (!url) {
+                showToastF("آدرس ویرایش مشتری یافت نشد.", "error");
+                return;
+            }
+
+            var body = new FormData(form);
+
+            /* Send the normalized (English-digit) phone number */
+            body.set("phone", toEnglishDigitsF(phone));
+
+            setBusy(true);
+
+            fetch(url, {
+                method: "POST",
+                headers: { "X-CSRFToken": getCsrfTokenF() },
+                body: body
+            })
+                .then(readJsonResponseF)
+                .then(function (result) {
+                    setBusy(false);
+
+                    if (result.ok && result.data.success) {
+                        Object.assign(currentCustomer, result.data.customer);
+
+                        showToastF(result.data.message);
+
+                        modal.hidden = true;
+                        currentCustomer = null;
+                        form.reset();
+
+                        applyFiltersF();
+                        return;
+                    }
+
+                    var errors = (result.data && result.data.errors) || {};
+
+                    Object.keys(errors).forEach(function (key) {
+                        if (fields[key]) setFieldError(fields[key], errors[key]);
+                    });
+
+                    showToastF(
+                        (result.data && result.data.message) ||
+                            "ذخیره تغییرات با خطا مواجه شد.",
+                        "error"
+                    );
+                })
+                .catch(function () {
+                    setBusy(false);
+
+                    showToastF(
+                        "ارتباط با سرور برقرار نشد. دوباره تلاش کنید.",
+                        "error"
+                    );
+                });
+        });
+
+        /* ---- delete (two-step, inline confirmation) ---- */
+
+        deleteBtn.addEventListener("click", function () {
+            if (!currentCustomer || isBusy) return;
+
+            confirmTextEl.textContent =
+                "آیا از حذف «" + currentCustomer.name +
+                "» مطمئن هستید؟ این کار قابل بازگشت نیست.";
+
+            actionsEl.hidden = true;
+            confirmEl.hidden = false;
+        });
+
+        confirmNoBtn.addEventListener("click", hideDeleteConfirm);
+
+        confirmYesBtn.addEventListener("click", function () {
+            if (!currentCustomer || isBusy) return;
+
+            var customer = currentCustomer;
+
+            var url = buildCustomerUrlF(
+                "data-delete-url-template",
+                customer.userId
+            );
+
+            if (!url) {
+                showToastF("آدرس حذف مشتری یافت نشد.", "error");
+                return;
+            }
+
+            setBusy(true);
+
+            fetch(url, {
+                method: "POST",
+                headers: { "X-CSRFToken": getCsrfTokenF() }
+            })
+                .then(readJsonResponseF)
+                .then(function (result) {
+                    setBusy(false);
+
+                    if (result.ok && result.data.success) {
+                        var index = mockCustomersF.indexOf(customer);
+
+                        if (index !== -1) mockCustomersF.splice(index, 1);
+
+                        showToastF(result.data.message);
+
+                        modal.hidden = true;
+                        currentCustomer = null;
+                        form.reset();
+                        hideDeleteConfirm();
+
+                        applyFiltersF();
+                        return;
+                    }
+
+                    hideDeleteConfirm();
+
+                    showToastF(
+                        (result.data && result.data.message) ||
+                            "حذف مشتری با خطا مواجه شد.",
+                        "error"
+                    );
+                })
+                .catch(function () {
+                    setBusy(false);
+                    hideDeleteConfirm();
+
+                    showToastF(
+                        "ارتباط با سرور برقرار نشد. دوباره تلاش کنید.",
+                        "error"
+                    );
+                });
+        });
+    }
+
     function initAdminCustomersF() {
         renderCustomerListF(mockCustomersF);
         initToolbarF();
         initAddCustomerModalF();
+        initEditCustomerModalF();
         initOrdersModalF();
         initTelegramTestF();
     }

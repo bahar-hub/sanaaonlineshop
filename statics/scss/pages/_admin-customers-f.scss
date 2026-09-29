@@ -301,3 +301,80 @@
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+// ----------------------------------------
+// Clickable customer card + edit/delete modal
+// ----------------------------------------
+
+.admin-customers-f__card--clickable {
+    cursor: pointer;
+}
+
+.admin-customers-f__card--clickable:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+}
+
+.admin-customers-f__form-hint {
+    margin-top: 4px;
+
+    color: $color-text-muted;
+    font-size: 0.7rem;
+}
+
+.admin-customers-f__form-check {
+    display: flex;
+    align-items: center;
+    gap: $spacing-sm;
+
+    margin-bottom: $spacing-md;
+
+    color: $color-text;
+    font-family: $font-family-persian;
+    font-size: 0.82rem;
+    cursor: pointer;
+
+    input {
+        width: 16px;
+        height: 16px;
+
+        accent-color: $color-primary;
+    }
+}
+
+.admin-customers-f__modal-actions {
+    display: flex;
+    gap: $spacing-sm;
+
+    margin-top: $spacing-sm;
+
+    .admin-btn-f {
+        flex: 1;
+        justify-content: center;
+    }
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.admin-customers-f__delete-confirm {
+    margin-top: $spacing-sm;
+    padding: $spacing-md;
+    border: 1px solid rgba(198, 40, 40, 0.3);
+    border-radius: $radius-md;
+
+    background-color: rgba(198, 40, 40, 0.06);
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+.admin-customers-f__delete-text {
+    color: $color-error;
+
+    font-family: $font-family-persian;
+    font-size: 0.8rem;
+    line-height: 1.7;
+}

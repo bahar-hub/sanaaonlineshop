@@ -383,3 +383,12 @@
         transform: translateY(0);
     }
 }
+
+// ----------------------------------------
+// Danger button (destructive actions)
+// ----------------------------------------
+
+.admin-btn-f--danger-f {
+    background-color: $color-error;
+    color: #FFFFFF;
+}

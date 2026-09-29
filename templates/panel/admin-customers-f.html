@@ -350,6 +350,10 @@
                 id="adminCustomersListF"
                 data-telegram-test-url-template=
                     "{% url 'panel:test_telegram_connection' 0 %}"
+                data-update-url-template=
+                    "{% url 'panel:update_customer' 0 %}"
+                data-delete-url-template=
+                    "{% url 'panel:delete_customer' 0 %}"
             ></ul>
 
 
@@ -624,6 +628,184 @@
                 ثبت مشتری
             </button>
 
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<!-- ========================================
+     EDIT / DELETE CUSTOMER MODAL
+========================================= -->
+
+<div
+    class="modal"
+    id="adminEditCustomerModalF"
+    hidden
+>
+
+    <div class="modal__backdrop"></div>
+
+    <div
+        class="modal__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="adminEditCustomerTitleF"
+    >
+
+        <button
+            type="button"
+            class="modal__close"
+            id="adminEditCustomerCloseF"
+            aria-label="بستن"
+        >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        <h2 class="modal__title" id="adminEditCustomerTitleF">
+            ویرایش مشتری
+        </h2>
+
+        <form
+            id="adminEditCustomerFormF"
+            method="POST"
+            autocomplete="off"
+            novalidate
+        >
+            {% csrf_token %}
+
+            <div class="admin-customers-f__form-row">
+                <div class="admin-customers-f__form-group">
+                    <label class="admin-customers-f__form-label" for="adminEditCustomerFirstNameF">نام</label>
+                    <input
+                        type="text"
+                        class="admin-customers-f__form-input"
+                        id="adminEditCustomerFirstNameF"
+                        name="first_name"
+                        placeholder="مثلاً سارا"
+                    >
+                    <p class="admin-customers-f__form-error"></p>
+                </div>
+                <div class="admin-customers-f__form-group">
+                    <label class="admin-customers-f__form-label" for="adminEditCustomerLastNameF">نام خانوادگی</label>
+                    <input
+                        type="text"
+                        class="admin-customers-f__form-input"
+                        id="adminEditCustomerLastNameF"
+                        name="last_name"
+                        placeholder="مثلاً احمدی"
+                    >
+                    <p class="admin-customers-f__form-error"></p>
+                </div>
+            </div>
+
+            <div class="admin-customers-f__form-row">
+                <div class="admin-customers-f__form-group">
+                    <label class="admin-customers-f__form-label" for="adminEditCustomerPhoneF">شماره تلفن</label>
+                    <input
+                        type="tel"
+                        class="admin-customers-f__form-input"
+                        id="adminEditCustomerPhoneF"
+                        name="phone"
+                        placeholder="۰۹۱۲۳۴۵۶۷۸۹" dir="ltr"
+                    >
+                    <p class="admin-customers-f__form-error"></p>
+                </div>
+                <div class="admin-customers-f__form-group">
+                    <label class="admin-customers-f__form-label" for="adminEditCustomerUsernameF">نام کاربری</label>
+                    <input
+                        type="text"
+                        class="admin-customers-f__form-input"
+                        id="adminEditCustomerUsernameF"
+                        name="username"
+                        placeholder="sara_ahmadi" dir="ltr"
+                        autocomplete="off"
+                    >
+                    <p class="admin-customers-f__form-error"></p>
+                </div>
+            </div>
+
+            <div class="admin-customers-f__form-group">
+                <label class="admin-customers-f__form-label" for="adminEditCustomerPasswordF">رمز عبور جدید</label>
+                <input
+                    type="password"
+                    class="admin-customers-f__form-input"
+                    id="adminEditCustomerPasswordF"
+                    name="password"
+                    placeholder="••••••••" dir="ltr"
+                    autocomplete="new-password"
+                >
+                <p class="admin-customers-f__form-hint">اختیاری — اگر خالی بماند رمز فعلی تغییری نمی‌کند.</p>
+                <p class="admin-customers-f__form-error"></p>
+            </div>
+
+            <div class="admin-customers-f__form-group">
+                <label class="admin-customers-f__form-label" for="adminEditCustomerAddressF">آدرس</label>
+                <textarea
+                    class="admin-customers-f__form-input admin-customers-f__form-textarea"
+                    id="adminEditCustomerAddressF"
+                    name="address"
+                    rows="3"
+                    placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد"
+                ></textarea>
+                <p class="admin-customers-f__form-error"></p>
+            </div>
+
+            <label class="admin-customers-f__form-check" for="adminEditCustomerActiveF">
+                <input
+                    type="checkbox"
+                    id="adminEditCustomerActiveF"
+                    name="is_active"
+                >
+                <span>حساب مشتری فعال است</span>
+            </label>
+
+            <!-- Actions -->
+            <div class="admin-customers-f__modal-actions" id="adminEditCustomerActionsF">
+                <button type="submit" class="admin-btn-f" id="adminEditCustomerSaveF">
+                    ذخیره تغییرات
+                </button>
+
+                <button
+                    type="button"
+                    class="admin-btn-f admin-btn-f--danger-f"
+                    id="adminEditCustomerDeleteF"
+                >
+                    حذف مشتری
+                </button>
+            </div>
+
+            <!-- Delete confirmation (inline) -->
+            <div
+                class="admin-customers-f__delete-confirm"
+                id="adminEditCustomerConfirmF"
+                hidden
+            >
+                <p class="admin-customers-f__delete-text" id="adminEditCustomerConfirmTextF"></p>
+
+                <div class="admin-customers-f__modal-actions">
+                    <button
+                        type="button"
+                        class="admin-btn-f admin-btn-f--danger-f"
+                        id="adminEditCustomerConfirmYesF"
+                    >
+                        بله، حذف شود
+                    </button>
+
+                    <button
+                        type="button"
+                        class="admin-btn-f admin-btn-f--secondary-f"
+                        id="adminEditCustomerConfirmNoF"
+                    >
+                        انصراف
+                    </button>
+                </div>
+            </div>
 
         </form>
 
