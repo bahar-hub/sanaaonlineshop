@@ -12,6 +12,7 @@ from .invoice_utils import (
     build_invoice_filenames,
     build_telegram_caption,
     build_order_number,
+    get_customer_name,
 )
 
 
@@ -47,6 +48,9 @@ def send_shipping_cost_notification(order):
 {items_text}
 
 💰 هزینه باربری: {int(order.shipping_cost or 0):,} ریال
+
+شماره کارت: 6219861909505736 
+شماره شبا:IR94056061182800512028910
 
 بعد از پرداخت باربری، برای ارسال سفارشتون با ما هماهنگ کنید 🫶🏽
 """
@@ -199,8 +203,7 @@ Sanaa Online Shop
 ۱ تا ۴ هفته؛ ممکن است با توجه به شرایط کشور، بیشتر شود.
 
 شماره کارت: 6219861909505736 
-شماره شبا:
-IR940560611828005120289101
+شماره شبا:IR940560611828005120289101
 
 سیده ثنا مدنی فرد 
     """
@@ -215,6 +218,33 @@ IR940560611828005120289101
 
 
     return True
+
+
+def build_order_update_message(order, changes):
+    """متن پیام «سفارش شما ویرایش شد» با فقط بخش‌های تغییرکرده."""
+    from html import escape
+
+    message = f"""
+سلام {escape(order.user.first_name or "")} عزیز 👋
+
+سفارش شما در Sanaa Online Shop ویرایش و به‌روزرسانی شد ✏️
+
+
+🧾 شماره سفارش:
+#{order.id}
+
+"""
+
+    if changes:
+        message += "\n\n".join(changes)
+
+    message += """
+
+
+با تشکر از اعتماد شما 🌱
+"""
+
+    return message.strip()
 
 
 def send_order_update_notification(order, changes):
@@ -232,29 +262,9 @@ def send_order_update_notification(order, changes):
         return False
 
 
-    # فقط بخش‌هایی که تغییر کرده‌اند گزارش می‌شوند.
-    message = f"""
-سلام {order.user.first_name} عزیز 👋
-
-سفارش شما در Sanaa Online Shop به‌روزرسانی شد ✏️
-
-🧾 شماره سفارش:
-#{order.id}
-
-"""
-
-
-    message += "\n\n".join(changes)
-
-
-    message += """
-
-"""
-
-
     send_telegram_text(
         connection.telegram_id,
-        message
+        build_order_update_message(order, changes)
     )
 
     return True
@@ -408,7 +418,7 @@ logger = logging.getLogger(__name__)
 
 
 def _post_telegram_file(chat_id, method, field, filename, file_bytes,
-                        mime, caption=None):
+                        mime, caption=None, parse_mode=None):
     """
     Sends one file to one chat. Returns (ok, error_description).
     Never raises, so one failed chat can't break the order request.
@@ -416,6 +426,8 @@ def _post_telegram_file(chat_id, method, field, filename, file_bytes,
     data = {"chat_id": chat_id}
     if caption:
         data["caption"] = caption
+        if parse_mode:
+            data["parse_mode"] = parse_mode
 
     try:
         response = requests.post(
@@ -541,4 +553,97 @@ def send_order_invoice_bundle(order_id):
         if not ok:
             logger.error(
                 "Admin copy of invoice %s failed: %s", order_id, error
+            )
+
+
+def send_updated_invoice(order_id, changes=None):
+    """
+    بعد از تغییر در محتوای فاکتور، «عکس» فاکتور جدید همراه با متن
+    تغییرات را برای مشتری و ادمین (TELEGRAM_CHAT_ID) می‌فرستد. PDF ارسال نمی‌شود.
+
+    متن تغییرات به‌عنوان کپشن عکس می‌رود. اگر از حد مجاز کپشن تلگرام
+    (۱۰۲۴ کاراکتر) بلندتر بود، عکس با کپشن کوتاه و متن کامل در پیام بعدی می‌آید.
+    """
+    from html import escape
+
+    CAPTION_LIMIT = 1024
+
+    if not settings.TELEGRAM_BOT_TOKEN:
+        logger.warning("Updated invoice not sent: TELEGRAM_BOT_TOKEN is empty.")
+        return
+
+    order = (
+        Order.objects
+        .select_related("user")
+        .prefetch_related("items")
+        .get(id=order_id)
+    )
+
+    connection = getattr(order.user, "telegram_connection", None)
+    customer_chat_id = (
+        connection.telegram_id
+        if connection and connection.is_active
+        else None
+    )
+    admin_chat_id = settings.TELEGRAM_CHAT_ID or None
+
+    if not customer_chat_id and not admin_chat_id:
+        return
+
+    image_bytes = build_invoice_image_bytes(order, is_admin=False)
+    filenames = build_invoice_filenames(order, is_admin=False)
+    number = build_order_number(order)
+
+    def send_photo_with_text(chat_id, full_text, short_caption):
+        if len(full_text) <= CAPTION_LIMIT:
+            return _post_telegram_file(
+                chat_id, "sendPhoto", "photo",
+                filenames["image"], image_bytes, "image/png",
+                full_text, parse_mode="HTML",
+            )
+
+        ok, error = _post_telegram_file(
+            chat_id, "sendPhoto", "photo",
+            filenames["image"], image_bytes, "image/png",
+            short_caption, parse_mode="HTML",
+        )
+        send_telegram_text(chat_id, full_text)
+        return ok, error
+
+    # --- مشتری ---
+    if customer_chat_id:
+        ok, error = send_photo_with_text(
+            customer_chat_id,
+            build_order_update_message(order, changes or []),
+            f"🧾 فاکتور به‌روزرسانی‌شده‌ی سفارش {number}",
+        )
+
+        if ok:
+            if connection.last_error:
+                connection.last_error = None
+                connection.save(update_fields=["last_error"])
+        else:
+            logger.error(
+                "Updated invoice %s failed for customer %s: %s",
+                order_id, order.user_id, error,
+            )
+            _mark_connection_error(connection, error)
+
+    # --- ادمین ---
+    if admin_chat_id and str(admin_chat_id) != str(customer_chat_id):
+        header = (
+            f"🔄 فاکتور به‌روزرسانی‌شده {number}\n"
+            f"👤 مشتری: {escape(get_customer_name(order.user))}\n"
+            f"📱 شماره: {escape(order.user.phone or '—')}"
+        )
+        admin_text = header
+        if changes:
+            admin_text += "\n\n" + "\n\n".join(changes)
+
+        ok, error = send_photo_with_text(
+            admin_chat_id, admin_text, header,
+        )
+        if not ok:
+            logger.error(
+                "Updated invoice %s failed for admin: %s", order_id, error
             )
