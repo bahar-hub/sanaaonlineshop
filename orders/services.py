@@ -222,6 +222,100 @@ def update_order(
     return order
 
 
+# ------------------------------------------------------------------
+# تشخیص تغییرات آیتم‌ها (برای پیام تلگرام و ارسال فاکتور جدید)
+# ------------------------------------------------------------------
+
+def snapshot_order_items(order):
+    """وضعیت فعلی آیتم‌ها؛ قبل از ویرایش گرفته می‌شود."""
+    return {
+        item.id: {
+            "name": item.product_name or "",
+            "brand": item.brand or "",
+            "size": item.size or "",
+            "color": item.color or "",
+            "qty": item.quantity,
+            "total": int(item.line_total_irr),
+            "photo": item.photo.name if item.photo else "",
+        }
+        for item in order.items.all()
+    }
+
+
+def diff_order_items(old_snapshot, order):
+    """
+    آیتم‌های قبل و بعد از ویرایش را مقایسه می‌کند.
+
+    خروجی: (lines, changed)
+      lines   -> متن آماده‌ی پیام برای هر آیتمی که تغییر کرده یا حذف شده
+      changed -> اگر هر چیزی در آیتم‌ها عوض شده باشد (اضافه، حذف یا ویرایش)
+                 تا فاکتور جدید ارسال شود.
+    محصولِ جدید متن جداگانه‌ی خودش را دارد (send_new_products_notification)،
+    پس اینجا فقط باعث changed=True می‌شود.
+    """
+    from html import escape
+
+    def show(value):
+        value = (value or "").strip() if isinstance(value, str) else value
+        return escape(str(value)) if value not in ("", None) else "-"
+
+    lines = []
+    changed = False
+    current_ids = set()
+
+    for item in order.items.all():
+        current_ids.add(item.id)
+        old = old_snapshot.get(item.id)
+
+        if old is None:
+            changed = True
+            continue
+
+        new = {
+            "name": item.product_name or "",
+            "brand": item.brand or "",
+            "size": item.size or "",
+            "color": item.color or "",
+            "qty": item.quantity,
+            "total": int(item.line_total_irr),
+            "photo": item.photo.name if item.photo else "",
+        }
+
+        rows = []
+
+        def field(key, icon, label, fmt=show):
+            if old[key] != new[key]:
+                rows.append(
+                    f"{icon} {label}: از «{fmt(old[key])}» به «{fmt(new[key])}»"
+                )
+
+        field("name", "🛍", "نام کالا")
+        field("brand", "🏷", "برند")
+        field("size", "📏", "سایز")
+        field("color", "🎨", "رنگ")
+        field("qty", "🔢", "تعداد")
+        field(
+            "total", "💰", "قیمت",
+            fmt=lambda v: f"{v:,} ریال",
+        )
+
+        if old["photo"] != new["photo"]:
+            rows.append("🖼 تصویر کالا به‌روزرسانی شد")
+
+        if rows:
+            changed = True
+            lines.append(
+                f"🔹 {escape(new['name'])}\n" + "\n".join(rows)
+            )
+
+    for old_id, old in old_snapshot.items():
+        if old_id not in current_ids:
+            changed = True
+            lines.append(f"🗑 محصول حذف شد:\n{escape(old['name'])}")
+
+    return lines, changed
+
+
 @transaction.atomic
 def delete_order(order):
     files_to_delete = [

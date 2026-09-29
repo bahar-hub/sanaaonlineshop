@@ -7,6 +7,7 @@ from orders.telegram_service import (
     send_order_update_notification,
     send_new_products_notification,
     send_shipping_cost_notification,
+    send_updated_invoice,
 )
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import user_passes_test
@@ -29,6 +30,8 @@ from orders.telegram_service import check_telegram_connection
 from orders.services import (
     create_order,
     update_order,
+    snapshot_order_items,
+    diff_order_items,
     delete_order as delete_order_service,
 )
 
@@ -987,6 +990,7 @@ def update_order_view(
         "total_irr": order.total_irr,
         "status": order.status,
     }
+    old_items_snapshot = snapshot_order_items(order)
     try:
         data = parse_order_request(
             request
@@ -1021,14 +1025,43 @@ def update_order_view(
         changes = []
 
         status_changed = old_data["status"] != order.status
-
-        # وقتی وضعیت به «ارسال به ایران» می‌رود و هزینه باربری صفر نیست،
-        # فقط پیام هزینه باربری برای مشتری ارسال می‌شود.
-        send_shipping_message = (
-            status_changed
-            and order.status == Order.Status.SHIPPED_TO_IRAN
-            and (order.shipping_cost or 0) > 0
+        shipping_changed = (
+            old_data["shipping_cost"] != order.shipping_cost
         )
+        payment_changed = (
+            old_data["payment_status"] != order.payment_status
+        )
+        total_changed = old_data["total_irr"] != order.total_irr
+
+        # تغییر رنگ، سایز، برند، تعداد، قیمت، نام، عکس، حذف یا افزودن آیتم
+        item_lines, items_changed = diff_order_items(
+            old_items_snapshot,
+            order,
+        )
+
+        # فقط وقتی وضعیت «ارسال به ایران» است و هزینه باربری صفر نیست،
+        # پیام هزینه باربری ارسال می‌شود (و فقط همین پیام). این پیام وقتی
+        # می‌رود که وضعیت تازه به «ارسال به ایران» رفته باشد یا هزینه
+        # باربری تغییر کرده باشد؛ با ویرایش‌های نامرتبط تکرار نمی‌شود.
+        send_shipping_message = (
+            order.status == Order.Status.SHIPPED_TO_IRAN
+            and (order.shipping_cost or 0) > 0
+            and (status_changed or shipping_changed)
+        )
+
+        # فاکتور جدید (فقط عکس، همراه متن تغییرات) برای مشتری و ادمین:
+        # وقتی چیزی در محتوای فاکتور مشتری عوض شده باشد. در حالت پیام
+        # باربری، فاکتور فقط با تغییر آیتم‌ها ارسال می‌شود. تغییر تنهای
+        # «وضعیت سفارش» فاکتور جدید نمی‌فرستد.
+        if send_shipping_message:
+            invoice_needed = items_changed
+        else:
+            invoice_needed = (
+                items_changed
+                or shipping_changed
+                or payment_changed
+                or total_changed
+            )
 
         if send_shipping_message:
             transaction.on_commit(
@@ -1036,29 +1069,39 @@ def update_order_view(
                 robust=True,
             )
 
-        else:
-            # در غیر این صورت فقط همان بخش‌هایی که تغییر کرده‌اند گفته می‌شود.
-            if status_changed:
-                changes.append(
-                    f"📦 وضعیت سفارش:\n{order.get_status_display()}"
-                )
+            # متن تغییرات کالاها همراه عکس فاکتور می‌رود
+            changes = list(item_lines)
 
-            if old_data["shipping_cost"] != order.shipping_cost:
+        else:
+            # فقط همان بخش‌هایی که تغییر کرده‌اند گفته می‌شود.
+            if status_changed:
+                if order.status == Order.Status.SHIPPED_TO_CUSTOMER:
+                    changes.append("📦 سفارشتون ارسال شد 🚚✨")
+                else:
+                    changes.append(
+                        f"📦 وضعیت سفارش:\n{order.get_status_display()}"
+                    )
+
+            changes.extend(item_lines)
+
+            if shipping_changed:
                 changes.append(
                     f"🚚 هزینه باربری:\n{int(order.shipping_cost):,} ریال"
                 )
 
-            if old_data["payment_status"] != order.payment_status:
+            if payment_changed:
                 changes.append(
                     f"💳 وضعیت پرداخت:\n{order.get_payment_status_display()}"
                 )
 
-            if old_data["total_irr"] != order.total_irr:
+            if total_changed:
                 changes.append(
                     f"💰 مبلغ سفارش:\n{int(order.total_irr):,} ریال"
                 )
 
-            if changes:
+            # وقتی فاکتور جدید می‌رود، متن تغییرات کپشن عکس است
+            # و پیام متنی جداگانه نمی‌رود.
+            if changes and not invoice_needed:
                 transaction.on_commit(
                     lambda: send_order_update_notification(
                         order,
@@ -1073,6 +1116,17 @@ def update_order_view(
                 lambda: send_new_products_notification(
                     order,
                     new_items
+                ),
+                robust=True,
+            )
+
+        if invoice_needed:
+            order_id_for_invoice = order.id
+            invoice_changes = list(changes)
+            transaction.on_commit(
+                lambda: send_updated_invoice(
+                    order_id_for_invoice,
+                    invoice_changes,
                 ),
                 robust=True,
             )
