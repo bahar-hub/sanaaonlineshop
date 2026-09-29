@@ -252,7 +252,7 @@
 .customer-footer__signature {
     color: $color-primary;
 
-    font-family: $font-family-primary;
+    font-family: $font-signiture;
     font-size: 0.5rem;
     font-weight: 400;
 
@@ -262,6 +262,19 @@
     opacity: 0.9;
 }
 
+
+.customer-footer__label {
+  color: $color-primary;
+
+  font-family: $font-family-persian;
+  font-size: 0.9rem;
+  font-weight: 400;
+
+  line-height: 1;
+  white-space: nowrap;
+
+  opacity: 0.9;
+}
 
 // ----------------------------------------
 // Desktop
