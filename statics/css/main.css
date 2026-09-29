@@ -27,6 +27,13 @@
   font-weight: 700;
   font-display: swap;
 }
+@font-face {
+  font-family: "RootSquad";
+  src: url("../fonts/Madani Arabic Regular.ttf") format("ttf");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
 *,
 *::before,
 *::after {
@@ -536,19 +543,9 @@ body {
   color: #7A5A13;
 }
 
-.order-status--shipped_to_iran {
-  background-color: rgba(30, 90, 170, 0.1);
-  color: #1E5AAA;
-}
-
-.order-status--shipped_to_customer {
+.order-status--shipped {
   background-color: rgba(166, 21, 121, 0.1);
   color: #A61579;
-}
-
-.order-status--cancelled {
-  background-color: rgba(183, 28, 28, 0.1);
-  color: #B71C1C;
 }
 
 .order-status--delivered {
@@ -1620,11 +1617,21 @@ body {
 
 .customer-footer__signature {
   color: #A61579;
-  font-family: "Belleza", Arial, sans-serif;
+  font-family: "Root squad";
   font-size: 0.5rem;
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.12em;
+  opacity: 0.9;
+}
+
+.customer-footer__label {
+  color: #A61579;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
   opacity: 0.9;
 }
 

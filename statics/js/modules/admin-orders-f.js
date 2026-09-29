@@ -315,6 +315,170 @@
      * HELPERS
      * ============================================================ */
 
+    // Numeric input/display helpers:
+    // - Display numbers with thousands separators.
+    // - Keep the underlying input value plain while the user edits,
+    //   so existing Number(input.value) calculations continue to work.
+    // - Support Persian/Arabic digits and both Persian/English separators.
+    function normalizeNumericInputValueF(value) {
+
+        var text = String(value == null ? "" : value).trim();
+
+        var persianDigits = "۰۱۲۳۴۵۶۷۸۹";
+        var arabicDigits = "٠١٢٣٤٥٦٧٨٩";
+
+        text = text.replace(/[۰-۹]/g, function (digit) {
+            return String(persianDigits.indexOf(digit));
+        });
+
+        text = text.replace(/[٠-٩]/g, function (digit) {
+            return String(arabicDigits.indexOf(digit));
+        });
+
+        // Remove thousands separators/spaces, keep decimal separator.
+        text = text
+            .replace(/[٬,\\s]/g, "")
+            .replace(/٫/g, ".");
+
+        // Keep only the first decimal point and valid numeric characters.
+        var negative = text.charAt(0) === "-";
+        text = text.replace(/-/g, "").replace(/[^0-9.]/g, "");
+
+        var firstDot = text.indexOf(".");
+        if (firstDot !== -1) {
+            text =
+                text.slice(0, firstDot + 1) +
+                text.slice(firstDot + 1).replace(/\./g, "");
+        }
+
+        return (negative ? "-" : "") + text;
+    }
+
+
+    function parseNumericInputF(value) {
+
+        var normalized =
+            normalizeNumericInputValueF(value);
+
+        if (!normalized || normalized === "-" || normalized === ".") {
+            return 0;
+        }
+
+        var number =
+            Number(normalized);
+
+        return Number.isFinite(number)
+            ? number
+            : 0;
+    }
+
+
+    function formatNumericInputDisplayF(input) {
+
+        if (!input) {
+            return;
+        }
+
+        var raw =
+            normalizeNumericInputValueF(input.value);
+
+        if (!raw || raw === "-") {
+            return;
+        }
+
+        var number =
+            Number(raw);
+
+        if (!Number.isFinite(number)) {
+            return;
+        }
+
+        var hasDecimal =
+            raw.indexOf(".") !== -1;
+
+        var fractionDigits =
+            hasDecimal
+                ? Math.min(
+                    (raw.split(".")[1] || "").length,
+                    6
+                )
+                : 0;
+
+        input.value =
+            number.toLocaleString(
+                "fa-IR",
+                {
+                    useGrouping: true,
+                    minimumFractionDigits: fractionDigits,
+                    maximumFractionDigits: fractionDigits
+                }
+            );
+    }
+
+
+    function prepareNumericInputF(input) {
+
+        if (!input || input.dataset.numericFormattingF === "1") {
+            return;
+        }
+
+        input.dataset.numericFormattingF = "1";
+
+        // type=number cannot display thousands separators reliably.
+        if (input.type === "number") {
+            input.type = "text";
+            input.inputMode = "decimal";
+        }
+
+        input.addEventListener(
+            "focus",
+            function () {
+                input.value =
+                    normalizeNumericInputValueF(input.value);
+            }
+        );
+
+        input.addEventListener(
+            "blur",
+            function () {
+                formatNumericInputDisplayF(input);
+            }
+        );
+
+        input.addEventListener(
+            "change",
+            function () {
+                // change can fire after blur; this is intentionally safe/idempotent.
+                formatNumericInputDisplayF(input);
+            }
+        );
+
+        formatNumericInputDisplayF(input);
+    }
+
+
+    function prepareAllNumericInputsF(root) {
+
+        var scope = root || document;
+
+        scope
+            .querySelectorAll(
+                'input[type="number"], ' +
+                '.admin-order-item-f__price, ' +
+                '.admin-order-item-f__markup, ' +
+                '.admin-order-item-f__exchange-rate, ' +
+                '.admin-order-item-f__qty, ' +
+                '.admin-order-item-f__service-cost, ' +
+                '#adminNewOrderShippingF'
+            )
+            .forEach(
+                function (input) {
+                    prepareNumericInputF(input);
+                }
+            );
+    }
+
+
     function formatNumberF(value) {
 
         return Math.round(Number(value) || 0).toLocaleString("fa-IR");
@@ -3157,9 +3321,14 @@
                 var currency = currencyInput.value;
                 if (markupInput) {
                     markupInput.value = DEFAULT_MARKUP_F[currency] || 0;
+                    formatNumericInputDisplayF(markupInput);
                 }
                 if (exchangeRateInput && EXCHANGE_RATES_F[currency]) {
                     exchangeRateInput.value = EXCHANGE_RATES_F[currency].rate;
+                    formatNumericInputDisplayF(exchangeRateInput);
+                }
+                if (markupInput) {
+                    formatNumericInputDisplayF(markupInput);
                 }
                 updatePricingPreviewF();
             });
@@ -3176,6 +3345,9 @@
         row.querySelectorAll("[data-qty-action]").forEach(function (btn) {
             btn.addEventListener("click", updatePricingPreviewF);
         });
+
+        // Format numeric fields in this dynamically-created row.
+        prepareAllNumericInputsF(row);
 
         setTimeout(updatePricingPreviewF, 0);
 
@@ -4819,6 +4991,10 @@
 
     function initNewOrderF() {
 
+        // Numeric fields outside dynamic item rows.
+        prepareAllNumericInputsF();
+
+
         var editingOrderId =
             null;
 
@@ -5027,6 +5203,10 @@
                         Number(
                             order.shippingRial
                         ) || 0;
+
+                    formatNumericInputDisplayF(
+                        shippingInput
+                    );
                 }
 
 

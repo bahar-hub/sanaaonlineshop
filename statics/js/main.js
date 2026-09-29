@@ -503,6 +503,18 @@ async function handleLogin(event) {
     }
 }
 
+function normalizePhone(value) {
+
+    return String(value || "")
+        .replace(/[۰-۹]/g, (digit) => {
+            return "۰۱۲۳۴۵۶۷۸۹".indexOf(digit);
+        })
+        .replace(/[٠-٩]/g, (digit) => {
+            return "٠١٢٣٤٥٦٧٨٩".indexOf(digit);
+        })
+        .trim();
+}
+
 
 // ========================================
 // Signup Handler
@@ -516,17 +528,59 @@ function handleSignup(event) {
 
     clearAuthError("signupForm");
 
+
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
 
+
     const formData = new FormData(form);
 
-    const password = formData.get("password");
-    const passwordConfirm = formData.get("passwordConfirm");
+    const phone =
+        normalizePhone(
+            formData.get("phone")
+        );
 
-    // بررسی یکسان بودن رمزها
+    const password =
+        String(
+            formData.get("password") || ""
+        );
+
+    const passwordConfirm =
+        String(
+            formData.get("passwordConfirm") || ""
+        );
+
+
+    // ========================================
+    // Validate Phone
+    // ========================================
+
+    if (!/^09\d{9}$/.test(phone)) {
+
+        showAuthError(
+            "شماره موبایل باید با 09 شروع شود و دقیقاً 11 رقم باشد.",
+            "signupForm"
+        );
+
+        return;
+    }
+
+
+    // شماره تبدیل‌شده را داخل input قرار بده
+    const phoneInput =
+        form.querySelector('[name="phone"]');
+
+    if (phoneInput) {
+        phoneInput.value = phone;
+    }
+
+
+    // ========================================
+    // Password Confirmation
+    // ========================================
+
     if (password !== passwordConfirm) {
 
         showAuthError(
@@ -537,7 +591,11 @@ function handleSignup(event) {
         return;
     }
 
-    // ارسال فرم واقعی به Django
+
+    // ========================================
+    // Send Form To Django
+    // ========================================
+
     form.submit();
 }
 // ========================================
