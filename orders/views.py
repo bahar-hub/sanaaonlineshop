@@ -103,24 +103,25 @@ def telegram_webhook(request):
                 send_telegram_text(
     chat_id,
     f"""
-    سلام {user.first_name} عزیز 👋🏼
+سلام {user.first_name} عزیز 👋🏼
 
-    به Sanaa Online Shop خوش اومدی 🌱✨
+به Sanaa Online Shop خوش اومدی 🌱✨
 
-    اتصال تلگرام شما با موفقیت انجام شد ✅
+اتصال تلگرام شما با موفقیت انجام شد ✅
 
-    از این به بعد، موارد زیر از طریق همین ربات براتون ارسال میشه:
+از این به بعد، موارد زیر از طریق همین ربات براتون ارسال میشه:
 
-    📦 وضعیت سفارش‌ها
-    🧾 فاکتورها
-    🔔 اطلاعیه‌ها و اخبار سفارش
+📦 وضعیت سفارش‌ها
+🧾 فاکتورها
+🔔 اطلاعیه‌ها و اخبار سفارش
 
-    ثبت سفارش و مشاوره خرید همچنان از طریق آیدی زیر یا دایرکت اینستاگرام انجام میشه 👇🏼
+ثبت سفارش و مشاوره خرید همچنان از طریق آیدی زیر یا دایرکت اینستاگرام انجام میشه 👇🏼
 
-    Telegram: @sanamadani
-    Instagram: @sanaaonlineshop
+Telegram: <a href="https://t.me/sanamadani">@sanamadani</a>
+Instagram: <a href="https://www.instagram.com/sanaa.onlineshop?stkn=NDJ0Y3o1MXZyenVm">@sanaaonlineshop</a>
+Website: <a href="https://sanaaonlineshop.com/">sanaaonlineshop.com</a>
 
-    ممنون که Sanaa رو انتخاب کردی 🤍"""
+ممنون که Sanaa رو انتخاب کردی 🤍"""
     )
 
             except User.DoesNotExist:

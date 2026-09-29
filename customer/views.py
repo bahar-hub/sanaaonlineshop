@@ -154,6 +154,9 @@ def customer_orders_api(request):
         for item in order.items.all():
             items.append({
                 "name": item.product_name,
+                "brand": item.brand or "",
+                "size": item.size or "",
+                "color": item.color or "",
                 "qty": item.quantity,
                 "currency": item.currency,
                 # Customer receives only final sale values, not markup details.
@@ -200,6 +203,9 @@ def customer_order_detail_api(request, order_id):
         "items": [
             {
                 "name": item.product_name,
+                "brand": item.brand or "",
+                "size": item.size or "",
+                "color": item.color or "",
                 "qty": item.quantity,
                 "currency": item.currency,
                 "unitPriceIRR": float(item.unit_price_irr),
