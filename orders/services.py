@@ -26,6 +26,32 @@ def round_invoice_total_up(value):
     )
 
 
+def percent_fields(item):
+    """
+    درصدهای واسطه/ادمین/تکس را از دیکشنری آیتم می‌خواند. اگر ارسال نشده
+    باشند، پیش‌فرض واحد پول استفاده می‌شود. درصد افزایش کل همیشه مجموع
+    این سه است.
+    """
+    defaults = OrderItem.default_percents(item.get("currency"))
+
+    def pick(key):
+        value = item.get(f"{key}_percent")
+        if value is None or value == "":
+            return defaults[key]
+        return to_decimal(value, str(defaults[key]))
+
+    broker = pick("broker")
+    admin = pick("admin")
+    tax = pick("tax")
+
+    return {
+        "broker_percent": broker,
+        "admin_percent": admin,
+        "tax_percent": tax,
+        "markup_percent": broker + admin + tax,
+    }
+
+
 def _recalculate_order(order):
     items_total_irr = Decimal("0")
     markup_total_irr = Decimal("0")
@@ -34,7 +60,8 @@ def _recalculate_order(order):
         # item.line_total_irr already includes that item's own service
         # cost (see OrderItem.line_total_irr), so it isn't added again here.
         items_total_irr += item.line_total_irr
-        markup_total_irr += item.markup_amount_irr
+        # فقط سود ادمین؛ سهم واسطه و تکس سود پروژه نیست.
+        markup_total_irr += item.admin_profit_irr
 
     total_irr = round_invoice_total_up(
         items_total_irr
@@ -102,7 +129,7 @@ def create_order(
             quantity=int(item.get("quantity", 1)),
             currency=item["currency"],
             product_price=to_decimal(item.get("product_price")),
-            markup_percent=to_decimal(item.get("markup_percent")),
+            **percent_fields(item),
             admin_cost=to_decimal(item.get("admin_cost")),
             service_cost=to_decimal(item.get("service_cost")),
             exchange_rate=to_decimal(item.get("exchange_rate")),
@@ -186,7 +213,8 @@ def update_order(
         order_item.quantity = int(item_data.get("quantity", 1))
         order_item.currency = item_data["currency"]
         order_item.product_price = to_decimal(item_data.get("product_price"))
-        order_item.markup_percent = to_decimal(item_data.get("markup_percent"))
+        for field_name, field_value in percent_fields(item_data).items():
+            setattr(order_item, field_name, field_value)
         order_item.admin_cost = to_decimal(item_data.get("admin_cost"))
         order_item.service_cost = to_decimal(
             item_data.get("service_cost")

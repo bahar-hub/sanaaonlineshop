@@ -10,6 +10,20 @@ class User(AbstractUser):
         blank=False,
     )
 
+    province = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        verbose_name="استان",
+    )
+
+    city = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        verbose_name="شهر",
+    )
+
     address = models.TextField(
         null=False,
         blank=False,

@@ -592,6 +592,35 @@
 
 
 
+            <div class="admin-customers-f__form-row-location">
+
+                <div class="admin-customers-f__form-group">
+                    <label class="admin-customers-f__form-label" for="adminNewCustomerProvinceF">استان</label>
+                    <select
+                        class="admin-customers-f__form-input"
+                        id="adminNewCustomerProvinceF"
+                        name="province"
+                    >
+                        <option value="">انتخاب استان</option>
+                    </select>
+                    <p class="admin-customers-f__form-error"></p>
+                </div>
+
+                <div class="admin-customers-f__form-group">
+                    <label class="admin-customers-f__form-label" for="adminNewCustomerCityF">شهر</label>
+                    <select
+                        class="admin-customers-f__form-input"
+                        id="adminNewCustomerCityF"
+                        name="city"
+                        disabled
+                    >
+                        <option value="">انتخاب شهر</option>
+                    </select>
+                    <p class="admin-customers-f__form-error"></p>
+                </div>
+
+            </div>
+
             <!-- ردیف چهارم: آدرس -->
 
             <div class="admin-customers-f__form-group">
@@ -608,7 +637,7 @@
                     id="adminNewCustomerAddressF"
                     name="address"
                     rows="3"
-                    placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد"
+                    placeholder="خیابان، کوچه، پلاک، واحد"
                 ></textarea>
 
                 <p class="admin-customers-f__form-error">
@@ -744,6 +773,35 @@
                 <p class="admin-customers-f__form-error"></p>
             </div>
 
+            <div class="admin-customers-f__form-row-location">
+
+                <div class="admin-customers-f__form-group">
+                    <label class="admin-customers-f__form-label" for="adminEditCustomerProvinceF">استان</label>
+                    <select
+                        class="admin-customers-f__form-input"
+                        id="adminEditCustomerProvinceF"
+                        name="province"
+                    >
+                        <option value="">انتخاب استان</option>
+                    </select>
+                    <p class="admin-customers-f__form-error"></p>
+                </div>
+
+                <div class="admin-customers-f__form-group">
+                    <label class="admin-customers-f__form-label" for="adminEditCustomerCityF">شهر</label>
+                    <select
+                        class="admin-customers-f__form-input"
+                        id="adminEditCustomerCityF"
+                        name="city"
+                        disabled
+                    >
+                        <option value="">انتخاب شهر</option>
+                    </select>
+                    <p class="admin-customers-f__form-error"></p>
+                </div>
+
+            </div>
+
             <div class="admin-customers-f__form-group">
                 <label class="admin-customers-f__form-label" for="adminEditCustomerAddressF">آدرس</label>
                 <textarea
@@ -751,7 +809,7 @@
                     id="adminEditCustomerAddressF"
                     name="address"
                     rows="3"
-                    placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد"
+                    placeholder="خیابان، کوچه، پلاک، واحد"
                 ></textarea>
                 <p class="admin-customers-f__form-error"></p>
             </div>
@@ -914,7 +972,9 @@
 <!-- ========================================
      JAVASCRIPT
 ========================================= -->
+{{ iran_locations|json_script:"iran-locations-data" }}
 {{ customers|json_script:"admin-customers-data" }}
+<script src="{% static 'js/modules/iran-locations.js' %}"></script>
 
 <script>
     window.adminCustomersData = JSON.parse(

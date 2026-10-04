@@ -172,6 +172,24 @@ function populateProfileForm(user) {
 }
 
 
+function initProfileLocation() {
+
+    const provinceSelect = document.getElementById("profileProvince");
+    const citySelect = document.getElementById("profileCity");
+
+    if (!provinceSelect || !citySelect || !window.IranLocations) {
+        return;
+    }
+
+    window.IranLocations.bind(
+        provinceSelect,
+        citySelect,
+        provinceSelect.dataset.selected || "",
+        citySelect.dataset.selected || ""
+    );
+}
+
+
 function clearFieldError(fieldName, prefix = "profile") {
 
     const input = document.getElementById(`${prefix}${capitalize(fieldName)}`);
@@ -213,6 +231,8 @@ function validateProfileForm(data) {
     let isValid = true;
 
     clearFieldError("phone");
+    clearFieldError("province");
+    clearFieldError("city");
     clearFieldError("address");
 
     const phonePattern = /^09\d{9}$/;
@@ -223,6 +243,20 @@ function validateProfileForm(data) {
             "phone",
             "شماره تلفن باید به‌صورت ۰۹xxxxxxxxx باشد."
         );
+
+        isValid = false;
+    }
+
+    if (!data.province) {
+
+        setFieldError("province", "لطفاً استان را انتخاب کنید.");
+
+        isValid = false;
+    }
+
+    if (!data.city) {
+
+        setFieldError("city", "لطفاً شهر را انتخاب کنید.");
 
         isValid = false;
     }
@@ -251,6 +285,8 @@ function handleProfileSubmit(event) {
 
     const data = {
         phone: formData.get("phone") || "",
+        province: formData.get("province") || "",
+        city: formData.get("city") || "",
         address: formData.get("address") || ""
     };
 
@@ -274,6 +310,8 @@ function initProfileForm() {
     form.addEventListener("submit", handleProfileSubmit);
 
     populateProfileForm(getCurrentUser());
+
+    initProfileLocation();
 }
 
 

@@ -200,7 +200,7 @@
 
                     {% if is_admin %}
                         <p><strong>نرخ {{ primary_currency_label }} اولیه:</strong> {{ primary_rate }} ریال</p>
-                        <p><strong>درصد افزایش:</strong> {{ primary_markup_percent }}%</p>
+                        <p><strong>درصد افزایش کل:</strong> {{ primary_markup_percent }}%</p>
                         <p><strong>نرخ {{ primary_currency_label }} بعد از افزایش:</strong> {{ primary_adjusted_rate }} ریال</p>
                     {% endif %}
                 </div>
@@ -278,7 +278,7 @@
                 {% if is_admin %}
                     <div class="profit-box">
                         <div><strong>جمع قبل از افزایش:</strong> {{ base_items_total }} ریال</div>
-                        <div><strong>مجموع افزایش اعمال‌شده:</strong> {{ profit_total }} ریال</div>
+                        <div><strong>سود ادمین:</strong> {{ profit_total }} ریال</div>
                         <div><strong>هزینه کل خدمات:</strong> {{ total_service_cost }} ریال</div>
                     </div>
                 {% endif %}

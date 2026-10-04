@@ -396,6 +396,39 @@
 
                         <div class="form-group">
 
+                            <div class="form-row-location">
+
+                                <div>
+                                    <label class="form-label" for="signupProvince">استان</label>
+                                    <select
+                                        class="form-select"
+                                        id="signupProvince"
+                                        name="province"
+                                        required
+                                    >
+                                        <option value="">انتخاب استان</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="form-label" for="signupCity">شهر</label>
+                                    <select
+                                        class="form-select"
+                                        id="signupCity"
+                                        name="city"
+                                        required
+                                        disabled
+                                    >
+                                        <option value="">انتخاب شهر</option>
+                                    </select>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
                             <label
                                 class="form-label"
                                 for="signupAddress"
@@ -407,15 +440,10 @@
                                 class="form-textarea"
                                 id="signupAddress"
                                 name="address"
-                                placeholder="آدرس خود را وارد کنید"
+                                placeholder="خیابان، کوچه، پلاک، واحد"
                                 autocomplete="street-address"
                                 required
                             ></textarea>
-                            <p class="form-hint form-hint--primary">
-
-    لطفاً استان و شهر را حتماً در آدرس ذکر کنید.
-
-</p>
 
                         </div>
                         <div class="form-group">
@@ -775,6 +803,8 @@
 
 
     <!-- JavaScript -->
+    {{ iran_locations|json_script:"iran-locations-data" }}
+    <script src="{% static 'js/modules/iran-locations.js' %}" defer></script>
     <script src="{% static 'js/modules/storage.js' %}" defer></script>
     <script src="{% static 'js/modules/auth.js' %}" defer></script>
     <!--<script src="{% static 'js/modules/page-guard.js' %}" defer></script>-->

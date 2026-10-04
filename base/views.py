@@ -4,6 +4,8 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 
+from customer.iran_locations import validate_location
+
 User = get_user_model()
 
 
@@ -80,10 +82,24 @@ def signup_view(request):
         first_name = request.POST.get("firstName", "").strip()
         last_name = request.POST.get("lastName", "").strip()
         phone = request.POST.get("phone", "").strip()
+        province = request.POST.get("province", "").strip()
+        city = request.POST.get("city", "").strip()
         address = request.POST.get("address", "").strip()
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
         password_confirm = request.POST.get("passwordConfirm", "")
+
+        location_error = validate_location(province, city)
+
+        if location_error:
+
+            return render(
+                request,
+                "base/index.html",
+                {
+                    "signup_error": location_error
+                },
+            )
 
         # بررسی یکسان بودن رمز عبور
         if password != password_confirm:
@@ -125,6 +141,8 @@ def signup_view(request):
             first_name=first_name,
             last_name=last_name,
             phone=phone,
+            province=province,
+            city=city,
             address=address,
         )
 

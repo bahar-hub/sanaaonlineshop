@@ -16,6 +16,7 @@ from django.views.decorators.http import require_POST
 
 from customer.models import User, PasswordResetOTP
 from customer.utils import send_password_reset_otp
+from customer.iran_locations import validate_location
 import hashlib
 from django.contrib.auth import login
 from django.utils import timezone
@@ -40,17 +41,33 @@ def profile_view(request):
 
             phone = request.POST.get("phone", "").strip()
             address = request.POST.get("address", "").strip()
+            province = request.POST.get("province", "").strip()
+            city = request.POST.get("city", "").strip()
 
-            request.user.phone = phone
-            request.user.address = address
+            location_error = validate_location(province, city)
 
-            request.user.save()
+            if location_error:
 
-            messages.success(
-                request,
-                "اطلاعات با موفقیت ذخیره شد.",
-                extra_tags="profile"
-            )
+                messages.error(
+                    request,
+                    location_error,
+                    extra_tags="profile"
+                )
+
+            else:
+
+                request.user.phone = phone
+                request.user.address = address
+                request.user.province = province
+                request.user.city = city
+
+                request.user.save()
+
+                messages.success(
+                    request,
+                    "اطلاعات با موفقیت ذخیره شد.",
+                    extra_tags="profile"
+                )
 
         # =========================
         # Change Password
@@ -134,6 +151,11 @@ def profile_view(request):
     )
 
 
+def _customer_display_name(user):
+    name = f"{user.first_name} {user.last_name}".strip()
+    return name or user.username
+
+
 @user_passes_test(is_customer, login_url="base:index")
 def customer_orders_api(request):
 
@@ -171,6 +193,8 @@ def customer_orders_api(request):
                 datetime=order.registered_at
             ).strftime("%Y/%m/%d"),
             "status": order.status,
+            "paymentStatus": order.payment_status,
+            "customerName": _customer_display_name(order.user),
             "items": items,
             "shipping": float(order.shipping_cost),
             "services": float(order.service_cost),
@@ -196,6 +220,8 @@ def customer_order_detail_api(request, order_id):
             datetime=order.registered_at
         ).strftime("%Y/%m/%d"),
         "status": order.status,
+        "paymentStatus": order.payment_status,
+        "customerName": _customer_display_name(order.user),
         "shipping": float(order.shipping_cost),
         "services": float(order.service_cost),
         "totalUSD": float(order.total_usd),

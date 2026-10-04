@@ -89,6 +89,7 @@ def build_invoice_context(order, is_admin=False):
             "TRY": "لیر",
             "GBP": "پوند",
             "AED": "درهم",
+            "CAD": "دلار کانادا",
         }
 
         row = {
@@ -120,7 +121,7 @@ def build_invoice_context(order, is_admin=False):
 
         items_total += item.line_total_irr
         base_items_total += item.base_unit_price_irr * item.quantity
-        total_profit += item.markup_amount_irr
+        total_profit += item.admin_profit_irr
         total_service_cost += item.service_cost or Decimal("0")
 
     context = {
@@ -131,7 +132,7 @@ def build_invoice_context(order, is_admin=False):
         "order_date": build_jalali_date(order.registered_at),
         "customer_name": get_customer_name(order.user),
         "customer_phone": order.user.phone or "—",
-        "customer_address": order.user.address or "—",
+        "customer_address": " ، ".join(x for x in (order.user.province, order.user.city, order.user.address) if x) or "—",
         "payment_status_label": order.get_payment_status_display(),
         "order_status_label": order.get_status_display(),
         "items": items,
@@ -243,7 +244,7 @@ def build_telegram_caption(order):
         "",
         f"👤 مشتری: {customer_name}",
         f"📱 شماره: {order.user.phone or '—'}",
-        f"📍 آدرس: {order.user.address or '—'}",
+        f"📍 آدرس: {' ، '.join(x for x in (order.user.province, order.user.city, order.user.address) if x) or '—'}",
         f"💳 وضعیت پرداخت: {order.get_payment_status_display()}",
         f"📦 وضعیت سفارش: {order.get_status_display()}",
         f"💰 مبلغ نهایی: {format_price(order.total_irr)} ریال",

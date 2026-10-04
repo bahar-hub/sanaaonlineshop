@@ -217,6 +217,44 @@
 
                             <div class="form-group">
 
+                                <div class="form-row-location">
+
+                                    <div>
+                                        <label class="form-label" for="profileProvince">استان</label>
+                                        <select
+                                            class="form-select"
+                                            id="profileProvince"
+                                            name="province"
+                                            data-selected="{{ customer.province }}"
+                                            required
+                                        >
+                                            <option value="">انتخاب استان</option>
+                                        </select>
+                                        <span class="form-error" id="profileProvinceError" role="alert"></span>
+                                    </div>
+
+                                    <div>
+                                        <label class="form-label" for="profileCity">شهر</label>
+                                        <select
+                                            class="form-select"
+                                            id="profileCity"
+                                            name="city"
+                                            data-selected="{{ customer.city }}"
+                                            required
+                                            disabled
+                                        >
+                                            <option value="">انتخاب شهر</option>
+                                        </select>
+                                        <span class="form-error" id="profileCityError" role="alert"></span>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="form-group">
+
                                 <label
                                     class="form-label"
                                     for="profileAddress"
@@ -228,7 +266,7 @@
                                     class="form-textarea"
                                     id="profileAddress"
                                     name="address"
-                                    placeholder="آدرس خود را وارد کنید"
+                                    placeholder="خیابان، کوچه، پلاک، واحد"
                                     autocomplete="street-address"
                                     required
                                 >{{ customer.address }}</textarea>
@@ -709,6 +747,8 @@
 
 
     <!-- JavaScript -->
+    {{ iran_locations|json_script:"iran-locations-data" }}
+    <script src="{% static 'js/modules/iran-locations.js' %}" defer></script>
     <script src="{% static 'js/modules/storage.js' %}" defer></script>
     <script src="{% static 'js/modules/auth.js' %}" defer></script>
     <script src="{% static 'js/modules/customer.js' %}" defer></script>

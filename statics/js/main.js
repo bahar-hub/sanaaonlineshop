@@ -446,6 +446,17 @@ function initForms() {
             handleSignup
         );
 
+        if (window.IranLocations) {
+
+            window.IranLocations.bind(
+                document.getElementById("signupProvince"),
+                document.getElementById("signupCity"),
+                "",
+                ""
+            );
+
+        }
+
     }
 }
 

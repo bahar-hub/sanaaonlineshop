@@ -105,14 +105,34 @@ class OrderItem(models.Model):
         TRY = "TRY", "لیر"
         GBP = "GBP", "پوند"
         AED = "AED", "درهم"
+        CAD = "CAD", "دلار کانادا"
+
+    # درصدهای پیش‌فرض هر واحد پول:
+    #   broker = سود واسطه، admin = سود ادمین، tax = مالیات (تکس)
+    # مجموع این سه، درصد افزایشی است که روی نرخ ارز اعمال می‌شود.
+    # فقط سود ادمین به‌عنوان سود پروژه محاسبه و نمایش داده می‌شود.
+    DEFAULT_PERCENTS_BY_CURRENCY = {
+        "EUR": {"broker": Decimal("15"), "admin": Decimal("10"), "tax": Decimal("0")},
+        "USD": {"broker": Decimal("20"), "admin": Decimal("10"), "tax": Decimal("12")},
+        "CAD": {"broker": Decimal("20"), "admin": Decimal("10"), "tax": Decimal("12")},
+        "TRY": {"broker": Decimal("10"), "admin": Decimal("10"), "tax": Decimal("0")},
+        "AED": {"broker": Decimal("15"), "admin": Decimal("10"), "tax": Decimal("0")},
+        "GBP": {"broker": Decimal("0"), "admin": Decimal("0"), "tax": Decimal("0")},
+    }
 
     DEFAULT_MARKUP_BY_CURRENCY = {
-        "USD": Decimal("42"),   # آمریکا / کانادا
-        "EUR": Decimal("25"),   # آلمان / اسپانیا / ایتالیا
-        "TRY": Decimal("20"),   # ترکیه
-        "AED": Decimal("25"),   # دبی / عمان
-        "GBP": Decimal("0"),    # برای سازگاری با داده‌های قبلی
+        currency: sum(parts.values(), Decimal("0"))
+        for currency, parts in DEFAULT_PERCENTS_BY_CURRENCY.items()
     }
+
+    @classmethod
+    def default_percents(cls, currency):
+        return dict(
+            cls.DEFAULT_PERCENTS_BY_CURRENCY.get(
+                currency,
+                {"broker": Decimal("0"), "admin": Decimal("0"), "tax": Decimal("0")},
+            )
+        )
 
     order = models.ForeignKey(
         Order,
@@ -153,6 +173,27 @@ class OrderItem(models.Model):
         max_digits=6,
         decimal_places=2,
         default=0,
+    )
+
+    # Breakdown of markup_percent (which is always broker + admin + tax).
+    # Only admin_percent is the admin's real profit.
+    broker_percent = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0,
+        verbose_name="درصد واسطه",
+    )
+    admin_percent = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0,
+        verbose_name="درصد ادمین",
+    )
+    tax_percent = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        default=0,
+        verbose_name="درصد تکس",
     )
 
     # Legacy field retained for compatibility with existing DB/admin invoices.
@@ -264,6 +305,19 @@ class OrderItem(models.Model):
             Decimal("1"),
             rounding=ROUND_HALF_UP,
         )
+
+
+    @property
+    def admin_profit_irr(self):
+        """
+        Admin's real profit: admin_percent of the base (pre-markup) line
+        value. Broker share and tax are pass-through costs, and the
+        service fee is a separate charge, so none of them count here.
+        """
+        base_total = self.base_unit_price_irr * self.quantity
+        return (
+            base_total * (self.admin_percent or Decimal("0")) / Decimal("100")
+        ).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
 
 
 class Invoice(models.Model):

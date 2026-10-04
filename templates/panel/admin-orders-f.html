@@ -1185,7 +1185,8 @@
                         <div class="admin-order-item-f__input-wrap">
                             <span class="admin-order-item-f__mini-label">واحد پول</span>
                             <select class="admin-select-f admin-order-item-f__currency">
-                                <option value="USD">دلار</option>
+                                <option value="USD">دلار آمریکا</option>
+                                <option value="CAD">دلار کانادا</option>
                                 <option value="EUR">یورو</option>
                                 <option value="TRY">لیر</option>
                                 <option value="AED">درهم امارات</option>
@@ -1195,22 +1196,73 @@
 
                     </div>
 
-                    <div class="admin-order-item-f__pricing-row">
-                        <div class="admin-order-item-f__input-wrap">
-                            <span class="admin-order-item-f__mini-label">درصد افزایش</span>
-                            <div class="admin-order-item-f__input-suffix">
+                    <div class="admin-order-item-f__percent-box-f">
+
+                        <div class="admin-order-item-f__percent-head-f">
+                            <span class="admin-order-item-f__mini-label">درصدهای افزایش (بر اساس واحد پول)</span>
+
+                            <label class="admin-order-item-f__percent-toggle-f">
+                                <input
+                                    type="checkbox"
+                                    class="admin-order-item-f__percent-edit"
+                                >
+                                <span>ویرایش درصدها</span>
+                            </label>
+                        </div>
+
+                        <div class="admin-order-item-f__percent-grid-f">
+
+                            <div class="admin-order-item-f__input-wrap">
+                                <span class="admin-order-item-f__mini-label">واسطه ٪</span>
                                 <input
                                     type="number"
-                                    class="admin-orders-f__new-order-input admin-order-item-f__markup"
+                                    class="admin-orders-f__new-order-input admin-order-item-f__broker"
                                     min="0"
                                     max="1000"
                                     step="0.01"
                                     inputmode="decimal"
                                 >
-                                
                             </div>
+
+                            <div class="admin-order-item-f__input-wrap">
+                                <span class="admin-order-item-f__mini-label">ادمین ٪</span>
+                                <input
+                                    type="number"
+                                    class="admin-orders-f__new-order-input admin-order-item-f__admin"
+                                    min="0"
+                                    max="1000"
+                                    step="0.01"
+                                    inputmode="decimal"
+                                >
+                            </div>
+
+                            <div class="admin-order-item-f__input-wrap">
+                                <span class="admin-order-item-f__mini-label">تکس ٪</span>
+                                <input
+                                    type="number"
+                                    class="admin-orders-f__new-order-input admin-order-item-f__tax"
+                                    min="0"
+                                    max="1000"
+                                    step="0.01"
+                                    inputmode="decimal"
+                                >
+                            </div>
+
+                            <div class="admin-order-item-f__input-wrap">
+                                <span class="admin-order-item-f__mini-label">کل ٪</span>
+                                <input
+                                    type="text"
+                                    class="admin-orders-f__new-order-input admin-order-item-f__markup"
+                                    readonly
+                                    tabindex="-1"
+                                >
+                            </div>
+
                         </div>
 
+                    </div>
+
+                    <div class="admin-order-item-f__pricing-row">
                         <div class="admin-order-item-f__input-wrap">
                             <span class="admin-order-item-f__mini-label">نرخ ارز (ریال)</span>
                             <input
@@ -1320,7 +1372,7 @@
             </button>
 
             <div
-                class="admin-invoice-f"
+                class="admin-invoice-host-f"
                 id="adminCustomerInvoiceF"
             ></div>
 
@@ -1378,7 +1430,7 @@
             </button>
 
             <div
-                class="admin-invoice-f"
+                class="admin-invoice-host-f"
                 id="adminInternalInvoiceF"
             ></div>
 
@@ -1440,7 +1492,7 @@
     </script>
 
     <script
-        src="{% static 'js/modules/admin-orders-f.js' %}?v=6"
+        src="{% static 'js/modules/admin-orders-f.js' %}?v=8"
         defer
     ></script>  
 

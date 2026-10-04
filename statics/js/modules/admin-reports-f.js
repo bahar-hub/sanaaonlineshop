@@ -510,6 +510,9 @@ for (var day = 1; day <= dayCount; day += 1) {
     chartValues: dailyTotals,
     dayCount: dayCount
 });
+
+    renderMonthlyProfitF(paidOrders, jy, jm);
+
     /*
      * فعلاً نمودار را نگه می‌داریم تا در قدم بعد
      * داده واقعی روزانه را به آن وصل کنیم.
@@ -604,8 +607,272 @@ for (var month = 1; month <= 12; month += 1) {
     renderYearlyChartF({
         monthlyTotals: monthlyTotals
     });
+
+    renderYearlyProfitF(yearlyOrders, jy);
 }
 
+
+
+
+    /* --------------------------------------------------------
+     * Admin profit (فقط سود ادمین)
+     * Data: order.admin_profit_irr / order.profit_by_currency,
+     * computed by Django from each item's admin percentage.
+     * -------------------------------------------------------- */
+
+    var CURRENCY_LABELS_F = {
+        USD: "دلار آمریکا",
+        CAD: "دلار کانادا",
+        EUR: "یورو",
+        TRY: "لیر",
+        AED: "درهم",
+        GBP: "پوند"
+    };
+
+    function orderJalaliF(order) {
+        var date = new Date(order.registered_at);
+
+        if (isNaN(date.getTime())) {
+            return null;
+        }
+
+        return toJalaliF(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    }
+
+    function sumProfitByCurrencyF(orders) {
+        var result = {};
+
+        orders.forEach(function (order) {
+            var parts = order.profit_by_currency || {};
+
+            Object.keys(parts).forEach(function (code) {
+                result[code] = (result[code] || 0) + Number(parts[code] || 0);
+            });
+        });
+
+        return result;
+    }
+
+    function renderProfitListF(listEl, rows, emptyText) {
+        if (!listEl) return;
+
+        listEl.innerHTML = "";
+
+        if (!rows.length) {
+            var empty = document.createElement("li");
+            empty.className = "admin-reports-f__profit-empty-f";
+            empty.textContent = emptyText;
+            listEl.appendChild(empty);
+            return;
+        }
+
+        rows.forEach(function (row) {
+            var li = document.createElement("li");
+            var label = document.createElement("span");
+            var value = document.createElement("span");
+
+            label.textContent = row.label;
+            value.textContent = formatNumberF(Math.round(row.value)) + " ریال";
+
+            li.appendChild(label);
+            li.appendChild(value);
+            listEl.appendChild(li);
+        });
+    }
+
+    function renderProfitLineChartF(svg, labelsEl, values, dayCount) {
+        if (!svg) return;
+
+        svg.innerHTML = "";
+
+        var NS = "http://www.w3.org/2000/svg";
+        var paths = buildLineChartPathsF(values.length > 1 ? values : [0, 0]);
+
+        var defs = document.createElementNS(NS, "defs");
+        defs.innerHTML =
+            '<linearGradient id="adminProfitGradientF" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0%" stop-color="#A61579" stop-opacity="0.22"/>' +
+            '<stop offset="100%" stop-color="#A61579" stop-opacity="0"/>' +
+            "</linearGradient>";
+        svg.appendChild(defs);
+
+        var area = document.createElementNS(NS, "path");
+        area.setAttribute("d", paths.areaPath);
+        area.setAttribute("fill", "url(#adminProfitGradientF)");
+        svg.appendChild(area);
+
+        var line = document.createElementNS(NS, "path");
+        line.setAttribute("d", paths.linePath);
+        line.setAttribute("fill", "none");
+        line.setAttribute("stroke", "#A61579");
+        line.setAttribute("stroke-width", "2.5");
+        line.setAttribute("stroke-linecap", "round");
+        line.setAttribute("stroke-linejoin", "round");
+        svg.appendChild(line);
+
+        if (labelsEl) {
+            labelsEl.innerHTML = "";
+            [1, Math.round(dayCount / 2), dayCount].forEach(function (day) {
+                var span = document.createElement("span");
+                span.textContent = toPersianDigitsF(day);
+                labelsEl.appendChild(span);
+            });
+        }
+    }
+
+    function renderProfitBarChartF(svg, labelsEl, values) {
+        if (!svg) return;
+
+        svg.innerHTML = "";
+
+        var NS = "http://www.w3.org/2000/svg";
+        var max = Math.max.apply(null, values) || 1;
+        var usableWidth = CHART_VIEW_WIDTH - CHART_PADDING * 2;
+        var usableHeight = CHART_VIEW_HEIGHT - CHART_PADDING * 2;
+        var gap = 8;
+        var barWidth = (usableWidth - gap * (values.length - 1)) / values.length;
+
+        values.forEach(function (value, index) {
+            var barHeight = (value / max) * usableHeight;
+            var rect = document.createElementNS(NS, "rect");
+
+            rect.setAttribute("x", (CHART_PADDING + index * (barWidth + gap)).toFixed(1));
+            rect.setAttribute("y", (CHART_PADDING + usableHeight - barHeight).toFixed(1));
+            rect.setAttribute("width", barWidth.toFixed(1));
+            rect.setAttribute("height", Math.max(barHeight, 2).toFixed(1));
+            rect.setAttribute("rx", "3");
+            rect.setAttribute("fill", "#A61579");
+            rect.setAttribute("fill-opacity", value > 0 ? "0.85" : "0.2");
+
+            var tip = document.createElementNS(NS, "title");
+            tip.textContent =
+                MONTH_NAMES_F[index] + ": " + formatNumberF(Math.round(value)) + " ریال";
+            rect.appendChild(tip);
+
+            svg.appendChild(rect);
+        });
+
+        if (labelsEl) {
+            labelsEl.innerHTML = "";
+            MONTH_ABBR_F.forEach(function (label) {
+                var span = document.createElement("span");
+                span.textContent = label;
+                labelsEl.appendChild(span);
+            });
+        }
+    }
+
+    function currencyRowsF(byCurrency) {
+        return Object.keys(byCurrency)
+            .filter(function (code) { return byCurrency[code] > 0; })
+            .sort(function (a, b) { return byCurrency[b] - byCurrency[a]; })
+            .map(function (code) {
+                return { label: CURRENCY_LABELS_F[code] || code, value: byCurrency[code] };
+            });
+    }
+
+    function renderMonthlyProfitF(paidOrders, jy, jm) {
+        var totalEl = document.getElementById("adminMonthlyProfitTotalF");
+        if (!totalEl) return;
+
+        var dayCount = jalaliMonthLengthF(jy, jm);
+        var daily = [];
+
+        for (var d = 0; d < dayCount; d += 1) {
+            daily.push(0);
+        }
+
+        var total = 0;
+
+        paidOrders.forEach(function (order) {
+            var jalali = orderJalaliF(order);
+            var profit = Number(order.admin_profit_irr || 0);
+
+            total += profit;
+
+            if (jalali && jalali[2] >= 1 && jalali[2] <= dayCount) {
+                daily[jalali[2] - 1] += profit;
+            }
+        });
+
+        totalEl.textContent = formatNumberF(Math.round(total));
+
+        renderProfitLineChartF(
+            document.getElementById("adminMonthlyProfitChartSvgF"),
+            document.getElementById("adminMonthlyProfitChartLabelsF"),
+            daily,
+            dayCount
+        );
+
+        renderProfitListF(
+            document.getElementById("adminMonthlyProfitByCurrencyF"),
+            currencyRowsF(sumProfitByCurrencyF(paidOrders)),
+            "در این ماه سودی ثبت نشده است."
+        );
+
+        var dayRows = [];
+
+        daily.forEach(function (value, index) {
+            if (value > 0) {
+                dayRows.push({
+                    label: toPersianDigitsF(index + 1) + " " + MONTH_NAMES_F[jm - 1],
+                    value: value
+                });
+            }
+        });
+
+        renderProfitListF(
+            document.getElementById("adminMonthlyProfitByPeriodF"),
+            dayRows,
+            "در این ماه سودی ثبت نشده است."
+        );
+    }
+
+    function renderYearlyProfitF(yearlyOrders, jy) {
+        var totalEl = document.getElementById("adminYearlyProfitTotalF");
+        if (!totalEl) return;
+
+        var monthly = [];
+
+        for (var m = 0; m < 12; m += 1) {
+            monthly.push(0);
+        }
+
+        var total = 0;
+
+        yearlyOrders.forEach(function (order) {
+            var jalali = orderJalaliF(order);
+            var profit = Number(order.admin_profit_irr || 0);
+
+            total += profit;
+
+            if (jalali) {
+                monthly[jalali[1] - 1] += profit;
+            }
+        });
+
+        totalEl.textContent = formatNumberF(Math.round(total));
+
+        renderProfitBarChartF(
+            document.getElementById("adminYearlyProfitChartSvgF"),
+            document.getElementById("adminYearlyProfitChartLabelsF"),
+            monthly
+        );
+
+        renderProfitListF(
+            document.getElementById("adminYearlyProfitByCurrencyF"),
+            currencyRowsF(sumProfitByCurrencyF(yearlyOrders)),
+            "در این سال سودی ثبت نشده است."
+        );
+
+        renderProfitListF(
+            document.getElementById("adminYearlyProfitByPeriodF"),
+            monthly.map(function (value, index) {
+                return { label: MONTH_NAMES_F[index], value: value };
+            }),
+            ""
+        );
+    }
 
     /* --------------------------------------------------------
      * Init

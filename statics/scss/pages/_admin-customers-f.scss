@@ -378,3 +378,32 @@
     font-size: 0.8rem;
     line-height: 1.7;
 }
+
+
+.admin-customers-f__form-row-location {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-sm;
+
+    .admin-customers-f__form-group {
+        margin-bottom: 0;
+    }
+}
+
+select.admin-customers-f__form-input {
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+    background-size: 16px;
+
+    padding-inline-end: 32px;
+
+    &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+}

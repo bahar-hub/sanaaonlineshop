@@ -22,6 +22,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from orders.telegram_service import send_order_invoice_to_customer , send_order_bundle_to_telegram, send_order_invoice_bundle
 from customer.models import TelegramConnection
+from customer.iran_locations import IRAN_LOCATIONS, validate_location
 from orders.models import (
     Order,
     OrderItem,
@@ -98,6 +99,12 @@ def customer_view(request):
         phone = request.POST.get("phone", "").strip()
         password = request.POST.get("password", "")
         address = request.POST.get("address", "").strip()
+        province = request.POST.get("province", "").strip()
+        city = request.POST.get("city", "").strip()
+        location_error = validate_location(province, city)
+        if location_error:
+            messages.error(request, location_error)
+            return redirect("panel:customers")
         if User.objects.filter(phone=phone).exists():
             messages.error(
                 request,
@@ -112,6 +119,8 @@ def customer_view(request):
             last_name=last_name,
             username=username,
             phone=phone,
+            province=province,
+            city=city,
             address=address,
         )
 
@@ -167,6 +176,8 @@ def customer_view(request):
             "lastName": customer.last_name,
             "username": customer.username,
             "address": customer.address,
+            "province": customer.province,
+            "city": customer.city,
             "phone": customer.phone,
             "joinDate": jdatetime.datetime.fromgregorian(
                 datetime=customer.date_joined
@@ -237,6 +248,8 @@ def update_customer_view(request, user_id):
     username = request.POST.get("username", "").strip()
     phone = _normalize_phone(request.POST.get("phone", ""))
     address = request.POST.get("address", "").strip()
+    province = request.POST.get("province", "").strip()
+    city = request.POST.get("city", "").strip()
     password = request.POST.get("password", "")
     is_active = request.POST.get("is_active") == "on"
 
@@ -265,6 +278,13 @@ def update_customer_view(request, user_id):
     elif User.objects.filter(username=username).exclude(pk=customer.pk).exists():
         errors["username"] = "این نام کاربری قبلاً ثبت شده است."
 
+    location_error = validate_location(province, city)
+
+    if location_error:
+        errors["province" if province not in IRAN_LOCATIONS else "city"] = (
+            location_error
+        )
+
     if not address:
         errors["address"] = "لطفاً آدرس مشتری را وارد کنید."
 
@@ -287,6 +307,8 @@ def update_customer_view(request, user_id):
     customer.username = username
     customer.phone = phone
     customer.address = address
+    customer.province = province
+    customer.city = city
     customer.is_active = is_active
 
     if password:
@@ -307,6 +329,8 @@ def update_customer_view(request, user_id):
                 "username": customer.username,
                 "phone": customer.phone,
                 "address": customer.address,
+                "province": customer.province,
+                "city": customer.city,
                 "status": "active" if customer.is_active else "inactive",
             },
         }
@@ -389,6 +413,16 @@ def report_view(request):
     report_orders = []
 
     for order in orders:
+        # سود ادمین سفارش (فقط درصد ادمین؛ سهم واسطه و تکس سود نیست)
+        # به تفکیک واحد پول، بر حسب ریال.
+        profit_by_currency = {}
+
+        for item in order.items.all():
+            profit_by_currency[item.currency] = (
+                profit_by_currency.get(item.currency, 0)
+                + float(item.admin_profit_irr)
+            )
+
         report_orders.append({
             "id": order.id,
 
@@ -414,6 +448,12 @@ def report_view(request):
 
             "service_cost":
                 float(order.service_cost or 0),
+
+            "admin_profit_irr":
+                sum(profit_by_currency.values()),
+
+            "profit_by_currency":
+                profit_by_currency,
 
             "items_count":
                 order.items.count(),
@@ -484,6 +524,7 @@ def serialize_order(order):
         "TRY": "unitPriceTry",
         "GBP": "unitPriceGbp",
         "AED": "unitPriceAed",
+        "CAD": "unitPriceCad",
     }
 
     order_items = list(
@@ -514,6 +555,10 @@ def serialize_order(order):
             # Base price entered by admin (before markup)
             "basePrice": float(item.product_price),
             "markupPercent": float(item.markup_percent),
+            "brokerPercent": float(item.broker_percent),
+            "adminPercent": float(item.admin_percent),
+            "taxPercent": float(item.tax_percent),
+            "adminProfitRial": float(item.admin_profit_irr),
             # Foreign-currency price itself does not change.
             "finalUnitPrice": float(item.sale_unit_price),
             # Original and percentage-adjusted FX rates.
@@ -605,7 +650,13 @@ def serialize_order(order):
                 or "—",
 
             "address":
-                customer.address
+                "، ".join(
+                    part for part in (
+                        customer.province,
+                        customer.city,
+                        customer.address,
+                    ) if part
+                )
                 or "—",
 
             "note":
@@ -808,14 +859,22 @@ def parse_order_request(request):
                 )
             )
 
-            markup_percent = Decimal(
-                str(
-                    item.get(
-                        "markup_percent",
-                        OrderItem.DEFAULT_MARKUP_BY_CURRENCY.get(currency, Decimal("0"))
-                    )
-                )
-            )
+            default_percents = OrderItem.default_percents(currency)
+
+            percent_values = {}
+
+            for key in ("broker", "admin", "tax"):
+                raw_value = item.get(f"{key}_percent")
+
+                if raw_value is None or raw_value == "":
+                    raw_value = default_percents[key]
+
+                percent_values[key] = Decimal(str(raw_value))
+
+            broker_percent = percent_values["broker"]
+            admin_percent = percent_values["admin"]
+            tax_percent = percent_values["tax"]
+            markup_percent = broker_percent + admin_percent + tax_percent
 
             exchange_rate = Decimal(
                 str(
@@ -845,7 +904,12 @@ def parse_order_request(request):
                 f"قیمت خرید محصول شماره {index + 1} معتبر نیست."
             )
 
-        if markup_percent < 0 or markup_percent > 1000:
+        if min(broker_percent, admin_percent, tax_percent) < 0:
+            raise ValueError(
+                f"درصدهای محصول شماره {index + 1} نمی‌تواند منفی باشد."
+            )
+
+        if markup_percent > 1000:
             raise ValueError(
                 f"درصد افزایش محصول شماره {index + 1} معتبر نیست."
             )
@@ -938,6 +1002,15 @@ def parse_order_request(request):
 
                 "markup_percent":
                     markup_percent,
+
+                "broker_percent":
+                    broker_percent,
+
+                "admin_percent":
+                    admin_percent,
+
+                "tax_percent":
+                    tax_percent,
 
                 "exchange_rate":
                     exchange_rate,

@@ -283,12 +283,24 @@
         var addressInput =
             document.getElementById("adminNewCustomerAddressF");
 
+        var provinceInput =
+            document.getElementById("adminNewCustomerProvinceF");
+
+        var cityInput =
+            document.getElementById("adminNewCustomerCityF");
+
+        var locationBinder = window.IranLocations
+            ? window.IranLocations.bind(provinceInput, cityInput, "", "")
+            : null;
+
         var allInputs = [
             firstNameInput,
             lastNameInput,
             phoneInput,
             usernameInput,
             passwordInput,
+            provinceInput,
+            cityInput,
             addressInput
         ];
 
@@ -348,6 +360,9 @@
             modal.hidden = true;
 
             form.reset();
+
+            if (locationBinder) locationBinder.reset();
+
             clearAllErrors();
         }
 
@@ -484,6 +499,19 @@
                     passwordInput,
                     "رمز عبور باید حداقل ۶ کاراکتر باشد."
                 );
+
+                hasError = true;
+            }
+
+            /* Province / City */
+            if (provinceInput && !provinceInput.value) {
+                setFieldError(provinceInput, "لطفاً استان را انتخاب کنید.");
+
+                hasError = true;
+            }
+
+            if (cityInput && !cityInput.value) {
+                setFieldError(cityInput, "لطفاً شهر را انتخاب کنید.");
 
                 hasError = true;
             }
@@ -832,8 +860,14 @@
             phone: document.getElementById("adminEditCustomerPhoneF"),
             username: document.getElementById("adminEditCustomerUsernameF"),
             password: document.getElementById("adminEditCustomerPasswordF"),
+            province: document.getElementById("adminEditCustomerProvinceF"),
+            city: document.getElementById("adminEditCustomerCityF"),
             address: document.getElementById("adminEditCustomerAddressF")
         };
+
+        var editLocationBinder = window.IranLocations
+            ? window.IranLocations.bind(fields.province, fields.city, "", "")
+            : null;
 
         var activeCheckbox =
             document.getElementById("adminEditCustomerActiveF");
@@ -909,6 +943,13 @@
             fields.phone.value = customer.phone || "";
             fields.username.value = customer.username || "";
             fields.password.value = "";
+            if (editLocationBinder) {
+                editLocationBinder.set(
+                    customer.province || "",
+                    customer.city || ""
+                );
+            }
+
             fields.address.value = customer.address || "";
 
             activeCheckbox.checked = customer.status === "active";
@@ -929,6 +970,9 @@
             currentCustomer = null;
 
             form.reset();
+
+            if (editLocationBinder) editLocationBinder.reset();
+
             clearAllErrors();
             hideDeleteConfirm();
         }
@@ -1042,6 +1086,16 @@
                     fields.password,
                     "رمز عبور باید حداقل ۶ کاراکتر باشد."
                 );
+                hasError = true;
+            }
+
+            if (!fields.province.value) {
+                setFieldError(fields.province, "لطفاً استان را انتخاب کنید.");
+                hasError = true;
+            }
+
+            if (!fields.city.value) {
+                setFieldError(fields.city, "لطفاً شهر را انتخاب کنید.");
                 hasError = true;
             }
 

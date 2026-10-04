@@ -267,6 +267,74 @@
 
 
 // ----------------------------------------
+// Admin profit section
+// ----------------------------------------
+
+.admin-reports-f__section--profit {
+    margin-top: $spacing-md;
+}
+
+.admin-reports-f__profit-note-f {
+    margin-bottom: $spacing-sm;
+
+    color: $color-text-muted;
+
+    font-size: 0.68rem;
+}
+
+.admin-reports-f__sub-title-f {
+    margin: $spacing-md 0 $spacing-xs;
+
+    color: $color-text;
+
+    font-family: $font-family-persian;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.admin-reports-f__profit-list-f {
+    display: grid;
+    gap: 6px;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+
+    li {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: $spacing-sm;
+
+        padding: 8px $spacing-sm;
+
+        border: 1px solid $color-border;
+        border-radius: $radius-md;
+
+        font-size: 0.78rem;
+
+        span:last-child {
+            color: $color-primary;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+    }
+}
+
+.admin-reports-f__profit-list-f--periods {
+    @media (min-width: 640px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.admin-reports-f__profit-empty-f {
+    color: $color-text-muted;
+    font-size: 0.75rem;
+}
+
+
+// ----------------------------------------
 // Responsive
 // ----------------------------------------
 
