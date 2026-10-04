@@ -35,7 +35,7 @@
     <!-- Main Stylesheet -->
     <link
         rel="stylesheet"
-        href="{% static 'css/main.css' %}">   
+        href="{% static 'css/main.css' %}?v=20261004">   
 </head>
 
 <body>
@@ -804,12 +804,12 @@
 
     <!-- JavaScript -->
     {{ iran_locations|json_script:"iran-locations-data" }}
-    <script src="{% static 'js/modules/iran-locations.js' %}" defer></script>
+    <script src="{% static 'js/modules/iran-locations.js' %}?v=20261004" defer></script>
     <script src="{% static 'js/modules/storage.js' %}" defer></script>
     <script src="{% static 'js/modules/auth.js' %}" defer></script>
     <!--<script src="{% static 'js/modules/page-guard.js' %}" defer></script>-->
     <script src="{% static 'js/modules/forgot-password.js' %}" defer></script>
-    <script src="{% static 'js/main.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}?v=20261004" defer></script>
 
     <!-- If already logged in, skip straight to the right panel -->
     <!--

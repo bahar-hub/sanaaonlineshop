@@ -407,7 +407,7 @@ function initChangePasswordForm() {
 async function getCustomerOrders() {
 
     try {
-        const response = await fetch("/profile/orders/");
+        const response = await fetch("/profile/orders/", { cache: "no-store" });
 
         if (!response.ok) {
             throw new Error("خطا در دریافت سفارش‌ها");
@@ -748,7 +748,8 @@ async function openOrderModal(orderId) {
     try {
 
         const response = await fetch(
-            `/profile/orders/${orderId}/`
+            `/profile/orders/${orderId}/`,
+            { cache: "no-store" }
         );
 
         if (!response.ok) {
