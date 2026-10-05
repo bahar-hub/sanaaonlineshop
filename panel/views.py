@@ -1296,9 +1296,14 @@ def update_order_view(
             if status_changed:
                 if order.status == Order.Status.SHIPPED_TO_CUSTOMER:
                     changes.append("📦 سفارشتون ارسال شد 🚚✨")
+                elif order.status == Order.Status.PREPARING:
+                    changes.append(
+                        "🛠 سفارشتون در حال آماده‌سازیه ✨\n"
+                        "به‌زودی مرحله بعدی رو بهتون اطلاع می‌دیم."
+                    )
                 else:
                     changes.append(
-                        f"📦 وضعیت سفارش:\n{order.get_status_display()}"
+                        f"📦 وضعیت سفارش:\n{order.customer_status_label}"
                     )
 
             changes.extend(item_lines)

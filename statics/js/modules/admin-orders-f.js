@@ -143,6 +143,7 @@
 
     var ORDER_STATUS_F = {
         registered: { label: "ثبت‌شده", color: "neutral" },
+        preparing: { label: "در حال آماده‌سازی", color: "warning" },
         shipped_to_iran: { label: "ارسال به ایران", color: "info" },
         shipped_to_customer: { label: "ارسال به مشتری", color: "primary" },
         delivered: { label: "تحویل داده‌شده", color: "success" },

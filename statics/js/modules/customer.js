@@ -72,13 +72,78 @@ function getMockOrders() {
     ];
 }
 
+// برچسب‌هایی که مشتری می‌بیند؛ «ارسال به مشتری» در پنل ادمین،
+// برای مشتری «ارسال به سمت شما» نمایش داده می‌شود.
 const ORDER_STATUS_LABELS = {
     registered: "ثبت شده",
+    preparing: "در حال آماده‌سازی",
     shipped_to_iran: "ارسال به ایران",
-    shipped_to_customer: "ارسال به مشتری",
+    shipped_to_customer: "ارسال به سمت شما",
     delivered: "تحویل داده شده",
     cancelled: "لغو شده"
 };
+
+// ترتیب مراحل نقشه‌راه سفارش
+const ORDER_ROADMAP_STEPS = [
+    "registered",
+    "preparing",
+    "shipped_to_iran",
+    "shipped_to_customer",
+    "delivered"
+];
+
+
+const ORDER_ROADMAP_ICONS = {
+    registered: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/>',
+    preparing: '<path d="m7.5 4.3 9 5.2"/><path d="M21 8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/>',
+    shipped_to_iran: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+    shipped_to_customer: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.7a1 1 0 0 0-.2-.6l-3.5-4.4A1 1 0 0 0 17.5 8H14"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+    delivered: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .7-1.5l7-6a2 2 0 0 1 2.6 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'
+};
+
+
+function renderOrderRoadmapHtml(status, extraClass) {
+
+    if (status === "cancelled") {
+        return '<div class="order-roadmap-cancelled">این سفارش لغو شده است.</div>';
+    }
+
+    let currentIndex = ORDER_ROADMAP_STEPS.indexOf(status);
+
+    if (currentIndex === -1) {
+        currentIndex = 0;
+    }
+
+    // سفارش تحویل‌شده یعنی همه مراحل کامل شده‌اند.
+    const allDone = status === "delivered";
+
+    const steps = ORDER_ROADMAP_STEPS.map((key, index) => {
+
+        const isDone = allDone || index < currentIndex;
+        const isCurrent = !allDone && index === currentIndex;
+
+        const stateClass = isDone ? "is-done" : (isCurrent ? "is-current" : "");
+
+        const icon =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+            'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            ORDER_ROADMAP_ICONS[key] + '</svg>';
+
+        return (
+            '<li class="order-roadmap__step ' + stateClass + '"' +
+                (isCurrent ? ' aria-current="step"' : '') + '>' +
+                '<span class="order-roadmap__dot">' + icon + '</span>' +
+                '<span class="order-roadmap__label">' + ORDER_STATUS_LABELS[key] + '</span>' +
+            '</li>'
+        );
+    }).join("");
+
+    return (
+        '<div class="order-roadmap-wrap ' + (extraClass || "") + '">' +
+            '<ol class="order-roadmap" aria-label="مراحل سفارش">' + steps + '</ol>' +
+        '</div>'
+    );
+}
 
 
 // ========================================
@@ -474,6 +539,8 @@ async function renderOrderList() {
                         ${ORDER_STATUS_LABELS[order.status] || order.status}
                     </span>
                 </div>
+
+                ${renderOrderRoadmapHtml(order.status)}
 
                 <div class="order-card__bottom">
                     <span class="order-card__date">

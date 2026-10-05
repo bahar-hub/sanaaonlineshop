@@ -18,9 +18,14 @@
 
     <title>سفارش‌ها | Sanaa Admin</title>
 
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}">
+    <link rel="icon" href="{% static 'img/favicon.ico' %}?v=2" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}?v=2">
+
+
     <link
         rel="stylesheet"
-        href="{% static 'css/main.css' %}?v=20261004"
+        href="{% static 'css/main.css' %}?v=20261006"
     >
 </head>
 
@@ -337,6 +342,10 @@
 
                                     <option value="registered">
                                         ثبت‌شده
+                                    </option>
+
+                                    <option value="preparing">
+                                        در حال آماده‌سازی
                                     </option>
 
                                     <option value="shipped_to_iran">
@@ -941,6 +950,10 @@
                             ثبت‌شده
                         </option>
 
+                        <option value="preparing">
+                            در حال آماده‌سازی
+                        </option>
+
                         <option value="shipped_to_iran">
                             ارسال به ایران
                         </option>
@@ -1492,7 +1505,7 @@
     </script>
 
     <script
-        src="{% static 'js/modules/admin-orders-f.js' %}?v=8"
+        src="{% static 'js/modules/admin-orders-f.js' %}?v=9"
         defer
     ></script>  
 

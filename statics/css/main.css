@@ -572,6 +572,13 @@ body {
   color: #7A5A13;
 }
 
+.order-status--preparing {
+  background-color: rgba(201, 161, 90, 0.2);
+  color: #7A5A13;
+}
+
+.order-status--shipped_to_iran,
+.order-status--shipped_to_customer,
 .order-status--shipped {
   background-color: rgba(166, 21, 121, 0.1);
   color: #A61579;
@@ -787,6 +794,130 @@ body {
   font-weight: 600;
 }
 
+.order-status--cancelled {
+  background-color: rgba(198, 40, 40, 0.1);
+  color: #B3261E;
+}
+
+.order-roadmap-wrap {
+  margin: 25px 0;
+  padding: 10px 6px 8px;
+  border: 1px solid #E3DCD2;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(166, 21, 121, 0.04), rgba(166, 21, 121, 0.01));
+}
+
+.order-roadmap {
+  display: flex;
+  direction: rtl;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.order-roadmap__step {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+
+.order-roadmap__step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: 50%;
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background-color: rgba(30, 20, 15, 0.1);
+}
+
+.order-roadmap__step.is-done:not(:last-child)::after {
+  background-color: #A61579;
+}
+
+.order-roadmap__step.is-current:not(:last-child)::after {
+  background: linear-gradient(to left, #A61579 0%, rgba(166, 21, 121, 0.25) 45%, rgba(30, 20, 15, 0.1) 70%);
+}
+
+.order-roadmap__dot {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border: 2px solid rgba(30, 20, 15, 0.14);
+  border-radius: 999px;
+  background-color: #FFFFFF;
+  color: rgba(30, 20, 15, 0.35);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.order-roadmap__dot svg {
+  width: 13px;
+  height: 13px;
+}
+
+.is-done .order-roadmap__dot {
+  border-color: #A61579;
+  background-color: #A61579;
+  color: #fff;
+}
+
+.is-current .order-roadmap__dot {
+  border-color: #A61579;
+  background-color: #FFFFFF;
+  color: #A61579;
+  box-shadow: 0 0 0 4px rgba(166, 21, 121, 0.16);
+  animation: orderRoadmapPulse 1.8s ease-in-out infinite;
+}
+
+.order-roadmap__label {
+  display: block;
+  margin-top: 5px;
+  padding: 0 1px;
+  color: #8A8178;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+.is-done .order-roadmap__label {
+  color: #191715;
+}
+
+.is-current .order-roadmap__label {
+  color: #A61579;
+  font-weight: 700;
+}
+
+.order-roadmap-cancelled {
+  margin: 8px 0;
+  padding: 8px 8px;
+  border-radius: 8px;
+  background-color: rgba(198, 40, 40, 0.08);
+  color: #B3261E;
+  font-family: "Vazirmatn", "Sanaa Persian", Tahoma, Arial, sans-serif;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+@keyframes orderRoadmapPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(166, 21, 121, 0.16);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(166, 21, 121, 0.06);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-current .order-roadmap__dot {
+    animation: none;
+  }
+}
 .modal {
   position: fixed;
   inset: 0;
