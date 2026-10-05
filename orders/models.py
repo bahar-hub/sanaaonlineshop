@@ -8,10 +8,28 @@ class Order(models.Model):
 
     class Status(models.TextChoices):
         REGISTERED = "registered", "ثبت شده"
+        PREPARING = "preparing", "در حال آماده‌سازی"
         SHIPPED_TO_IRAN = "shipped_to_iran", "ارسال به ایران"
         SHIPPED_TO_CUSTOMER = "shipped_to_customer", "ارسال به مشتری"
         DELIVERED = "delivered", "تحویل داده شده"
         CANCELLED = "cancelled", "لغو شده"
+
+    # برچسب‌هایی که مشتری می‌بیند (پنل مشتری و پیام‌ها). برای مشتری
+    # «ارسال به مشتری» به‌صورت «ارسال به سمت شما» نمایش داده می‌شود.
+    CUSTOMER_STATUS_LABELS = {
+        "registered": "ثبت شده",
+        "preparing": "در حال آماده‌سازی",
+        "shipped_to_iran": "ارسال به ایران",
+        "shipped_to_customer": "ارسال به سمت شما",
+        "delivered": "تحویل داده شده",
+        "cancelled": "لغو شده",
+    }
+
+    @property
+    def customer_status_label(self):
+        return self.CUSTOMER_STATUS_LABELS.get(
+            self.status, self.get_status_display()
+        )
 
     class PaymentStatus(models.TextChoices):
         PENDING = "pending", "در انتظار پرداخت"

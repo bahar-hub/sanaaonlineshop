@@ -208,7 +208,7 @@
                 <div style="text-align:left;">
                     <p><strong>شماره سفارش:</strong> {{ order_number }}</p>
                     <p><strong>تاریخ صدور:</strong> {{ order_date }}</p>
-                    <p><strong>وضعیت سفارش:</strong> {{ order_status_label }}</p>
+                    <p><strong>وضعیت سفارش:</strong> {% if is_admin %}{{ order_status_label }}{% else %}{{ customer_status_label }}{% endif %}</p>
                 </div>
             </div>
 

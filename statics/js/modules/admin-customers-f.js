@@ -21,6 +21,7 @@
 
     var STATUS_LABEL_F = {
         registered: "ثبت شده",
+        preparing: "در حال آماده‌سازی",
         shipped_to_iran: "ارسال به ایران",
         shipped_to_customer: "ارسال به مشتری",
         delivered: "تحویل داده شده",
@@ -32,6 +33,7 @@
     // (plain dot, no colored pill) — see _orders.scss.
     var STATUS_MODIFIER_CLASS_F = {
         registered: "",
+        preparing: "order-status--preparing",
         shipped_to_iran: "order-status--shipped_to_iran",
         shipped_to_customer: "order-status--shipped_to_customer",
         delivered: "order-status--delivered",

@@ -135,6 +135,7 @@ def build_invoice_context(order, is_admin=False):
         "customer_address": " ، ".join(x for x in (order.user.province, order.user.city, order.user.address) if x) or "—",
         "payment_status_label": order.get_payment_status_display(),
         "order_status_label": order.get_status_display(),
+        "customer_status_label": order.customer_status_label,
         "items": items,
         "items_total": format_price(items_total),
         "shipping_cost": format_price(order.shipping_cost),
