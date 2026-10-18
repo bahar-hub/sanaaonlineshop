@@ -18,14 +18,6 @@
 
     <title>Sanaa Online Shop</title>
 
-    <!-- PWA / Add to Home Screen -->
-<link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}">
-<link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="SANAA">
-
     <!-- Persian Typeface: Vazirmatn -->
     <link
         rel="stylesheet"
@@ -35,7 +27,7 @@
     <!-- Main Stylesheet -->
     <link
         rel="stylesheet"
-        href="{% static 'css/main.css' %}?v=20261006">   
+        href="{% static 'css/main.css' %}">   
 </head>
 
 <body>
@@ -49,7 +41,6 @@
         class="splash"
         id="splash"
         aria-label="Sanaa introduction"
-        {% if login_error %}hidden{% endif %}
     >
 
         <div class="splash__texture"></div>
@@ -158,7 +149,7 @@
     <main
         class="auth-page"
         id="authPage"
-        {% if not login_error %}hidden{% endif %}
+        hidden
     >
 
         <div class="auth-page__container">
@@ -229,11 +220,6 @@
                         action="{% url 'base:login' %}"
                     >
                         {% csrf_token %}
-                        {% if login_error %}
-                            <p class="login-error">
-                                {{ login_error }}
-                            </p>
-                        {% endif %}
                         <div class="form-group">
 
                             <label
@@ -301,6 +287,14 @@
                             <span class="auth-submit__label">ورود</span>
                         </button>
 
+
+                        <button
+                            type="button"
+                            class="auth-secondary"
+                            data-switch-auth="forgot"
+                        >
+                            فراموشی رمز عبور؟
+                        </button>
 
 
                         <button
@@ -396,39 +390,6 @@
 
                         <div class="form-group">
 
-                            <div class="form-row-location">
-
-                                <div>
-                                    <label class="form-label" for="signupProvince">استان</label>
-                                    <select
-                                        class="form-select"
-                                        id="signupProvince"
-                                        name="province"
-                                        required
-                                    >
-                                        <option value="">انتخاب استان</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="form-label" for="signupCity">شهر</label>
-                                    <select
-                                        class="form-select"
-                                        id="signupCity"
-                                        name="city"
-                                        required
-                                        disabled
-                                    >
-                                        <option value="">انتخاب شهر</option>
-                                    </select>
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                        <div class="form-group">
-
                             <label
                                 class="form-label"
                                 for="signupAddress"
@@ -440,7 +401,7 @@
                                 class="form-textarea"
                                 id="signupAddress"
                                 name="address"
-                                placeholder="خیابان، کوچه، پلاک، واحد"
+                                placeholder="آدرس خود را وارد کنید"
                                 autocomplete="street-address"
                                 required
                             ></textarea>
@@ -726,90 +687,14 @@
         </div>
 
     </main>
-    <!-- ========================================
-         Add to Home Screen Guide
-    ========================================= -->
-    <div
-        class="a2hs-modal"
-        id="a2hsModal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="a2hsTitle"
-        hidden
-    >
-        <div
-            class="a2hs-modal__backdrop"
-            data-a2hs-close
-        ></div>
-
-        <section class="a2hs-modal__panel">
-
-            <button
-                type="button"
-                class="a2hs-modal__close"
-                data-a2hs-close
-                aria-label="بستن"
-            >
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    aria-hidden="true"
-                >
-                    <path
-                        d="M6 6l12 12M18 6L6 18"
-                        stroke-linecap="round"
-                    />
-                </svg>
-            </button>
-
-            <div class="a2hs-modal__brand" dir="ltr">
-                SANAA
-            </div>
-
-            <h2
-                class="a2hs-modal__title"
-                id="a2hsTitle"
-            >
-                ثنا رو همیشه دم دست داشته باش
-            </h2>
-
-            <p
-                class="a2hs-modal__text"
-                id="a2hsText"
-            >
-                برای دسترسی سریع‌تر، SANAA رو به گوشی‌ات اضافه کن.
-            </p>
-
-            <button
-                type="button"
-                class="a2hs-modal__action"
-                id="a2hsInstall"
-            >
-                افزودن SANAA
-            </button>
-
-            <button
-                type="button"
-                class="a2hs-modal__later"
-                data-a2hs-close
-            >
-                بعداً
-            </button>
-
-        </section>
-    </div>
 
 
     <!-- JavaScript -->
-    {{ iran_locations|json_script:"iran-locations-data" }}
-    <script src="{% static 'js/modules/iran-locations.js' %}?v=20261004" defer></script>
     <script src="{% static 'js/modules/storage.js' %}" defer></script>
     <script src="{% static 'js/modules/auth.js' %}" defer></script>
     <!--<script src="{% static 'js/modules/page-guard.js' %}" defer></script>-->
     <script src="{% static 'js/modules/forgot-password.js' %}" defer></script>
-    <script src="{% static 'js/main.js' %}?v=20261004" defer></script>
+    <script src="{% static 'js/main.js' %}" defer></script>
 
     <!-- If already logged in, skip straight to the right panel -->
     <!--
