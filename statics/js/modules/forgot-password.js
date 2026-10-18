@@ -147,87 +147,89 @@
     // ========================================
 
     function handleSendCode() {
+    clearAuthError("forgotForm");
 
-        clearAuthError("forgotForm");
+    const phoneInput = document.getElementById("forgotPhone");
+    const phone = phoneInput.value.trim();
+    const phonePattern = /^09\d{9}$/;
 
-        const phoneInput =
-            document.getElementById("forgotPhone");
-
-        const phone = phoneInput.value.trim();
-
-        const phonePattern = /^09\d{9}$/;
-
-        if (!phonePattern.test(phone)) {
-
-            showAuthError(
-                "شماره تلفن معتبر نیست.",
-                "forgotForm"
-            );
-
-            return;
-        }
-
-        fetch("/profile/password-reset/request/", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCookie("csrftoken")
-    },
-    body: JSON.stringify({
-        phone: phone
-    })
-})
-.then(response => response.json())
-.then(data => {
-
-    if (!data.success) {
-
-        showAuthError(
-            data.message,
-            "forgotForm"
-        );
-
+    if (!phonePattern.test(phone)) {
+        showAuthError("شماره تلفن معتبر نیست.", "forgotForm");
         return;
     }
 
+    // Store phone immediately
+    pendingReset = { phone: phone };
 
-    pendingReset = {
-        phone: phone
-    };
-
-
-    const hint =
-        document.getElementById("forgotHint");
-
-    if (hint) {
-        hint.textContent =
-            `کد تایید برای شماره ${phone} ارسال شد.`;
-    }
-
-
-    const codeInput =
-        document.getElementById("forgotCode");
+    const hint = document.getElementById("forgotHint");
+    const codeInput = document.getElementById("forgotCode");
+    const sendButton = document.querySelector("[data-forgot-send]");
+    const verifyButton = document.querySelector(
+        '[data-forgot-step="code"] button[type="submit"]'
+    );
 
     if (codeInput) {
         codeInput.value = "";
     }
 
-
+    // Immediately open OTP step
     showStep("code");
-    startResendTimer(60);
 
-})
-.catch(() => {
-
-    showAuthError(
-        "خطا در ارتباط با سرور.",
-        "forgotForm"
-    );
-
-});
-
-       
+    if (hint) {
+        hint.textContent = "در حال ارسال کد تأیید...";
     }
+
+    if (sendButton) sendButton.disabled = true;
+    if (verifyButton) verifyButton.disabled = true;
+
+    fetch("/profile/password-reset/request/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({ phone: phone })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (!data.success) {
+            if (hint) {
+                hint.textContent = "ارسال کد تأیید ناموفق بود.";
+            }
+            showAuthError(
+                data.message || "خطا در ارسال پیامک.",
+                "forgotForm"
+            );
+            return;
+        }
+
+        if (hint) {
+            hint.textContent = `کد تأیید برای شماره ${phone} ارسال شد.`;
+        }
+
+        if (verifyButton) verifyButton.disabled = false;
+        startResendTimer(60);
+    })
+    .catch(() => {
+        if (hint) {
+            hint.textContent =
+                "ارتباط با سرور برقرار نشد. لطفاً دوباره تلاش کنید.";
+        }
+
+        showAuthError(
+            "خطا در ارتباط با سرور.",
+            "forgotForm"
+        );
+    })
+    .finally(() => {
+        if (sendButton) sendButton.disabled = false;
+    });
+}
 
 
     // ========================================
