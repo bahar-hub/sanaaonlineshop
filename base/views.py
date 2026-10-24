@@ -89,50 +89,30 @@ def signup_view(request):
         password = request.POST.get("password", "")
         password_confirm = request.POST.get("passwordConfirm", "")
 
-        location_error = validate_location(province, city)
+        # Only non-sensitive fields are returned when validation fails.
+        signup_data = {
+            "firstName": first_name,
+            "lastName": last_name,
+            "phone": phone,
+            "province": province,
+            "city": city,
+            "address": address,
+            "username": username,
+        }
 
-        if location_error:
+        error = validate_location(province, city)
+        if not error and password != password_confirm:
+            error = "رمز عبور و تکرار رمز عبور یکسان نیستند."
+        if not error and User.objects.filter(username=username).exists():
+            error = "این نام کاربری قبلاً استفاده شده است."
+        if not error and User.objects.filter(phone=phone).exists():
+            error = "این شماره تلفن قبلاً ثبت شده است."
 
-            return render(
-                request,
-                "base/index.html",
-                {
-                    "signup_error": location_error
-                },
-            )
-
-        # بررسی یکسان بودن رمز عبور
-        if password != password_confirm:
-
-            return render(
-                request,
-                "base/index.html",
-                {
-                    "signup_error": "رمز عبور و تکرار رمز عبور یکسان نیستند."
-                },
-            )
-
-        # بررسی نام کاربری تکراری
-        if User.objects.filter(username=username).exists():
-
-            return render(
-                request,
-                "base/index.html",
-                {
-                    "signup_error": "این نام کاربری قبلاً استفاده شده است."
-                },
-            )
-
-        # بررسی شماره تلفن تکراری
-        if User.objects.filter(phone=phone).exists():
-
-            return render(
-                request,
-                "base/index.html",
-                {
-                    "signup_error": "این شماره تلفن قبلاً ثبت شده است."
-                },
-            )
+        if error:
+            return render(request, "base/index.html", {
+                "signup_error": error,
+                "signup_data": signup_data,
+            })
 
         # ساخت کاربر
         user = User.objects.create_user(

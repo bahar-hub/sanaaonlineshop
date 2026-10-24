@@ -448,11 +448,14 @@ function initForms() {
 
         if (window.IranLocations) {
 
+            const provinceSelect = document.getElementById("signupProvince");
+            const citySelect = document.getElementById("signupCity");
+
             window.IranLocations.bind(
-                document.getElementById("signupProvince"),
-                document.getElementById("signupCity"),
-                "",
-                ""
+                provinceSelect,
+                citySelect,
+                provinceSelect ? provinceSelect.dataset.selected || "" : "",
+                citySelect ? citySelect.dataset.selected || "" : ""
             );
 
         }
