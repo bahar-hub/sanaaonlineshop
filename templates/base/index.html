@@ -149,7 +149,7 @@
     <main
         class="auth-page"
         id="authPage"
-        hidden
+        {% if not signup_error %}hidden{% endif %}
     >
 
         <div class="auth-page__container">
@@ -185,20 +185,20 @@
 
                     <button
                         type="button"
-                        class="auth-tab is-active"
+                        class="auth-tab{% if not signup_error %} is-active{% endif %}"
                         data-auth-tab="login"
                         role="tab"
-                        aria-selected="true"
+                        aria-selected="{% if signup_error %}false{% else %}true{% endif %}"
                     >
                         ورود
                     </button>
 
                     <button
                         type="button"
-                        class="auth-tab"
+                        class="auth-tab{% if signup_error %} is-active{% endif %}"
                         data-auth-tab="signup"
                         role="tab"
-                        aria-selected="false"
+                        aria-selected="{% if signup_error %}true{% else %}false{% endif %}"
                     >
                         ثبت نام
                     </button>
@@ -213,7 +213,7 @@
                     =================================== -->
 
                     <form
-                        class="auth-form is-active"
+                        class="auth-form{% if not signup_error %} is-active{% endif %}"
                         id="loginForm"
                         data-auth-form="login"
                         method="POST"
@@ -313,13 +313,16 @@
                     =================================== -->
 
                     <form
-                        class="auth-form"
+                        class="auth-form{% if signup_error %} is-active{% endif %}"
                         id="signupForm"
                         data-auth-form="signup"
                         method="POST"
                         action="{% url 'base:signup' %}"
                     >
                         {% csrf_token %}
+                        {% if signup_error %}
+                            <p class="auth-error" role="alert">{{ signup_error }}</p>
+                        {% endif %}
 
                         <div class="form-group">
 
@@ -335,6 +338,7 @@
                                 type="text"
                                 id="signupFirstName"
                                 name="firstName"
+                                value="{{ signup_data.firstName }}"
                                 placeholder="نام خود را وارد کنید"
                                 autocomplete="given-name"
                                 required
@@ -357,6 +361,7 @@
                                 type="text"
                                 id="signupLastName"
                                 name="lastName"
+                                value="{{ signup_data.lastName }}"
                                 placeholder="نام خانوادگی خود را وارد کنید"
                                 autocomplete="family-name"
                                 required
@@ -379,6 +384,7 @@
                                 type="tel"
                                 id="signupPhone"
                                 name="phone"
+                                value="{{ signup_data.phone }}"
                                 placeholder="شماره تلفن خود را وارد کنید"
                                 autocomplete="tel"
                                 inputmode="tel"
@@ -386,6 +392,45 @@
                             >
 
                         </div>
+
+
+                            <div class="form-group">
+
+                                <div class="form-row-location">
+
+                                    <div>
+                                        <label class="form-label" for="signupProvince">استان</label>
+                                        <select
+                                            class="form-select"
+                                            id="signupProvince"
+                                            name="province"
+                                            data-selected="{{ signup_data.province }}"
+                                            required
+                                        >
+                                            <option value="">انتخاب استان</option>
+                                        </select>
+                                        <span class="form-error" id="signupProvinceError" role="alert"></span>
+                                    </div>
+
+                                    <div>
+                                        <label class="form-label" for="signupCity">شهر</label>
+                                        <select
+                                            class="form-select"
+                                            id="signupCity"
+                                            name="city"
+                                            data-selected="{{ signup_data.city }}"
+                                            required
+                                            disabled
+                                        >
+                                            <option value="">انتخاب شهر</option>
+                                        </select>
+                                        <span class="form-error" id="signupCityError" role="alert"></span>
+                                    </div>
+
+                                </div>
+
+                            </div>
+
 
 
                         <div class="form-group">
@@ -404,7 +449,7 @@
                                 placeholder="آدرس خود را وارد کنید"
                                 autocomplete="street-address"
                                 required
-                            ></textarea>
+                            >{{ signup_data.address }}</textarea>
 
                         </div>
                         <div class="form-group">
@@ -421,6 +466,7 @@
         type="text"
         id="signupUsername"
         name="username"
+                                value="{{ signup_data.username }}"
         placeholder="نام کاربری خود را وارد کنید"
         autocomplete="username"
         minlength="4"
@@ -689,12 +735,15 @@
     </main>
 
 
+    {{ iran_locations|json_script:"iran-locations-data" }}
+    <script src="{% static 'js/modules/iran-locations.js' %}?v=20261004" defer></script>
+
     <!-- JavaScript -->
     <script src="{% static 'js/modules/storage.js' %}" defer></script>
     <script src="{% static 'js/modules/auth.js' %}" defer></script>
     <!--<script src="{% static 'js/modules/page-guard.js' %}" defer></script>-->
     <script src="{% static 'js/modules/forgot-password.js' %}" defer></script>
-    <script src="{% static 'js/main.js' %}" defer></script>
+    <script src="{% static 'js/main.js' %}?v=20261024-signup" defer></script>
 
     <!-- If already logged in, skip straight to the right panel -->
     <!--
