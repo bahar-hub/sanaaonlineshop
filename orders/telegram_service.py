@@ -52,6 +52,9 @@ def send_shipping_cost_notification(order):
 شماره کارت: 6219861909505736 
 شماره شبا:IR94056061182800512028910
 
+از طریق وبسایت سفارشتون رو پیگیری کنید👇🏼
+<a href="https://sanaaonlineshop.com/">sanaaonlineshop.com</a>
+
 بعد از پرداخت باربری، برای ارسال سفارشتون با ما هماهنگ کنید 🫶🏽
 """
 
@@ -195,7 +198,7 @@ Sanaa Online Shop
 ⏱️ اعتبار این فاکتور: ۳۰ دقیقه
 
 🚚 هزینه باربری هر کیلو :
-اروپا: ۱۵€ | کانادا: ۴۵–۵۰ CAD | آمریکا: ۳۸ USD | ترکیه:۶۵۰-۷۰۰ تومان | دبی: 35 درهم
+اروپا: 20€ | کانادا: 55 CAD | آمریکا: 46 USD | ترکیه: 650 تومان | دبی: 35 درهم
 
 📍 از آنجایی که باربری دلاری و با نرخ روز محاسبه می‌شود، پیشنهاد می‌کنیم دلار باربری را از قبل تهیه کنید تا در صورت افزایش نرخ، متضرر نشوید.
 
@@ -204,8 +207,11 @@ Sanaa Online Shop
 
 شماره کارت: 6219861909505736 
 شماره شبا:IR940560611828005120289101
-
 سیده ثنا مدنی فرد 
+
+
+از طریق وبسایت سفارشتون رو پیگیری کنید👇🏼
+<a href="https://sanaaonlineshop.com/">sanaaonlineshop.com</a>
     """
 
 
@@ -230,8 +236,8 @@ def build_order_update_message(order, changes):
 سفارش شما در Sanaa Online Shop ویرایش و به‌روزرسانی شد ✏️
 
 
-🧾 شماره سفارش:
-#{order.id}
+🧾 شماره سفارش #{order.id}:
+
 
 """
 
@@ -240,6 +246,8 @@ def build_order_update_message(order, changes):
 
     message += """
 
+از طریق وبسایت سفارشتون رو پیگیری کنید👇🏼
+<a href="https://sanaaonlineshop.com/">sanaaonlineshop.com</a>
 
 با تشکر از اعتماد شما 🌱
 """
@@ -362,8 +370,7 @@ def send_new_products_notification(order, new_items):
 محصول جدیدی به سفارش شما در Sanaa Online Shop اضافه شد ✨
 
 
-🧾 شماره سفارش:
-#{order.id}
+🧾 شماره سفارش #{order.id}:
 
 
 📦 مشخصات محصول:
@@ -396,6 +403,8 @@ def send_new_products_notification(order, new_items):
 💰 مبلغ نهایی جدید سفارش:
 {int(order.total_irr):,} ریال
 
+از طریق وبسایت سفارشتون رو پیگیری کنید👇🏼
+<a href="https://sanaaonlineshop.com/">sanaaonlineshop.com</a>
 
 فاکتور سفارش شما به‌روزرسانی شد 🌱
 """
