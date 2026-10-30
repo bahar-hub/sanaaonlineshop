@@ -290,6 +290,47 @@
     margin-top: -2px;
 }
 
+.admin-order-item-f__rate-control-f {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: $spacing-xs;
+}
+
+.admin-order-item-f__fetch-rate-f {
+    min-height: 42px;
+    padding-inline: $spacing-sm;
+    white-space: nowrap;
+    font-size: 0.72rem;
+}
+
+.admin-order-item-f__fetch-rate-f:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.admin-order-item-f__rate-status-f {
+    display: block;
+    min-height: 18px;
+    margin-top: 4px;
+    color: $color-text-muted;
+    font-family: $font-family-persian;
+    font-size: 0.68rem;
+}
+
+.admin-order-item-f__rate-status-f.is-success-f {
+    color: #2e7d32;
+}
+
+.admin-order-item-f__rate-status-f.is-error-f {
+    color: $color-error;
+}
+
+@media (max-width: 480px) {
+    .admin-order-item-f__rate-control-f {
+        grid-template-columns: 1fr;
+    }
+}
+
 .admin-order-item-f__price-preview {
     display: flex;
     flex-direction: column;

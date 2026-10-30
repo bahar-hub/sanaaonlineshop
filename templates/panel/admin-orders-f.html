@@ -1278,14 +1278,23 @@
                     <div class="admin-order-item-f__pricing-row">
                         <div class="admin-order-item-f__input-wrap">
                             <span class="admin-order-item-f__mini-label">نرخ ارز (ریال)</span>
-                            <input
-                                type="number"
-                                class="admin-orders-f__new-order-input admin-order-item-f__exchange-rate"
-                                min="1"
-                                step="1"
-                                placeholder="نرخ هر واحد ارز"
-                                inputmode="numeric"
-                            >
+                            <div class="admin-order-item-f__rate-control-f">
+                                <input
+                                    type="number"
+                                    class="admin-orders-f__new-order-input admin-order-item-f__exchange-rate"
+                                    min="1"
+                                    step="1"
+                                    placeholder="نرخ هر واحد ارز"
+                                    inputmode="numeric"
+                                >
+                                <button
+                                    type="button"
+                                    class="admin-btn-f admin-btn-f--secondary admin-order-item-f__fetch-rate-f"
+                                >
+                                    دریافت قیمت ارز
+                                </button>
+                            </div>
+                            <small class="admin-order-item-f__rate-status-f" aria-live="polite"></small>
                         </div>
                     </div>
 

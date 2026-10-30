@@ -24,6 +24,11 @@ urlpatterns = [
     path('report/', report_view, name='report'),
     path('orders/', orders_view, name='orders'),
     path(
+        "exchange-rate/",
+        exchange_rate_view,
+        name="exchange_rate",
+    ),
+    path(
         "orders/create/",
         create_order_view,
         name="create_order",
