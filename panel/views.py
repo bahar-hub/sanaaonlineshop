@@ -1,5 +1,8 @@
 import re
 from decimal import Decimal, InvalidOperation
+import requests
+from django.conf import settings
+from django.core.cache import cache
 from django.contrib import messages
 import json
 import jdatetime
@@ -19,7 +22,7 @@ from django.shortcuts import (
     redirect,
 )
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from orders.telegram_service import send_order_invoice_to_customer , send_order_bundle_to_telegram, send_order_invoice_bundle
 from customer.models import TelegramConnection
 from customer.iran_locations import IRAN_LOCATIONS, validate_location
@@ -39,6 +42,119 @@ from orders.services import (
 
 def is_superuser(user):
     return user.is_authenticated and user.is_superuser
+
+
+@require_GET
+@user_passes_test(is_superuser, login_url="base:index")
+def exchange_rate_view(request):
+    """Return one NetArz sell rate converted from toman to rial per unit."""
+
+    currency = request.GET.get("currency", "").strip().upper()
+
+    if currency not in OrderItem.Currency.values:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "واحد پول انتخاب‌شده معتبر نیست.",
+            },
+            status=400,
+        )
+
+    if not settings.NETARZ_FX_KEY:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "کلید API نت‌ارز روی سرور تنظیم نشده است.",
+            },
+            status=503,
+        )
+
+    cache_key = f"netarz:exchange-rate:{currency}"
+    cached_payload = cache.get(cache_key)
+    if cached_payload:
+        return JsonResponse(cached_payload)
+
+    endpoint = (
+        f"{settings.NETARZ_FX_BASE_URL.rstrip('/')}/rates/{currency}"
+    )
+
+    try:
+        response = requests.get(
+            endpoint,
+            headers={
+                "Authorization": f"Bearer {settings.NETARZ_FX_KEY}",
+                "Accept": "application/json",
+            },
+            timeout=10,
+        )
+    except requests.RequestException:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "ارتباط با سرویس نرخ ارز برقرار نشد. دوباره تلاش کنید.",
+            },
+            status=502,
+        )
+
+    try:
+        upstream_payload = response.json()
+    except ValueError:
+        upstream_payload = {}
+
+    if not response.ok:
+        error_code = upstream_payload.get("error", {}).get("code", "")
+        messages_by_code = {
+            "domain_not_verified": "دامنه در پنل نت‌ارز تأیید نشده است.",
+            "origin_required": "IP خروجی سرور در پنل نت‌ارز ثبت نشده است.",
+            "ip_not_allowed": "IP خروجی سرور در پنل نت‌ارز مجاز نیست.",
+            "unknown_currency": "این ارز در نت‌ارز پشتیبانی نمی‌شود.",
+            "pro_required": "دریافت نرخ این ارز به طرح حرفه‌ای نت‌ارز نیاز دارد.",
+        }
+        return JsonResponse(
+            {
+                "success": False,
+                "message": messages_by_code.get(
+                    error_code,
+                    "نت‌ارز نتوانست نرخ این ارز را برگرداند.",
+                ),
+                "code": error_code,
+            },
+            status=502,
+        )
+
+    rate_data = upstream_payload.get("data")
+    meta = upstream_payload.get("meta") or {}
+
+    try:
+        sell_toman = Decimal(str(rate_data["sell"]))
+        unit = Decimal(str(rate_data.get("unit", 1)))
+        if sell_toman <= 0 or unit <= 0:
+            raise ValueError
+        # NetArz quotes IRT (toman) for `unit` currency units. The order model
+        # stores IRR for one currency unit.
+        rate_rial = (sell_toman * Decimal("10") / unit).quantize(Decimal("1"))
+    except (KeyError, TypeError, ValueError, InvalidOperation):
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "پاسخ نرخ ارز از نت‌ارز معتبر نبود.",
+            },
+            status=502,
+        )
+
+    payload = {
+        "success": True,
+        "currency": currency,
+        "rate": int(rate_rial),
+        "rateType": "sell",
+        "quoteCurrency": "IRR",
+        "source": "netarz.ir",
+        "asOf": meta.get("as_of"),
+        "isDelayed": bool(meta.get("is_delayed", False)),
+        "delayedMinutes": meta.get("delayed_minutes", 0),
+    }
+    cache.set(cache_key, payload, timeout=300)
+    return JsonResponse(payload)
 
 @require_POST
 @user_passes_test(is_superuser, login_url="base:index")

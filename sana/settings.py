@@ -164,3 +164,11 @@ TELEGRAM_BOT_USERNAME = config(
     "TELEGRAM_BOT_USERNAME",
     default="sanaa_orders_bot"
 )
+
+# NetArz API credentials stay on the server and are never exposed to the
+# admin page JavaScript. Set NETARZ_FX_KEY in the production .env file.
+NETARZ_FX_KEY = config("NETARZ_FX_KEY", default="")
+NETARZ_FX_BASE_URL = config(
+    "NETARZ_FX_BASE_URL",
+    default="https://netarz.ir/api/fx/v1",
+)

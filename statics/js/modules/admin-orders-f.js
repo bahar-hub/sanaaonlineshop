@@ -1759,6 +1759,8 @@
         var taxInput = row.querySelector(".admin-order-item-f__tax");
         var percentEditToggle = row.querySelector(".admin-order-item-f__percent-edit");
         var exchangeRateInput = row.querySelector(".admin-order-item-f__exchange-rate");
+        var fetchRateButton = row.querySelector(".admin-order-item-f__fetch-rate-f");
+        var rateStatus = row.querySelector(".admin-order-item-f__rate-status-f");
         var afterMarkupOutput = row.querySelector(".admin-order-item-f__after-markup");
         var baseRialOutput = row.querySelector(".admin-order-item-f__base-rial");
         var unitRialOutput = row.querySelector(".admin-order-item-f__unit-rial");
@@ -2049,6 +2051,64 @@
                 }
 
                 updatePricingPreviewF();
+            });
+        }
+
+        if (fetchRateButton) {
+            fetchRateButton.addEventListener("click", function () {
+                var currency = currencyInput ? currencyInput.value : "";
+                var originalText = fetchRateButton.textContent;
+
+                if (!currency) {
+                    if (rateStatus) rateStatus.textContent = "ابتدا واحد پول را انتخاب کنید.";
+                    return;
+                }
+
+                fetchRateButton.disabled = true;
+                fetchRateButton.textContent = "در حال دریافت…";
+                if (rateStatus) {
+                    rateStatus.textContent = "در حال دریافت نرخ فروش از نت‌ارز…";
+                    rateStatus.classList.remove("is-error-f", "is-success-f");
+                }
+
+                fetch("/panel/exchange-rate/?currency=" + encodeURIComponent(currency), {
+                    method: "GET",
+                    credentials: "same-origin",
+                    headers: { Accept: "application/json" }
+                })
+                    .then(function (response) {
+                        return response.json().catch(function () { return {}; }).then(function (payload) {
+                            if (!response.ok || !payload.success) {
+                                throw new Error(payload.message || "دریافت قیمت ارز انجام نشد.");
+                            }
+                            return payload;
+                        });
+                    })
+                    .then(function (payload) {
+                        if (exchangeRateInput) {
+                            exchangeRateInput.value = payload.rate;
+                            formatNumericInputDisplayF(exchangeRateInput);
+                            updatePricingPreviewF();
+                        }
+
+                        if (rateStatus) {
+                            var delayText = payload.isDelayed && payload.delayedMinutes
+                                ? " (با " + payload.delayedMinutes + " دقیقه تأخیر)"
+                                : "";
+                            rateStatus.textContent = "نرخ فروش نت‌ارز دریافت شد" + delayText + ". قابل ویرایش است.";
+                            rateStatus.classList.add("is-success-f");
+                        }
+                    })
+                    .catch(function (error) {
+                        if (rateStatus) {
+                            rateStatus.textContent = error.message || "دریافت قیمت ارز انجام نشد.";
+                            rateStatus.classList.add("is-error-f");
+                        }
+                    })
+                    .finally(function () {
+                        fetchRateButton.disabled = false;
+                        fetchRateButton.textContent = originalText;
+                    });
             });
         }
 
