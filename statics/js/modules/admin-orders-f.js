@@ -24,12 +24,12 @@
      * ============================================================ */
 
     var EXCHANGE_RATES_F = {
-        USD: { label: "دلار", rate: 605000 },
-        TRY: { label: "لیر", rate: 18000 },
-        EUR: { label: "یورو", rate: 655000 },
-        GBP: { label: "پوند", rate: 765000 },
-        AED: { label: "درهم امارات", rate: 165000 },
-        CAD: { label: "دلار کانادا", rate: 440000 }
+        USD: { label: "دلار", rate: 0 },
+        TRY: { label: "لیر", rate: 0 },
+        EUR: { label: "یورو", rate: 0 },
+        GBP: { label: "پوند", rate: 0 },
+        AED: { label: "درهم امارات", rate: 0 },
+        CAD: { label: "دلار کانادا", rate: 0 }
     };
 
 
