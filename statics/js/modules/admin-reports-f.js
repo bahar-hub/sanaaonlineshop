@@ -264,34 +264,76 @@
     var CHART_VIEW_HEIGHT = 200;
     var CHART_PADDING = 12;
 
+    // Smooth monotone-ish curve: keeps the values and avoids angular segments.
     function buildLineChartPathsF(values) {
-        var max = Math.max.apply(null, values);
-        var min = Math.min.apply(null, values);
+        if (!values || !values.length) values = [0, 0];
+        var max = Math.max.apply(null, values.concat([0]));
+        var min = Math.min.apply(null, values.concat([0]));
         var range = max - min || 1;
-
         var usableWidth = CHART_VIEW_WIDTH - CHART_PADDING * 2;
         var usableHeight = CHART_VIEW_HEIGHT - CHART_PADDING * 2;
         var step = usableWidth / (values.length - 1 || 1);
-
         var points = values.map(function (value, index) {
-            var x = CHART_PADDING + step * index;
-            var y = CHART_PADDING + usableHeight - ((value - min) / range) * usableHeight;
-            return [x, y];
+            return [CHART_PADDING + step * index,
+                CHART_PADDING + usableHeight - ((value - min) / range) * usableHeight];
         });
+        var linePath = "M" + points[0][0].toFixed(1) + "," + points[0][1].toFixed(1);
+        for (var i = 1; i < points.length; i += 1) {
+            var prev = points[i - 1], current = points[i];
+            var midX = (prev[0] + current[0]) / 2;
+            linePath += " C" + midX.toFixed(1) + "," + prev[1].toFixed(1) +
+                " " + midX.toFixed(1) + "," + current[1].toFixed(1) +
+                " " + current[0].toFixed(1) + "," + current[1].toFixed(1);
+        }
+        var bottom = CHART_PADDING + usableHeight;
+        var areaPath = linePath + " L" + points[points.length - 1][0].toFixed(1) +
+            "," + bottom + " L" + points[0][0].toFixed(1) + "," + bottom + " Z";
+        return { linePath: linePath, areaPath: areaPath, points: points };
+    }
 
-        var linePath = points
-            .map(function (point, index) {
-                return (index === 0 ? "M" : "L") + point[0].toFixed(1) + "," + point[1].toFixed(1);
-            })
-            .join(" ");
+    // Decorative guides are rendered under the dataset and don't change the data.
+    function drawChartGuidesF(svg) {
+        if (!svg) return;
+        svg.querySelectorAll("[data-chart-guide-f]").forEach(function (node) { node.remove(); });
+        var NS = "http://www.w3.org/2000/svg";
+        var group = document.createElementNS(NS, "g");
+        group.setAttribute("data-chart-guide-f", "1");
+        group.setAttribute("stroke", "#ebe3e8");
+        group.setAttribute("stroke-width", "0.8");
+        group.setAttribute("stroke-dasharray", "4 6");
+        for (var i = 1; i <= 4; i += 1) {
+            var y = CHART_PADDING + (CHART_VIEW_HEIGHT - 2 * CHART_PADDING) * i / 4;
+            var guide = document.createElementNS(NS, "line");
+            guide.setAttribute("x1", CHART_PADDING);
+            guide.setAttribute("x2", CHART_VIEW_WIDTH - CHART_PADDING);
+            guide.setAttribute("y1", y.toFixed(1));
+            guide.setAttribute("y2", y.toFixed(1));
+            group.appendChild(guide);
+        }
+        var defs = svg.querySelector("defs");
+        if (defs && defs.nextSibling) svg.insertBefore(group, defs.nextSibling);
+        else svg.insertBefore(group, svg.firstChild);
+    }
 
-        var areaPath =
-            linePath +
-            " L" + points[points.length - 1][0].toFixed(1) + "," + (CHART_PADDING + usableHeight) +
-            " L" + points[0][0].toFixed(1) + "," + (CHART_PADDING + usableHeight) +
-            " Z";
-
-        return { linePath: linePath, areaPath: areaPath };
+    function addLastPointF(svg, points, label) {
+        if (!svg || !points.length) return;
+        svg.querySelectorAll("[data-last-point-f]").forEach(function (node) { node.remove(); });
+        var NS = "http://www.w3.org/2000/svg";
+        var point = points[points.length - 1];
+        var circle = document.createElementNS(NS, "circle");
+        circle.setAttribute("data-last-point-f", "1");
+        circle.setAttribute("cx", point[0].toFixed(1));
+        circle.setAttribute("cy", point[1].toFixed(1));
+        circle.setAttribute("r", "4.5");
+        circle.setAttribute("fill", "#fff");
+        circle.setAttribute("stroke", "#A61579");
+        circle.setAttribute("stroke-width", "2.5");
+        if (label) {
+            var tip = document.createElementNS(NS, "title");
+            tip.textContent = label;
+            circle.appendChild(tip);
+        }
+        svg.appendChild(circle);
     }
 
     function renderMonthlyChartF(report) {
@@ -302,6 +344,10 @@
         var paths = buildLineChartPathsF(report.chartValues);
         if (lineEl) lineEl.setAttribute("d", paths.linePath);
         if (areaEl) areaEl.setAttribute("d", paths.areaPath);
+        var salesSvg = lineEl && lineEl.ownerSVGElement;
+        drawChartGuidesF(salesSvg);
+        addLastPointF(salesSvg, paths.points, "روز آخر: " +
+            formatNumberF(Math.round(report.chartValues[report.chartValues.length - 1] || 0)) + " ریال");
 
         if (labelsEl) {
             labelsEl.innerHTML = "";
@@ -324,6 +370,7 @@
             bar.remove();
         });
 
+        drawChartGuidesF(svg);
         var values = report.monthlyTotals;
         var max = Math.max.apply(null, values) || 1;
 
@@ -343,9 +390,13 @@
             rect.setAttribute("y", y.toFixed(1));
             rect.setAttribute("width", barWidth.toFixed(1));
             rect.setAttribute("height", Math.max(barHeight, 2).toFixed(1));
-            rect.setAttribute("rx", "3");
+            rect.setAttribute("rx", "6");
+            rect.setAttribute("class", "sanaa-chart-bar-f");
             rect.setAttribute("fill", "#A61579");
-            rect.setAttribute("fill-opacity", index === values.length - 1 ? "1" : "0.35");
+            rect.setAttribute("fill-opacity", index === values.length - 1 ? "0.95" : "0.52");
+            var tip = document.createElementNS("http://www.w3.org/2000/svg", "title");
+            tip.textContent = MONTH_NAMES_F[index] + ": " + formatNumberF(Math.round(value)) + " ریال";
+            rect.appendChild(tip);
             svg.appendChild(rect);
         });
 
@@ -695,6 +746,7 @@ for (var month = 1; month <= 12; month += 1) {
             '<stop offset="100%" stop-color="#A61579" stop-opacity="0"/>' +
             "</linearGradient>";
         svg.appendChild(defs);
+        drawChartGuidesF(svg);
 
         var area = document.createElementNS(NS, "path");
         area.setAttribute("d", paths.areaPath);
@@ -709,6 +761,8 @@ for (var month = 1; month <= 12; month += 1) {
         line.setAttribute("stroke-linecap", "round");
         line.setAttribute("stroke-linejoin", "round");
         svg.appendChild(line);
+        addLastPointF(svg, paths.points, "روز آخر: " +
+            formatNumberF(Math.round(values[values.length - 1] || 0)) + " ریال");
 
         if (labelsEl) {
             labelsEl.innerHTML = "";
@@ -724,6 +778,7 @@ for (var month = 1; month <= 12; month += 1) {
         if (!svg) return;
 
         svg.innerHTML = "";
+        drawChartGuidesF(svg);
 
         var NS = "http://www.w3.org/2000/svg";
         var max = Math.max.apply(null, values) || 1;
@@ -740,7 +795,8 @@ for (var month = 1; month <= 12; month += 1) {
             rect.setAttribute("y", (CHART_PADDING + usableHeight - barHeight).toFixed(1));
             rect.setAttribute("width", barWidth.toFixed(1));
             rect.setAttribute("height", Math.max(barHeight, 2).toFixed(1));
-            rect.setAttribute("rx", "3");
+            rect.setAttribute("rx", "6");
+            rect.setAttribute("class", "sanaa-chart-bar-f");
             rect.setAttribute("fill", "#A61579");
             rect.setAttribute("fill-opacity", value > 0 ? "0.85" : "0.2");
 
