@@ -18,52 +18,100 @@ from .invoice_utils import (
 
 TELEGRAM_API_BASE = "https://api.telegram.org"
 def send_shipping_cost_notification(order):
-    """
-    پیام هزینه باربری؛ فقط وقتی سفارش به مرحله «ارسال به ایران»
-    می‌رسد و هزینه باربری صفر نیست ارسال می‌شود.
-    """
-
-    connection = getattr(
-        order.user,
-        "telegram_connection",
-        None
+    """Notify customer when a positive shipping cost is set or changed."""
+    connection = getattr(order.user, "telegram_connection", None)
+    if not connection or not connection.is_active or order.shipping_cost <= 0:
+        return False
+    message = (
+        f"هزینه باربری سفارش شما مشخص شد 📦\n\n"
+        f"🧾 سفارش #{order.id}\n"
+        f"🚚 هزینه باربری: {int(order.shipping_cost):,} ریال\n\n"
+        "شماره کارت: 6219861909505736\n"
+        "شماره شبا: IR940560611828005120289101\n"
+        "سیده ثنا مدنی فرد\n\n"
+        "برای مشاهده و پیگیری سفارش:\n"
+        "sanaaonlineshop.com"
     )
+    send_telegram_text(connection.telegram_id, message)
+    return True
 
+
+def send_customer_event_notification(order, event):
+    """Send exactly the requested text for each customer-facing order event."""
+    connection = getattr(order.user, "telegram_connection", None)
     if not connection or not connection.is_active:
         return False
-
-    items_text = "\n".join(
-        f"▫️ {item.product_name} × {item.quantity}"
-        for item in order.items.all()
-    )
-
-    message = f"""
-سلام، وقت بخیر ✨
-
-سفارشتون رسیددد 😍📦✨
-
-هزینه باربری شماره سفارش #{order.id}:
-
-📦 مشخصات سفارش
-{items_text}
-
-💰 هزینه باربری: {int(order.shipping_cost or 0):,} ریال
-
-شماره کارت: 6219861909505736 
-شماره شبا:IR94056061182800512028910
-
-از طریق وبسایت سفارشتون رو پیگیری کنید👇🏼
-<a href="https://sanaaonlineshop.com/">sanaaonlineshop.com</a>
-
-بعد از پرداخت باربری، برای ارسال سفارشتون با ما هماهنگ کنید 🫶🏽
-"""
-
-    send_telegram_text(
-        connection.telegram_id,
-        message
-    )
-
+    number = f"🧾 سفارش #{order.id}"
+    site = "sanaaonlineshop.com"
+    messages = {
+        "paid": (
+            "ثنا جان\n\n"
+            "پرداخت سفارش شما با موفقیت انجام شد🛍️✅\n\n"
+            f"برای پیگیری سفارش:\n{site}\n\n"
+            "ممنون که Sanaa رو انتخاب کردید ✨"
+        ),
+        "partial": (
+            "پرداخت سفارش شما کامل نشده است 💳\n"
+            "لطفا جهت تکمیل سفارش خود پرداختی خود را کامل کنید❤️🙏🏽\n\n"
+            f"{number}\n\n"
+            f"برای مشاهده جزئیات و تکمیل پرداخت:\n{site}"
+        ),
+        "preparing": (
+            "سفارش شما وارد مرحله آماده‌سازی شد ✨\n\n"
+            f"{number}\n\n"
+            "آخرین وضعیت سفارشتون از طریق سایت و ربات تلگرام اطلاع می‌ دهیم\n\n"
+            f"پیگیری سفارش:\n{site}\n\n"
+            "ممنون از همراهی‌تون 🤍"
+        ),
+        "shipped_to_iran": (
+            "خبر خوب! سفارش شما به مقصد ایران ارسال شد 📦✈️\n\n"
+            f"{number}\n\n"
+            f"برای پیگیری آخرین وضعیت سفارش:\n{site}"
+        ),
+        "shipped_to_customer": (
+            "سفارش شما رسید 🤩📦\n\n"
+            f"{number}\n\n"
+            "لطفا بعد از واریز باربری اعلام شده\n\n"
+            "برای هماهنگی ودریافت سفارش، از طریق تلگرام به آیدی زیر پیام بدید:\n"
+            "@sanamadani\n"
+            "ممنون از اعتمادتون✨"
+        ),
+        "delivered": (
+            "سفارش شما با موفقیت تحویل داده شد 📦✨\n\n"
+            "امیدواریم از خریدتون لذت ببرید و دوستش داشته باشید! 🥰\n\n"
+            "منتظرتون برای خریدهای بعدی هستیم 💚\n\n"
+            f"Sanaa Online Shop 🌱\n{site}"
+        ),
+        "cancelled": (
+            "سفارش شما لغو شد.\n\n"
+            f"{number}\n\n"
+            f"برای مشاهده جزئیات:\n{site}"
+        ),
+    }
+    message = messages.get(event)
+    if not message:
+        return False
+    send_telegram_text(connection.telegram_id, message)
     return True
+
+
+def send_admin_order_change_notification(order_id, changes):
+    """One concise text for all changed fields, only to the configured admin."""
+    from html import escape
+
+    admin_chat_id = getattr(settings, "TELEGRAM_CHAT_ID", None)
+    if not settings.TELEGRAM_BOT_TOKEN or not admin_chat_id or not changes:
+        return False
+
+    lines = [f"🧾 سفارش #{order_id}"]
+    lines.extend(f"• {escape(str(change))}" for change in changes)
+    try:
+        response = send_telegram_text(admin_chat_id, "\n".join(lines))
+        response.raise_for_status()
+        return response.json().get("ok", False)
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Admin notification failed for order %s: %s", order_id, exc)
+        return False
 
 
 def send_telegram_text(chat_id, text):
@@ -350,77 +398,8 @@ def check_telegram_connection(connection):
 
 
 def send_new_products_notification(order, new_items):
-
-    connection = getattr(
-        order.user,
-        "telegram_connection",
-        None
-    )
-
-    if not connection:
-        return False
-
-    if not connection.is_active:
-        return False
-
-
-    message = f"""
-سلام {order.user.first_name} عزیز 👋
-
-محصول جدیدی به سفارش شما در Sanaa Online Shop اضافه شد ✨
-
-
-🧾 شماره سفارش #{order.id}:
-
-
-📦 مشخصات محصول:
-"""
-
-
-    for item in new_items:
-
-        message += f"""
-
-🔹 {item.product_name}
-
-🏷 برند:
-{item.brand or "-"}
-
-📏 سایز:
-{item.size or "-"}
-
-🔢 تعداد:
-{item.quantity}
-
-💰 قیمت:
-{int(item.line_total_irr):,} ریال
-
-"""
-
-
-    message += f"""
-
-💰 مبلغ نهایی جدید سفارش:
-{int(order.total_irr):,} ریال
-
-از طریق وبسایت سفارشتون رو پیگیری کنید👇🏼
-<a href="https://sanaaonlineshop.com/">sanaaonlineshop.com</a>
-
-فاکتور سفارش شما به‌روزرسانی شد 🌱
-"""
-
-
-    send_telegram_text(
-        connection.telegram_id,
-        message
-    )
-
-
-    # ارسال فاکتور جدید فقط در صورت اضافه شدن محصول
-    send_order_invoice_to_customer(order)
-
-
-    return True
+    """Disabled to avoid extra messages after invoice issuance."""
+    return False
 
 
 logger = logging.getLogger(__name__)
@@ -553,106 +532,16 @@ def send_order_invoice_bundle(order_id):
             )
             _mark_connection_error(connection, error)
 
-    # --- admin copy ---
+    # --- Admin: send only ONE invoice image when the order is created. ---
     if admin_chat_id and str(admin_chat_id) != str(customer_chat_id):
-        ok, error = _send_invoice_files(
-            admin_chat_id, order, pdf_bytes, image_bytes, filenames,
-            build_telegram_caption(order),
+        ok, error = _post_telegram_file(
+            admin_chat_id, "sendPhoto", "photo", filenames["image"],
+            image_bytes, "image/png", f"🧾 سفارش #{order.id} - ثبت شد",
         )
         if not ok:
-            logger.error(
-                "Admin copy of invoice %s failed: %s", order_id, error
-            )
+            logger.error("Admin invoice image %s failed: %s", order_id, error)
 
 
 def send_updated_invoice(order_id, changes=None):
-    """
-    بعد از تغییر در محتوای فاکتور، «عکس» فاکتور جدید همراه با متن
-    تغییرات را برای مشتری و ادمین (TELEGRAM_CHAT_ID) می‌فرستد. PDF ارسال نمی‌شود.
-
-    متن تغییرات به‌عنوان کپشن عکس می‌رود. اگر از حد مجاز کپشن تلگرام
-    (۱۰۲۴ کاراکتر) بلندتر بود، عکس با کپشن کوتاه و متن کامل در پیام بعدی می‌آید.
-    """
-    from html import escape
-
-    CAPTION_LIMIT = 1024
-
-    if not settings.TELEGRAM_BOT_TOKEN:
-        logger.warning("Updated invoice not sent: TELEGRAM_BOT_TOKEN is empty.")
-        return
-
-    order = (
-        Order.objects
-        .select_related("user")
-        .prefetch_related("items")
-        .get(id=order_id)
-    )
-
-    connection = getattr(order.user, "telegram_connection", None)
-    customer_chat_id = (
-        connection.telegram_id
-        if connection and connection.is_active
-        else None
-    )
-    admin_chat_id = settings.TELEGRAM_CHAT_ID or None
-
-    if not customer_chat_id and not admin_chat_id:
-        return
-
-    image_bytes = build_invoice_image_bytes(order, is_admin=False)
-    filenames = build_invoice_filenames(order, is_admin=False)
-    number = build_order_number(order)
-
-    def send_photo_with_text(chat_id, full_text, short_caption):
-        if len(full_text) <= CAPTION_LIMIT:
-            return _post_telegram_file(
-                chat_id, "sendPhoto", "photo",
-                filenames["image"], image_bytes, "image/png",
-                full_text, parse_mode="HTML",
-            )
-
-        ok, error = _post_telegram_file(
-            chat_id, "sendPhoto", "photo",
-            filenames["image"], image_bytes, "image/png",
-            short_caption, parse_mode="HTML",
-        )
-        send_telegram_text(chat_id, full_text)
-        return ok, error
-
-    # --- مشتری ---
-    if customer_chat_id:
-        ok, error = send_photo_with_text(
-            customer_chat_id,
-            build_order_update_message(order, changes or []),
-            f"🧾 فاکتور به‌روزرسانی‌شده‌ی سفارش {number}",
-        )
-
-        if ok:
-            if connection.last_error:
-                connection.last_error = None
-                connection.save(update_fields=["last_error"])
-        else:
-            logger.error(
-                "Updated invoice %s failed for customer %s: %s",
-                order_id, order.user_id, error,
-            )
-            _mark_connection_error(connection, error)
-
-    # --- ادمین ---
-    if admin_chat_id and str(admin_chat_id) != str(customer_chat_id):
-        header = (
-            f"🔄 فاکتور به‌روزرسانی‌شده {number}\n"
-            f"👤 مشتری: {escape(get_customer_name(order.user))}\n"
-            f"📱 شماره: {escape(order.user.phone or '—')}"
-        )
-        admin_text = header
-        if changes:
-            admin_text += "\n\n" + "\n\n".join(changes)
-
-        ok, error = send_photo_with_text(
-            admin_chat_id, admin_text, header,
-        )
-        if not ok:
-            logger.error(
-                "Updated invoice %s failed for admin: %s", order_id, error
-            )
+    """Disabled: invoices are sent only when an order is first issued."""
+    return None

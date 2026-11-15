@@ -11,6 +11,7 @@ from orders.telegram_service import (
     send_order_update_notification,
     send_new_products_notification,
     send_shipping_cost_notification,
+    send_admin_order_change_notification,
     send_updated_invoice,
 )
 from django.contrib.auth import get_user_model
@@ -1374,102 +1375,59 @@ def update_order_view(
             order,
         )
 
-        # فقط وقتی وضعیت «ارسال به ایران» است و هزینه باربری صفر نیست،
-        # پیام هزینه باربری ارسال می‌شود (و فقط همین پیام). این پیام وقتی
-        # می‌رود که وضعیت تازه به «ارسال به ایران» رفته باشد یا هزینه
-        # باربری تغییر کرده باشد؛ با ویرایش‌های نامرتبط تکرار نمی‌شود.
-        send_shipping_message = (
-            order.status == Order.Status.SHIPPED_TO_IRAN
-            and (order.shipping_cost or 0) > 0
-            and (status_changed or shipping_changed)
+        # Notifications are text-only; no invoice is resent after creation.
+        # Snapshot the event values before the transaction commits.
+        order_id_for_notification = order.id
+        events = []
+        if payment_changed:
+            if order.payment_status == Order.PaymentStatus.PAID:
+                events.append("paid")
+            elif order.payment_status == Order.PaymentStatus.PARTIAL:
+                events.append("partial")
+        if status_changed and order.status in {
+            Order.Status.PREPARING,
+            Order.Status.SHIPPED_TO_IRAN,
+            Order.Status.SHIPPED_TO_CUSTOMER,
+            Order.Status.DELIVERED,
+            Order.Status.CANCELLED,
+        }:
+            events.append(order.status)
+        shipping_notification_needed = (
+            shipping_changed and order.shipping_cost > 0
         )
-
-        # فاکتور جدید (فقط عکس، همراه متن تغییرات) برای مشتری و ادمین:
-        # وقتی چیزی در محتوای فاکتور مشتری عوض شده باشد. در حالت پیام
-        # باربری، فاکتور فقط با تغییر آیتم‌ها ارسال می‌شود. تغییر تنهای
-        # «وضعیت سفارش» فاکتور جدید نمی‌فرستد.
-        if send_shipping_message:
-            invoice_needed = items_changed
-        else:
-            invoice_needed = (
-                items_changed
-                or shipping_changed
-                or payment_changed
-                or total_changed
-            )
-
-        if send_shipping_message:
+        # Admin gets one concise message per save, listing only the changes.
+        admin_changes = []
+        if status_changed:
+            admin_changes.append(f"وضعیت سفارش: {order.get_status_display()}")
+        if payment_changed:
+            admin_changes.append(f"وضعیت پرداخت: {order.get_payment_status_display()}")
+        if shipping_changed:
+            admin_changes.append(f"هزینه باربری: {int(order.shipping_cost or 0):,} ریال")
+        if items_changed:
+            admin_changes.append("اقلام سفارش ویرایش شد")
+        if total_changed and not items_changed:
+            admin_changes.append("مبلغ سفارش تغییر کرد")
+        if admin_changes:
             transaction.on_commit(
-                lambda: send_shipping_cost_notification(order),
+                lambda oid=order.id, lines=tuple(admin_changes):
+                    send_admin_order_change_notification(oid, lines),
                 robust=True,
             )
 
-            # متن تغییرات کالاها همراه عکس فاکتور می‌رود
-            changes = list(item_lines)
+        if events or shipping_notification_needed:
+            def notify_customer_after_commit(
+                order_id=order_id_for_notification,
+                event_names=tuple(events),
+                notify_shipping=shipping_notification_needed,
+            ):
+                from orders.telegram_service import send_customer_event_notification
+                current_order = Order.objects.select_related("user").get(pk=order_id)
+                for event_name in event_names:
+                    send_customer_event_notification(current_order, event_name)
+                if notify_shipping:
+                    send_shipping_cost_notification(current_order)
 
-        else:
-            # فقط همان بخش‌هایی که تغییر کرده‌اند گفته می‌شود.
-            if status_changed:
-                if order.status == Order.Status.SHIPPED_TO_CUSTOMER:
-                    changes.append("📦 سفارشتون ارسال شد 🚚✨")
-                elif order.status == Order.Status.PREPARING:
-                    changes.append(
-                        "🛠 سفارشتون در حال آماده‌سازیه ✨\n"
-                        "به‌زودی مرحله بعدی رو بهتون اطلاع می‌دیم."
-                    )
-                else:
-                    changes.append(
-                        f"📦 وضعیت سفارش:\n{order.customer_status_label}"
-                    )
-
-            changes.extend(item_lines)
-
-            if shipping_changed:
-                changes.append(
-                    f"🚚 هزینه باربری:\n{int(order.shipping_cost):,} ریال"
-                )
-
-            if payment_changed:
-                changes.append(
-                    f"💳 وضعیت پرداخت:\n{order.get_payment_status_display()}"
-                )
-
-            if total_changed:
-                changes.append(
-                    f"💰 مبلغ سفارش:\n{int(order.total_irr):,} ریال"
-                )
-
-            # وقتی فاکتور جدید می‌رود، متن تغییرات کپشن عکس است
-            # و پیام متنی جداگانه نمی‌رود.
-            if changes and not invoice_needed:
-                transaction.on_commit(
-                    lambda: send_order_update_notification(
-                        order,
-                        changes
-                    ),
-                    robust=True,
-                )
-
-
-        if new_items.exists():
-            transaction.on_commit(
-                lambda: send_new_products_notification(
-                    order,
-                    new_items
-                ),
-                robust=True,
-            )
-
-        if invoice_needed:
-            order_id_for_invoice = order.id
-            invoice_changes = list(changes)
-            transaction.on_commit(
-                lambda: send_updated_invoice(
-                    order_id_for_invoice,
-                    invoice_changes,
-                ),
-                robust=True,
-            )
+            transaction.on_commit(notify_customer_after_commit, robust=True)
 
     except ValueError as exc:
 
