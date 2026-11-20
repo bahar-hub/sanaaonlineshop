@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import re
 from decimal import Decimal, InvalidOperation
 import requests
@@ -1520,3 +1521,1527 @@ def delete_order_view(
                 order_number,
         }
     )
+=======
+import re
+from decimal import Decimal, InvalidOperation
+import requests
+from django.conf import settings
+from django.core.cache import cache
+from django.contrib import messages
+import json
+import jdatetime
+from django.db import transaction
+from orders.telegram_service import (
+    send_order_update_notification,
+    send_new_products_notification,
+    send_shipping_cost_notification,
+    send_admin_order_change_notification,
+    send_updated_invoice,
+)
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import user_passes_test
+from django.http import JsonResponse
+from django.shortcuts import (
+    get_object_or_404,
+    render,
+    redirect,
+)
+from django.utils import timezone
+from django.views.decorators.http import require_GET, require_POST
+from orders.telegram_service import send_order_invoice_to_customer , send_order_bundle_to_telegram, send_order_invoice_bundle
+from customer.models import TelegramConnection
+from customer.iran_locations import IRAN_LOCATIONS, validate_location
+from orders.models import (
+    Order,
+    OrderItem,
+    Invoice,
+)
+from orders.telegram_service import check_telegram_connection
+from orders.services import (
+    create_order,
+    update_order,
+    snapshot_order_items,
+    diff_order_items,
+    delete_order as delete_order_service,
+)
+
+def is_superuser(user):
+    return user.is_authenticated and user.is_superuser
+
+
+@require_GET
+@user_passes_test(is_superuser, login_url="base:index")
+def exchange_rate_view(request):
+    """Return one NetArz sell rate converted from toman to rial per unit."""
+
+    currency = request.GET.get("currency", "").strip().upper()
+
+    if currency not in OrderItem.Currency.values:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "واحد پول انتخاب‌شده معتبر نیست.",
+            },
+            status=400,
+        )
+
+    if not settings.NETARZ_FX_KEY:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "کلید API نت‌ارز روی سرور تنظیم نشده است.",
+            },
+            status=503,
+        )
+
+    cache_key = f"netarz:exchange-rate:{currency}"
+    cached_payload = cache.get(cache_key)
+    if cached_payload:
+        return JsonResponse(cached_payload)
+
+    endpoint = (
+        f"{settings.NETARZ_FX_BASE_URL.rstrip('/')}/rates/{currency}"
+    )
+
+    try:
+        response = requests.get(
+            endpoint,
+            headers={
+                "Authorization": f"Bearer {settings.NETARZ_FX_KEY}",
+                "Accept": "application/json",
+            },
+            timeout=10,
+        )
+    except requests.RequestException:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "ارتباط با سرویس نرخ ارز برقرار نشد. دوباره تلاش کنید.",
+            },
+            status=502,
+        )
+
+    try:
+        upstream_payload = response.json()
+    except ValueError:
+        upstream_payload = {}
+
+    if not response.ok:
+        error_code = upstream_payload.get("error", {}).get("code", "")
+        messages_by_code = {
+            "domain_not_verified": "دامنه در پنل نت‌ارز تأیید نشده است.",
+            "origin_required": "IP خروجی سرور در پنل نت‌ارز ثبت نشده است.",
+            "ip_not_allowed": "IP خروجی سرور در پنل نت‌ارز مجاز نیست.",
+            "unknown_currency": "این ارز در نت‌ارز پشتیبانی نمی‌شود.",
+            "pro_required": "دریافت نرخ این ارز به طرح حرفه‌ای نت‌ارز نیاز دارد.",
+        }
+        return JsonResponse(
+            {
+                "success": False,
+                "message": messages_by_code.get(
+                    error_code,
+                    "نت‌ارز نتوانست نرخ این ارز را برگرداند.",
+                ),
+                "code": error_code,
+            },
+            status=502,
+        )
+
+    rate_data = upstream_payload.get("data")
+    meta = upstream_payload.get("meta") or {}
+
+    try:
+        sell_toman = Decimal(str(rate_data["sell"]))
+        unit = Decimal(str(rate_data.get("unit", 1)))
+        if sell_toman <= 0 or unit <= 0:
+            raise ValueError
+        # NetArz quotes IRT (toman) for `unit` currency units. The order model
+        # stores IRR for one currency unit.
+        rate_rial = (sell_toman * Decimal("10") / unit).quantize(Decimal("1"))
+    except (KeyError, TypeError, ValueError, InvalidOperation):
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "پاسخ نرخ ارز از نت‌ارز معتبر نبود.",
+            },
+            status=502,
+        )
+
+    payload = {
+        "success": True,
+        "currency": currency,
+        "rate": int(rate_rial),
+        "rateType": "sell",
+        "quoteCurrency": "IRR",
+        "source": "netarz.ir",
+        "asOf": meta.get("as_of"),
+        "isDelayed": bool(meta.get("is_delayed", False)),
+        "delayedMinutes": meta.get("delayed_minutes", 0),
+    }
+    cache.set(cache_key, payload, timeout=300)
+    return JsonResponse(payload)
+
+@require_POST
+@user_passes_test(is_superuser, login_url="base:index")
+def test_telegram_connection_view(request, user_id):
+
+    User = get_user_model()
+
+    customer = get_object_or_404(
+        User,
+        id=user_id,
+        is_superuser=False,
+    )
+
+    connection = TelegramConnection.objects.filter(
+        user=customer
+    ).first()
+
+    if not connection:
+        return JsonResponse(
+            {
+                "success": True,
+                "connected": False,
+                "status": "not_linked",
+                "message":
+                    "این مشتری هنوز حساب تلگرام خود را متصل نکرده است.",
+            }
+        )
+
+    result = check_telegram_connection(connection)
+
+    if result["connected"]:
+        status = "connected"
+    elif result.get("reason") == "not_linked":
+        status = "not_linked"
+    else:
+        status = "disconnected"
+
+    return JsonResponse(
+        {
+            "success": True,
+            "connected": result["connected"],
+            "status": status,
+            "message": result["message"],
+            "telegramUsername": connection.username,
+        }
+    )
+
+
+@user_passes_test(is_superuser, login_url="base:index")
+def customer_view(request):
+
+    User = get_user_model()
+
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        username = request.POST.get("username", "").strip()
+        phone = request.POST.get("phone", "").strip()
+        password = request.POST.get("password", "")
+        address = request.POST.get("address", "").strip()
+        province = request.POST.get("province", "").strip()
+        city = request.POST.get("city", "").strip()
+        location_error = validate_location(province, city)
+        if location_error:
+            messages.error(request, location_error)
+            return redirect("panel:customers")
+        if User.objects.filter(phone=phone).exists():
+            messages.error(
+                request,
+                "این شماره موبایل قبلاً ثبت شده است."
+            )
+            return redirect("panel:customers")
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "این نام کاربری قبلاً ثبت شده است.")
+            return redirect("panel:customers")
+        user = User(
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
+            phone=phone,
+            province=province,
+            city=city,
+            address=address,
+        )
+
+        user.set_password(password)
+        user.save()
+
+        return redirect("panel:customers")
+
+    customers_queryset = (
+        User.objects
+        .filter(is_superuser=False)
+        .select_related("telegram_connection")
+        .prefetch_related("orders")
+        .order_by("-date_joined")
+    )
+
+    customers = []
+
+    for customer in customers_queryset:
+        orders = list(
+            customer.orders.all().order_by("-registered_at")
+        )
+
+        total_spent = sum(
+            (order.total_irr for order in orders),
+            Decimal("0")
+        )
+
+        telegram_connection = getattr(
+            customer, "telegram_connection", None
+        )
+
+        if telegram_connection and telegram_connection.telegram_id:
+            if telegram_connection.is_active:
+                telegram_status = "connected"
+            else:
+                telegram_status = "disconnected"
+        else:
+            telegram_status = "not_linked"
+
+        customer_name = (
+            f"{customer.first_name} {customer.last_name}"
+        ).strip()
+
+        if not customer_name:
+            customer_name = customer.username
+
+        customer_data = {
+            "userId": customer.id,
+            "id": "C-" + str(customer.id).zfill(4),
+            "name": customer_name,
+            "firstName": customer.first_name,
+            "lastName": customer.last_name,
+            "username": customer.username,
+            "address": customer.address,
+            "province": customer.province,
+            "city": customer.city,
+            "phone": customer.phone,
+            "joinDate": jdatetime.datetime.fromgregorian(
+                datetime=customer.date_joined
+            ).strftime("%Y/%m/%d"),
+
+            "status": "active" if customer.is_active else "inactive",
+
+            "ordersCount": len(orders),
+            "totalSpent": float(total_spent),
+            "telegramStatus": telegram_status,
+            "telegramUsername": (
+                telegram_connection.username
+                if telegram_connection else None
+            ),
+
+            "orders": [
+                {
+                    "number": f"SN-{order.id:05d}",
+                    "date": jdatetime.datetime.fromgregorian(
+                        datetime=timezone.localtime(order.registered_at)
+                    ).strftime("%Y/%m/%d"),
+                    "status": order.status,
+                    "amount": float(order.total_irr),
+                }
+                for order in orders
+            ],
+        }
+
+        customers.append(customer_data)
+
+    context = {
+        "customers": customers
+    }
+
+    return render(
+        request,
+        "panel/admin-customers-f.html",
+        context
+    )
+
+
+def _normalize_phone(value):
+    """Persian/Arabic digits -> English, drop spaces/dashes, +98 -> 0."""
+    value = (value or "").strip()
+    value = value.translate(
+        str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+    )
+    value = re.sub(r"[\s-]", "", value)
+    if value.startswith("+98"):
+        value = "0" + value[3:]
+    return value
+
+
+@require_POST
+@user_passes_test(is_superuser, login_url="base:index")
+def update_customer_view(request, user_id):
+
+    User = get_user_model()
+
+    customer = get_object_or_404(
+        User,
+        id=user_id,
+        is_superuser=False,
+    )
+
+    first_name = request.POST.get("first_name", "").strip()
+    last_name = request.POST.get("last_name", "").strip()
+    username = request.POST.get("username", "").strip()
+    phone = _normalize_phone(request.POST.get("phone", ""))
+    address = request.POST.get("address", "").strip()
+    province = request.POST.get("province", "").strip()
+    city = request.POST.get("city", "").strip()
+    password = request.POST.get("password", "")
+    is_active = request.POST.get("is_active") == "on"
+
+    errors = {}
+
+    if not first_name:
+        errors["first_name"] = "لطفاً نام مشتری را وارد کنید."
+
+    if not last_name:
+        errors["last_name"] = "لطفاً نام خانوادگی مشتری را وارد کنید."
+
+    if not phone:
+        errors["phone"] = "لطفاً شماره موبایل را وارد کنید."
+    elif not re.fullmatch(r"09\d{9}", phone):
+        errors["phone"] = "شماره موبایل واردشده معتبر نیست."
+    elif User.objects.filter(phone=phone).exclude(pk=customer.pk).exists():
+        errors["phone"] = "این شماره موبایل قبلاً ثبت شده است."
+
+    if not username:
+        errors["username"] = "لطفاً نام کاربری را وارد کنید."
+    elif not re.fullmatch(r"[a-zA-Z0-9_]{4,}", username):
+        errors["username"] = (
+            "نام کاربری باید حداقل ۴ کاراکتر و فقط شامل "
+            "حروف انگلیسی، اعداد و _ باشد."
+        )
+    elif User.objects.filter(username=username).exclude(pk=customer.pk).exists():
+        errors["username"] = "این نام کاربری قبلاً ثبت شده است."
+
+    location_error = validate_location(province, city)
+
+    if location_error:
+        errors["province" if province not in IRAN_LOCATIONS else "city"] = (
+            location_error
+        )
+
+    if not address:
+        errors["address"] = "لطفاً آدرس مشتری را وارد کنید."
+
+    # رمز عبور اختیاری است: خالی = بدون تغییر
+    if password and len(password) < 6:
+        errors["password"] = "رمز عبور باید حداقل ۶ کاراکتر باشد."
+
+    if errors:
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "لطفاً خطاهای فرم را برطرف کنید.",
+                "errors": errors,
+            },
+            status=400,
+        )
+
+    customer.first_name = first_name
+    customer.last_name = last_name
+    customer.username = username
+    customer.phone = phone
+    customer.address = address
+    customer.province = province
+    customer.city = city
+    customer.is_active = is_active
+
+    if password:
+        customer.set_password(password)
+
+    customer.save()
+
+    name = f"{customer.first_name} {customer.last_name}".strip()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "اطلاعات مشتری با موفقیت به‌روزرسانی شد.",
+            "customer": {
+                "name": name or customer.username,
+                "firstName": customer.first_name,
+                "lastName": customer.last_name,
+                "username": customer.username,
+                "phone": customer.phone,
+                "address": customer.address,
+                "province": customer.province,
+                "city": customer.city,
+                "status": "active" if customer.is_active else "inactive",
+            },
+        }
+    )
+
+
+@require_POST
+@user_passes_test(is_superuser, login_url="base:index")
+def delete_customer_view(request, user_id):
+
+    User = get_user_model()
+
+    customer = get_object_or_404(
+        User,
+        id=user_id,
+        is_superuser=False,
+    )
+
+    # سفارش‌ها به کاربر PROTECT شده‌اند؛ مشتری دارای سفارش حذف نمی‌شود
+    # تا سوابق مالی و فاکتورها از بین نروند.
+    if customer.orders.exists():
+        return JsonResponse(
+            {
+                "success": False,
+                "message": (
+                    "این مشتری سفارش ثبت‌شده دارد و قابل حذف نیست. "
+                    "به‌جای حذف می‌توانید او را غیرفعال کنید."
+                ),
+            },
+            status=409,
+        )
+
+    customer.delete()
+
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "مشتری با موفقیت حذف شد.",
+        }
+    )
+
+
+@user_passes_test(is_superuser, login_url="base:index")
+def admin_manage_view(request):
+    return render(request, "panel/adminpage.html")
+
+
+@user_passes_test(is_superuser, login_url="base:index")
+def report_view(request):
+    User = get_user_model()
+
+    # =========================
+    # مشتریان جدید
+    # =========================
+
+    customer_join_dates = [
+        dt.isoformat()
+        for dt in User.objects.filter(
+            is_superuser=False
+        ).values_list(
+            "date_joined",
+            flat=True
+        )
+    ]
+
+    # =========================
+    # سفارش‌های واقعی
+    # =========================
+
+    orders = (
+        Order.objects
+        .filter(
+            user__is_superuser=False
+        )
+        .select_related("user")
+        .prefetch_related("items")
+        .order_by("registered_at")
+    )
+
+    report_orders = []
+
+    for order in orders:
+        # سود ادمین سفارش (فقط درصد ادمین؛ سهم واسطه و تکس سود نیست)
+        # به تفکیک واحد پول، بر حسب ریال.
+        profit_by_currency = {}
+
+        for item in order.items.all():
+            profit_by_currency[item.currency] = (
+                profit_by_currency.get(item.currency, 0)
+                + float(item.admin_profit_irr)
+            )
+
+        report_orders.append({
+            "id": order.id,
+
+            "customer_id": order.user_id,
+
+            "registered_at":
+                order.registered_at.isoformat(),
+
+            "status":
+                order.status,
+
+            "payment_status":
+                order.payment_status,
+
+            "total_usd":
+                float(order.total_usd or 0),
+
+            "total_irr":
+                float(order.total_irr or 0),
+
+            "shipping_cost":
+                float(order.shipping_cost or 0),
+
+            "service_cost":
+                float(order.service_cost or 0),
+
+            "admin_profit_irr":
+                sum(profit_by_currency.values()),
+
+            "profit_by_currency":
+                profit_by_currency,
+
+            "items_count":
+                order.items.count(),
+
+            "items_sold": sum(
+                item.quantity
+                for item in order.items.all()
+            ),
+
+            # برای تشخیص فروش واقعی
+            "is_paid":
+                order.payment_status
+                == Order.PaymentStatus.PAID,
+        })
+
+    # =========================
+    # Context
+    # =========================
+
+    context = {
+        "customer_join_dates":
+            customer_join_dates,
+
+        "report_orders":
+            report_orders,
+    }
+
+    return render(
+        request,
+        "panel/admin-reports-f.html",
+        context
+    )
+
+
+
+def serialize_order(order):
+    customer = order.user
+
+    customer_name = (
+        f"{customer.first_name} "
+        f"{customer.last_name}"
+    ).strip()
+
+    if not customer_name:
+        customer_name = (
+            customer.username
+        )
+
+    registered_at = (
+        timezone.localtime(
+            order.registered_at
+        )
+    )
+
+    jalali_date = (
+        jdatetime.datetime
+        .fromgregorian(
+            datetime=registered_at
+        )
+        .strftime(
+            "%Y/%m/%d"
+        )
+    )
+
+    currency_fields = {
+        "USD": "unitPriceUsd",
+        "EUR": "unitPriceEur",
+        "TRY": "unitPriceTry",
+        "GBP": "unitPriceGbp",
+        "AED": "unitPriceAed",
+        "CAD": "unitPriceCad",
+    }
+
+    order_items = list(
+        order.items.all()
+    )
+
+    products = []
+
+    for item in order_items:
+        image_url = ""
+
+        if item.photo:
+            try:
+                image_url = (
+                    item.photo.url
+                )
+            except ValueError:
+                image_url = ""
+
+        product = {
+            "id": item.id,
+            "name": item.product_name,
+            "brand": item.brand or "",
+            "size": item.size or "",
+            "description": item.description or "",
+            "qty": item.quantity,
+            "currency": item.currency,
+            # Base price entered by admin (before markup)
+            "basePrice": float(item.product_price),
+            "markupPercent": float(item.markup_percent),
+            "brokerPercent": float(item.broker_percent),
+            "adminPercent": float(item.admin_percent),
+            "taxPercent": float(item.tax_percent),
+            "adminProfitRial": float(item.admin_profit_irr),
+            # Foreign-currency price itself does not change.
+            "finalUnitPrice": float(item.sale_unit_price),
+            # Original and percentage-adjusted FX rates.
+            "exchangeRate": float(item.exchange_rate),
+            "adjustedExchangeRate": float(item.adjusted_exchange_rate),
+            # Product price before/after FX-rate percentage increase.
+            "baseUnitPriceRial": float(item.base_unit_price_irr),
+            "unitPriceRial": float(item.unit_price_irr),
+            "lineTotalRial": float(item.line_total_irr),
+            "costPrice": float(item.admin_cost),
+            "image": image_url,
+            "color": item.color or "",
+            "serviceCost": float(item.service_cost or 0),
+        }
+
+        price_field = (
+            currency_fields.get(
+                item.currency
+            )
+        )
+
+        if price_field:
+            product[
+                price_field
+            ] = float(
+                item.product_price
+            )
+
+        products.append(
+            product
+        )
+
+    if order_items:
+        order_currency = (
+            order_items[0].currency
+        )
+    else:
+        order_currency = "USD"
+
+    invoice_types = {
+        invoice.type
+        for invoice
+        in order.invoices.all()
+    }
+
+    invoice_status = (
+        "issued"
+        if (
+            Invoice
+            .InvoiceType
+            .CUSTOMER
+            in invoice_types
+        )
+        else "waiting"
+    )
+
+    total_irr = float(
+        order.total_irr
+    )
+
+    is_paid = (
+        order.payment_status
+        ==
+        Order.PaymentStatus.PAID
+    )
+
+    return {
+        "id":
+            order.id,
+
+        "number":
+            f"SN-{order.id:05d}",
+
+        "date":
+            jalali_date,
+
+        "lastChangeDate":
+            jalali_date,
+
+        "customer": {
+            "id":
+                customer.id,
+
+            "name":
+                customer_name,
+
+            "phone":
+                customer.phone
+                or "—",
+
+            "address":
+                "، ".join(
+                    part for part in (
+                        customer.province,
+                        customer.city,
+                        customer.address,
+                    ) if part
+                )
+                or "—",
+
+            "note":
+                "",
+        },
+
+        "products":
+            products,
+
+        "currency":
+            order_currency,
+
+        "discountRial":
+            0,
+
+        "shippingRial":
+            float(
+                order.shipping_cost
+            ),
+
+        "serviceRial":
+            # Order-level service cost was replaced by a per-item service
+            # cost (OrderItem.service_cost, already folded into totalRial),
+            # so this is always 0 now; kept only because older JS still
+            # reads order.serviceRial.
+            0,
+
+        "totalRial":
+            total_irr,
+
+        "paymentStatus":
+            order.payment_status,
+
+        "orderStatus":
+            order.status,
+
+        "invoiceStatus":
+            invoice_status,
+
+        "payment": {
+            "method":
+                "—",
+
+            "trackingCode":
+                "—",
+
+            "paidDate":
+                jalali_date
+                if is_paid
+                else "—",
+
+            "paidRial":
+                total_irr
+                if is_paid
+                else 0,
+
+            "remainingRial":
+                0
+                if is_paid
+                else total_irr,
+        },
+    }
+
+def parse_order_request(request):
+    User = get_user_model()
+
+    customer_id = request.POST.get(
+        "customer_id"
+    )
+
+    try:
+        customer = User.objects.get(
+            id=customer_id,
+            is_superuser=False,
+        )
+
+    except (
+        User.DoesNotExist,
+        TypeError,
+        ValueError,
+    ):
+        raise ValueError(
+            "مشتری انتخاب‌شده معتبر نیست."
+        )
+
+    payment_status = request.POST.get(
+        "payment_status",
+        Order.PaymentStatus.PENDING,
+    )
+
+    if (
+        payment_status
+        not in Order.PaymentStatus.values
+    ):
+        raise ValueError(
+            "وضعیت پرداخت معتبر نیست."
+        )
+
+    # وضعیت سفارش فقط هنگام ویرایش ارسال می‌شود (اختیاری).
+    status = request.POST.get("status")
+
+    if status is not None:
+        status = str(status).strip()
+
+        if status not in Order.Status.values:
+            raise ValueError(
+                "وضعیت سفارش معتبر نیست."
+            )
+
+    items_json = request.POST.get(
+        "items",
+        "[]",
+    )
+
+    try:
+        raw_items = json.loads(
+            items_json
+        )
+
+    except json.JSONDecodeError:
+        raise ValueError(
+            "اطلاعات اقلام سفارش معتبر نیست."
+        )
+
+    if (
+        not isinstance(raw_items, list)
+        or
+        not raw_items
+    ):
+        raise ValueError(
+            "سفارش باید حداقل یک آیتم داشته باشد."
+        )
+
+    items = []
+
+    for index, item in enumerate(
+        raw_items
+    ):
+        product_name = str(
+            item.get(
+                "product_name",
+                ""
+            )
+        ).strip()
+
+        if not product_name:
+            raise ValueError(
+                f"نام محصول شماره {index + 1} وارد نشده است."
+            )
+
+        currency = item.get(
+            "currency"
+        )
+
+        if (
+            currency
+            not in OrderItem.Currency.values
+        ):
+            raise ValueError(
+                f"ارز محصول شماره {index + 1} معتبر نیست."
+            )
+
+        try:
+            quantity = int(
+                item.get(
+                    "quantity",
+                    1
+                )
+            )
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+            raise ValueError(
+                f"تعداد محصول شماره {index + 1} معتبر نیست."
+            )
+
+        if quantity < 1:
+            raise ValueError(
+                f"تعداد محصول شماره {index + 1} معتبر نیست."
+            )
+
+        try:
+            product_price = Decimal(
+                str(
+                    item.get(
+                        "product_price",
+                        0
+                    )
+                )
+            )
+
+            admin_cost = Decimal(
+                str(
+                    item.get(
+                        "admin_cost",
+                        0
+                    )
+                )
+            )
+
+            default_percents = OrderItem.default_percents(currency)
+
+            percent_values = {}
+
+            for key in ("broker", "admin", "tax"):
+                raw_value = item.get(f"{key}_percent")
+
+                if raw_value is None or raw_value == "":
+                    raw_value = default_percents[key]
+
+                percent_values[key] = Decimal(str(raw_value))
+
+            broker_percent = percent_values["broker"]
+            admin_percent = percent_values["admin"]
+            tax_percent = percent_values["tax"]
+            markup_percent = broker_percent + admin_percent + tax_percent
+
+            exchange_rate = Decimal(
+                str(
+                    item.get(
+                        "exchange_rate",
+                        0
+                    )
+                )
+            )
+
+        except (
+            InvalidOperation,
+            TypeError,
+            ValueError,
+        ):
+            raise ValueError(
+                f"اطلاعات قیمت محصول شماره {index + 1} معتبر نیست."
+            )
+
+        if product_price <= 0:
+            raise ValueError(
+                f"قیمت محصول شماره {index + 1} باید بیشتر از صفر باشد."
+            )
+
+        if admin_cost < 0:
+            raise ValueError(
+                f"قیمت خرید محصول شماره {index + 1} معتبر نیست."
+            )
+
+        if min(broker_percent, admin_percent, tax_percent) < 0:
+            raise ValueError(
+                f"درصدهای محصول شماره {index + 1} نمی‌تواند منفی باشد."
+            )
+
+        if markup_percent > 1000:
+            raise ValueError(
+                f"درصد افزایش محصول شماره {index + 1} معتبر نیست."
+            )
+
+        if exchange_rate <= 0:
+            raise ValueError(
+                f"نرخ ارز محصول شماره {index + 1} معتبر نیست."
+            )
+
+        try:
+            item_service_cost = Decimal(
+                str(
+                    item.get(
+                        "service_cost",
+                        0
+                    )
+                )
+            )
+
+        except (
+            InvalidOperation,
+            TypeError,
+            ValueError,
+        ):
+            raise ValueError(
+                f"هزینه خدمات محصول شماره {index + 1} معتبر نیست."
+            )
+
+        if item_service_cost < 0:
+            raise ValueError(
+                f"هزینه خدمات محصول شماره {index + 1} معتبر نیست."
+            )
+
+        item_id = item.get(
+            "id"
+        )
+
+        if item_id:
+            try:
+                item_id = int(
+                    item_id
+                )
+
+            except (
+                TypeError,
+                ValueError,
+            ):
+                raise ValueError(
+                    "شناسه آیتم سفارش معتبر نیست."
+                )
+
+        else:
+            item_id = None
+
+        photo = request.FILES.get(
+            f"item_photo_{index}"
+        )
+
+        items.append(
+            {
+                "id":
+                    item_id,
+
+                "product_name":
+                    product_name,
+
+                "brand":
+                    str(item.get("brand", "") or "").strip(),
+
+                "size":
+                    str(item.get("size", "") or "").strip(),
+
+                "color":
+                    str(item.get("color", "") or "").strip(),
+
+                "description":
+                    str(item.get("description", "") or "").strip(),
+
+                "quantity":
+                    quantity,
+
+                "currency":
+                    currency,
+
+                "product_price":
+                    product_price,
+
+                "admin_cost":
+                    admin_cost,
+
+                "markup_percent":
+                    markup_percent,
+
+                "broker_percent":
+                    broker_percent,
+
+                "admin_percent":
+                    admin_percent,
+
+                "tax_percent":
+                    tax_percent,
+
+                "exchange_rate":
+                    exchange_rate,
+
+                "service_cost":
+                    item_service_cost,
+
+                "photo":
+                    photo,
+            }
+        )
+
+    return {
+        "customer":
+            customer,
+
+        "payment_status":
+            payment_status,
+
+        "status":
+            status,
+
+        "shipping_cost":
+            request.POST.get(
+                "shipping_cost",
+                "0",
+            ),
+
+        "usd_rate":
+            request.POST.get(
+                "usd_rate",
+                "0",
+            ),
+
+        "items":
+            items,
+    }
+
+
+@user_passes_test(
+    is_superuser,
+    login_url="base:index"
+)
+def orders_view(request):
+
+    User = get_user_model()
+
+    customers = (
+        User.objects
+        .filter(
+            is_superuser=False
+        )
+        .order_by(
+            "first_name",
+            "last_name"
+        )
+    )
+
+    orders_queryset = (
+        Order.objects
+        .select_related(
+            "user"
+        )
+        .prefetch_related(
+            "items",
+            "invoices"
+        )
+        .order_by(
+            "-registered_at"
+        )
+    )
+
+    orders_data = [
+        serialize_order(order)
+        for order in orders_queryset
+    ]
+
+    context = {
+        "customers":
+            customers,
+
+        "orders_data":
+            orders_data,
+    }
+
+    return render(
+        request,
+        "panel/admin-orders-f.html",
+        context,
+    )
+
+
+
+@require_POST
+@user_passes_test(
+    is_superuser,
+    login_url="base:index"
+)
+def create_order_view(request):
+
+    try:
+        data = parse_order_request(
+            request
+        )
+
+        order = create_order(
+            user=
+                data["customer"],
+
+            items=
+                data["items"],
+
+            shipping_cost=
+                data["shipping_cost"],
+
+            payment_status=
+                data["payment_status"],
+
+            usd_rate=
+                data["usd_rate"],
+        )
+        # Each callback needs its own on_commit() call: the 2nd positional
+        # argument of on_commit is `using` (DB alias), not another callback.
+        # robust=True makes a Telegram/PDF failure only get logged, so it can
+        # never turn an already-saved order into a 500 error.
+        created_order_id = order.id
+
+        transaction.on_commit(
+            lambda: send_order_invoice_bundle(created_order_id),
+            robust=True,
+        )
+
+    except ValueError as exc:
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message": str(exc),
+            },
+            status=400,
+        )
+
+    except Exception as exc:
+
+        print(
+            "CREATE ORDER ERROR:",
+            repr(exc)
+        )
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message":
+                    "ثبت سفارش با خطا مواجه شد.",
+            },
+            status=500,
+        )
+
+    return JsonResponse(
+        {
+            "success": True,
+
+            "order":
+                serialize_order(
+                    order
+                ),
+        },
+        status=201,
+    )
+
+
+
+@require_POST
+@user_passes_test(
+    is_superuser,
+    login_url="base:index"
+)
+def update_order_view(
+    request,
+    order_id
+):
+
+    order = get_object_or_404(
+        Order,
+        id=order_id,
+    )
+    old_item_ids = set(
+        order.items.values_list(
+            "id",
+            flat=True
+        )
+    )
+    old_data = {
+        "shipping_cost": order.shipping_cost,
+        "payment_status": order.payment_status,
+        "total_irr": order.total_irr,
+        "status": order.status,
+    }
+    old_items_snapshot = snapshot_order_items(order)
+    try:
+        data = parse_order_request(
+            request
+        )
+        
+        order = update_order(
+            order=order,
+
+            user=
+                data["customer"],
+
+            items=
+                data["items"],
+
+            shipping_cost=
+                data["shipping_cost"],
+
+            payment_status=
+                data["payment_status"],
+
+            usd_rate=
+                data["usd_rate"],
+
+            status=
+                data["status"],
+        )
+
+
+        new_items = order.items.exclude(
+            id__in=old_item_ids
+        )
+        changes = []
+
+        status_changed = old_data["status"] != order.status
+        shipping_changed = (
+            old_data["shipping_cost"] != order.shipping_cost
+        )
+        payment_changed = (
+            old_data["payment_status"] != order.payment_status
+        )
+        total_changed = old_data["total_irr"] != order.total_irr
+
+        # تغییر رنگ، سایز، برند، تعداد، قیمت، نام، عکس، حذف یا افزودن آیتم
+        item_lines, items_changed = diff_order_items(
+            old_items_snapshot,
+            order,
+        )
+
+        # Notifications are text-only; no invoice is resent after creation.
+        # Snapshot the event values before the transaction commits.
+        order_id_for_notification = order.id
+        events = []
+        if payment_changed:
+            if order.payment_status == Order.PaymentStatus.PAID:
+                events.append("paid")
+            elif order.payment_status == Order.PaymentStatus.PARTIAL:
+                events.append("partial")
+        if status_changed and order.status in {
+            Order.Status.PREPARING,
+            Order.Status.SHIPPED_TO_IRAN,
+            Order.Status.SHIPPED_TO_CUSTOMER,
+            Order.Status.DELIVERED,
+            Order.Status.CANCELLED,
+        }:
+            events.append(order.status)
+        shipping_notification_needed = (
+            shipping_changed and order.shipping_cost > 0
+        )
+        # Admin gets one concise message per save, listing only the changes.
+        admin_changes = []
+        if status_changed:
+            admin_changes.append(f"وضعیت سفارش: {order.get_status_display()}")
+        if payment_changed:
+            admin_changes.append(f"وضعیت پرداخت: {order.get_payment_status_display()}")
+        if shipping_changed:
+            admin_changes.append(f"هزینه باربری: {int(order.shipping_cost or 0):,} ریال")
+        if items_changed:
+            admin_changes.append("اقلام سفارش ویرایش شد")
+        if total_changed and not items_changed:
+            admin_changes.append("مبلغ سفارش تغییر کرد")
+        if admin_changes:
+            transaction.on_commit(
+                lambda oid=order.id, lines=tuple(admin_changes):
+                    send_admin_order_change_notification(oid, lines),
+                robust=True,
+            )
+
+        if events or shipping_notification_needed:
+            def notify_customer_after_commit(
+                order_id=order_id_for_notification,
+                event_names=tuple(events),
+                notify_shipping=shipping_notification_needed,
+            ):
+                from orders.telegram_service import send_customer_event_notification
+                current_order = Order.objects.select_related("user").get(pk=order_id)
+                for event_name in event_names:
+                    send_customer_event_notification(current_order, event_name)
+                if notify_shipping:
+                    send_shipping_cost_notification(current_order)
+
+            transaction.on_commit(notify_customer_after_commit, robust=True)
+
+    except ValueError as exc:
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message": str(exc),
+            },
+            status=400,
+        )
+
+    except Exception as exc:
+
+        print(
+            "UPDATE ORDER ERROR:",
+            repr(exc)
+        )
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message":
+                    "ویرایش سفارش با خطا مواجه شد.",
+            },
+            status=500,
+        )
+
+    return JsonResponse(
+        {
+            "success": True,
+
+            "order":
+                serialize_order(
+                    order
+                ),
+        }
+    )
+
+
+
+@require_POST
+@user_passes_test(
+    is_superuser,
+    login_url="base:index"
+)
+def delete_order_view(
+    request,
+    order_id
+):
+
+    order = get_object_or_404(
+        Order,
+        id=order_id,
+    )
+
+    order_number = (
+        f"SN-{order.id:05d}"
+    )
+
+    try:
+
+        delete_order_service(
+            order
+        )
+
+    except Exception as exc:
+
+        print(
+            "DELETE ORDER ERROR:",
+            repr(exc)
+        )
+
+        return JsonResponse(
+            {
+                "success": False,
+                "message":
+                    "حذف سفارش با خطا مواجه شد.",
+            },
+            status=500,
+        )
+
+    return JsonResponse(
+        {
+            "success": True,
+
+            "order_id":
+                order_id,
+
+            "order_number":
+                order_number,
+        }
+    )
+>>>>>>> refs/remotes/origin/main
