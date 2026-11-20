@@ -130,10 +130,10 @@ class OrderItem(models.Model):
     # مجموع این سه، درصد افزایشی است که روی نرخ ارز اعمال می‌شود.
     # فقط سود ادمین به‌عنوان سود پروژه محاسبه و نمایش داده می‌شود.
     DEFAULT_PERCENTS_BY_CURRENCY = {
-        "EUR": {"broker": Decimal("15"), "admin": Decimal("10"), "tax": Decimal("0")},
+        "EUR": {"broker": Decimal("10"), "admin": Decimal("15"), "tax": Decimal("0")},
         "USD": {"broker": Decimal("20"), "admin": Decimal("10"), "tax": Decimal("12")},
         "CAD": {"broker": Decimal("20"), "admin": Decimal("10"), "tax": Decimal("12")},
-        "TRY": {"broker": Decimal("10"), "admin": Decimal("10"), "tax": Decimal("0")},
+        "TRY": {"broker": Decimal("10"), "admin": Decimal("15"), "tax": Decimal("0")},
         "AED": {"broker": Decimal("15"), "admin": Decimal("10"), "tax": Decimal("0")},
         "GBP": {"broker": Decimal("0"), "admin": Decimal("0"), "tax": Decimal("0")},
     }

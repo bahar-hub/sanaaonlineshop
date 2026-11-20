@@ -39,10 +39,10 @@
     // مقادیر روی هر آیتم ذخیره می‌شوند و با چک‌باکس «ویرایش درصدها»
     // قابل تغییر هستند، پس فاکتورهای قبلی هیچ‌وقت عوض نمی‌شوند.
     var DEFAULT_PERCENTS_F = {
-        EUR: { broker: 15, admin: 10, tax: 0 },
+        EUR: { broker: 10, admin: 15, tax: 0 },
         USD: { broker: 20, admin: 10, tax: 12 },
         CAD: { broker: 20, admin: 10, tax: 12 },
-        TRY: { broker: 10, admin: 10, tax: 0 },
+        TRY: { broker: 10, admin: 15, tax: 0 },
         AED: { broker: 15, admin: 10, tax: 0 },
         GBP: { broker: 0, admin: 0, tax: 0 }
     };

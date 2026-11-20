@@ -542,6 +542,96 @@ def send_order_invoice_bundle(order_id):
             logger.error("Admin invoice image %s failed: %s", order_id, error)
 
 
-def send_updated_invoice(order_id, changes=None):
-    """Disabled: invoices are sent only when an order is first issued."""
-    return None
+def send_updated_invoice(order_id, changes=None, *, customer_changes=None, admin_changes=None):
+    """Send updated customer invoice photo with recipient-specific change text.
+
+    The legacy `changes` argument remains supported. For new calls, pass
+    separate lists so customer captions cannot expose admin-only pricing.
+    """
+    if not settings.TELEGRAM_BOT_TOKEN:
+        logger.warning("Updated invoice not sent: TELEGRAM_BOT_TOKEN is empty.")
+        return False
+
+    def normalize(lines):
+        return [str(line).strip() for line in (lines or []) if str(line).strip()]
+
+    if customer_changes is None and admin_changes is None:
+        customer_changes = admin_changes = changes
+    customer_changes = normalize(customer_changes)
+    admin_changes = normalize(admin_changes)
+    if not customer_changes and not admin_changes:
+        return False
+
+    try:
+        order = (
+            Order.objects.select_related("user")
+            .prefetch_related("items")
+            .get(pk=order_id)
+        )
+    except Order.DoesNotExist:
+        logger.warning("Updated invoice not sent: order %s not found", order_id)
+        return False
+
+    connection = getattr(order.user, "telegram_connection", None)
+    customer_chat_id = (
+        connection.telegram_id
+        if connection and connection.is_active and connection.telegram_id
+        else None
+    )
+    admin_chat_id = getattr(settings, "TELEGRAM_CHAT_ID", None)
+    recipients = []
+    if customer_chat_id and customer_changes:
+        recipients.append(("customer", customer_chat_id, customer_changes))
+    if admin_chat_id and admin_changes:
+        # Do not send conflicting customer and admin captions to one chat.
+        if str(admin_chat_id) != str(customer_chat_id):
+            recipients.append(("admin", admin_chat_id, admin_changes))
+        elif not customer_changes:
+            recipients.append(("admin", admin_chat_id, admin_changes))
+    if not recipients:
+        logger.info("Updated invoice %s: no Telegram recipient configured", order_id)
+        return False
+
+    try:
+        # Customer-safe invoice image (the existing invoice renderer).
+        image_bytes = build_invoice_image_bytes(order, is_admin=False)
+        filenames = build_invoice_filenames(order, is_admin=False)
+    except Exception:
+        logger.exception("Could not render updated invoice %s", order_id)
+        return False
+
+    successes = 0
+    for recipient_type, chat_id, recipient_changes in recipients:
+        caption = "\n".join([f"🧾 سفارش #{order.id}", *recipient_changes])
+        needs_separate_text = len(caption) > 1000
+        photo_caption = (
+            f"🧾 سفارش #{order.id}\nفاکتور اصلاح‌شده"
+            if needs_separate_text else caption
+        )
+        ok, error = _post_telegram_file(
+            chat_id, "sendPhoto", "photo", filenames["image"],
+            image_bytes, "image/png", photo_caption,
+        )
+        if ok:
+            successes += 1
+            if needs_separate_text:
+                try:
+                    response = send_telegram_text(chat_id, caption)
+                    response.raise_for_status()
+                except requests.RequestException:
+                    logger.exception(
+                        "Full change text failed for %s order %s",
+                        recipient_type, order_id,
+                    )
+            if recipient_type == "customer":
+                connection.last_error = None
+                connection.save(update_fields=["last_error"])
+        else:
+            logger.warning(
+                "Updated invoice for %s order %s failed: %s",
+                recipient_type, order_id, error,
+            )
+            if recipient_type == "customer":
+                _mark_connection_error(connection, error)
+
+    return successes > 0

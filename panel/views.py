@@ -1325,6 +1325,9 @@ def update_order_view(
         "payment_status": order.payment_status,
         "total_irr": order.total_irr,
         "status": order.status,
+        "usd_rate": order.usd_rate,
+        "service_cost": order.service_cost,
+        "user_id": order.user_id,
     }
     old_items_snapshot = snapshot_order_items(order)
     try:
@@ -1368,14 +1371,48 @@ def update_order_view(
             old_data["payment_status"] != order.payment_status
         )
         total_changed = old_data["total_irr"] != order.total_irr
+        usd_rate_changed = old_data["usd_rate"] != order.usd_rate
+        customer_changed = old_data["user_id"] != order.user_id
 
-        # تغییر رنگ، سایز، برند، تعداد، قیمت، نام، عکس، حذف یا افزودن آیتم
-        item_lines, items_changed = diff_order_items(
-            old_items_snapshot,
-            order,
+        # Two independent, per-recipient notifications: do not expose internal
+        # rates, base prices, service fees or margin percentages to customers.
+        admin_item_lines, admin_items_changed = diff_order_items(
+            old_items_snapshot, order, audience="admin",
         )
+        customer_item_lines, customer_items_changed = diff_order_items(
+            old_items_snapshot, order, audience="customer",
+        )
+        admin_invoice_changes = list(admin_item_lines)
+        customer_invoice_changes = list(customer_item_lines)
+        if usd_rate_changed:
+            admin_invoice_changes.append(f"💱 نرخ محاسبه سفارش تغییر کرد: {order.usd_rate:,.2f}")
+        if customer_changed:
+            customer_name = order.user.get_full_name().strip() or order.user.get_username()
+            admin_invoice_changes.append(f"👤 مشتری سفارش تغییر کرد: {customer_name}")
+            customer_invoice_changes.append(f"👤 مشتری سفارش تغییر کرد: {customer_name}")
+        if old_data["service_cost"] != order.service_cost:
+            admin_invoice_changes.append(f"🛠️ هزینه خدمات سفارش تغییر کرد: {order.service_cost:,.0f} ریال")
 
-        # Notifications are text-only; no invoice is resent after creation.
+        # Grand total is public, but a shipping-only change already has its own
+        # dedicated message, which must not be duplicated here.
+        if total_changed and (admin_invoice_changes or not shipping_changed):
+            admin_invoice_changes.append(f"💰 مبلغ نهایی فاکتور تغییر کرد: {order.total_irr:,.0f} ریال")
+        if total_changed and (customer_invoice_changes or not shipping_changed):
+            customer_invoice_changes.append(f"💰 مبلغ نهایی فاکتور تغییر کرد: {order.total_irr:,.0f} ریال")
+
+        if admin_invoice_changes or customer_invoice_changes:
+            transaction.on_commit(
+                lambda oid=order.id, customer_lines=tuple(customer_invoice_changes),
+                       admin_lines=tuple(admin_invoice_changes):
+                    send_updated_invoice(
+                        oid,
+                        customer_changes=customer_lines,
+                        admin_changes=admin_lines,
+                    ),
+                robust=True,
+            )
+
+        # Keep the existing dedicated notifications for payment and order status.
         # Snapshot the event values before the transaction commits.
         order_id_for_notification = order.id
         events = []
@@ -1403,10 +1440,10 @@ def update_order_view(
             admin_changes.append(f"وضعیت پرداخت: {order.get_payment_status_display()}")
         if shipping_changed:
             admin_changes.append(f"هزینه باربری: {int(order.shipping_cost or 0):,} ریال")
-        if items_changed:
-            admin_changes.append("اقلام سفارش ویرایش شد")
-        if total_changed and not items_changed:
-            admin_changes.append("مبلغ سفارش تغییر کرد")
+        # Invoice field changes are sent to admin with the new invoice image.
+        # Keep this existing text-only notification for status/payment/shipping only.
+        if total_changed and not admin_invoice_changes and not shipping_changed:
+            admin_changes.append(f"مبلغ سفارش تغییر کرد: {order.total_irr:,.0f} ریال")
         if admin_changes:
             transaction.on_commit(
                 lambda oid=order.id, lines=tuple(admin_changes):

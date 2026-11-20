@@ -255,91 +255,132 @@ def update_order(
 # ------------------------------------------------------------------
 
 def snapshot_order_items(order):
-    """وضعیت فعلی آیتم‌ها؛ قبل از ویرایش گرفته می‌شود."""
+    """Capture invoice-relevant item fields before an order is edited."""
     return {
         item.id: {
             "name": item.product_name or "",
+            "description": item.description or "",
+            "admin_cost": item.admin_cost,
             "brand": item.brand or "",
             "size": item.size or "",
             "color": item.color or "",
             "qty": item.quantity,
-            "total": int(item.line_total_irr),
+            "currency": item.currency or "",
+            "product_price": item.product_price,
+            "broker_percent": item.broker_percent,
+            "admin_percent": item.admin_percent,
+            "tax_percent": item.tax_percent,
+            "exchange_rate": item.exchange_rate,
+            "service_cost": item.service_cost,
             "photo": item.photo.name if item.photo else "",
+            "line_total_irr": item.line_total_irr,
         }
         for item in order.items.all()
     }
 
 
-def diff_order_items(old_snapshot, order):
+def diff_order_items(old_snapshot, order, *, audience="admin"):
+    """Separate internal pricing details from the customer's payable prices.
+
+    audience='admin': every changed input, including internal percentages/rates.
+    audience='customer': public item details only; payable order total is reported by the view.
     """
-    آیتم‌های قبل و بعد از ویرایش را مقایسه می‌کند.
-
-    خروجی: (lines, changed)
-      lines   -> متن آماده‌ی پیام برای هر آیتمی که تغییر کرده یا حذف شده
-      changed -> اگر هر چیزی در آیتم‌ها عوض شده باشد (اضافه، حذف یا ویرایش)
-                 تا فاکتور جدید ارسال شود.
-    محصولِ جدید متن جداگانه‌ی خودش را دارد (send_new_products_notification)،
-    پس اینجا فقط باعث changed=True می‌شود.
-    """
-    from html import escape
-
-    def show(value):
-        value = (value or "").strip() if isinstance(value, str) else value
-        return escape(str(value)) if value not in ("", None) else "-"
-
+    if audience not in {"admin", "customer"}:
+        raise ValueError("Invalid invoice audience")
     lines = []
     changed = False
     current_ids = set()
 
-    for item in order.items.all():
+    labels = {
+        "name": "نام محصول",
+        "description": "توضیحات محصول",
+        "admin_cost": "قیمت خرید محصول",
+        "brand": "برند محصول",
+        "size": "سایز محصول",
+        "color": "رنگ محصول",
+        "qty": "تعداد محصول",
+        "currency": "واحد پول محصول",
+        "product_price": "قیمت محصول",
+        "broker_percent": "درصد واسطه محصول",
+        "admin_percent": "درصد ادمین محصول",
+        "tax_percent": "درصد مالیات محصول",
+        "exchange_rate": "نرخ ارز محصول",
+        "service_cost": "هزینه خدمات محصول",
+    }
+
+    icons = {
+        "name": "🏷️", "description": "📝", "admin_cost": "💰",
+        "brand": "🏷️", "size": "📏", "color": "🎨", "qty": "🔢",
+        "currency": "💱", "product_price": "💵", "broker_percent": "📊",
+        "admin_percent": "📊", "tax_percent": "🧾", "exchange_rate": "💱",
+        "service_cost": "🛠️",
+    }
+
+    public_fields = {"name", "description", "brand", "size", "color", "qty"}
+    items = list(order.items.all())
+    show_product_header = len(items) > 1
+    for item in items:
         current_ids.add(item.id)
         old = old_snapshot.get(item.id)
-
         if old is None:
             changed = True
+            lines.append(f"➕ محصول «{item.product_name}» به سفارش اضافه شد")
             continue
 
         new = {
             "name": item.product_name or "",
+            "description": item.description or "",
+            "admin_cost": item.admin_cost,
             "brand": item.brand or "",
             "size": item.size or "",
             "color": item.color or "",
             "qty": item.quantity,
-            "total": int(item.line_total_irr),
+            "currency": item.currency or "",
+            "product_price": item.product_price,
+            "broker_percent": item.broker_percent,
+            "admin_percent": item.admin_percent,
+            "tax_percent": item.tax_percent,
+            "exchange_rate": item.exchange_rate,
+            "service_cost": item.service_cost,
             "photo": item.photo.name if item.photo else "",
         }
 
-        rows = []
+        item_changes = []
+        any_field_changed = any(old.get(key) != new.get(key) for key in labels)
+        photo_changed = old.get("photo") != new.get("photo")
+        payable_changed = old.get("line_total_irr") != item.line_total_irr
+        for key, label in labels.items():
+            if audience == "customer" and key not in public_fields:
+                continue
+            if old.get(key) != new.get(key):
+                value = new.get(key)
+                if value is None or str(value).strip() == "":
+                    value_text = "حذف شد"
+                else:
+                    value_text = f"{value:,.2f}".rstrip("0").rstrip(".") if isinstance(value, __import__("decimal").Decimal) else str(value)
+                if key in {"broker_percent", "admin_percent", "tax_percent"} and value_text != "حذف شد":
+                    value_text += "٪"
+                item_changes.append(f"{icons[key]} {label} تغییر کرد: {value_text}")
 
-        def field(key, icon, label, fmt=show):
-            if old[key] != new[key]:
-                rows.append(
-                    f"{icon} {label}: از «{fmt(old[key])}» به «{fmt(new[key])}»"
-                )
+        if old.get("photo") != new.get("photo"):
+            item_changes.append("🖼️ تصویر محصول تغییر کرد: تصویر جدید ثبت شد" if new.get("photo") else "🖼️ تصویر محصول تغییر کرد: حذف شد")
 
-        field("name", "🛍", "نام کالا")
-        field("brand", "🏷", "برند")
-        field("size", "📏", "سایز")
-        field("color", "🎨", "رنگ")
-        field("qty", "🔢", "تعداد")
-        field(
-            "total", "💰", "قیمت",
-            fmt=lambda v: f"{v:,} ریال",
-        )
+        if audience == "admin" and (any_field_changed or photo_changed) and payable_changed:
+            item_changes.append(f"💰 قیمت نهایی کالا تغییر کرد: {item.line_total_irr:,.0f} ریال")
 
-        if old["photo"] != new["photo"]:
-            rows.append("🖼 تصویر کالا به‌روزرسانی شد")
-
-        if rows:
+        if item_changes:
             changed = True
-            lines.append(
-                f"🔹 {escape(new['name'])}\n" + "\n".join(rows)
-            )
+            # Show the product name once as a header only for multi-item invoices.
+            # Never prepend it to every change: this made RTL Telegram lines
+            # look like a repeated, broken prefix before each emoji.
+            if show_product_header:
+                lines.append(f"📦 محصول: {item.product_name}")
+            lines.extend(item_changes)
 
     for old_id, old in old_snapshot.items():
         if old_id not in current_ids:
             changed = True
-            lines.append(f"🗑 محصول حذف شد:\n{escape(old['name'])}")
+            lines.append(f"➖ محصول «{old['name']}» از سفارش حذف شد")
 
     return lines, changed
 
